@@ -2,20 +2,20 @@ import Toolbar from '@mui/material/Toolbar';
 import clsx from 'clsx';
 import { memo } from 'react';
 import NavbarToggleButton from 'src/components/theme-layouts/components/navbar/NavbarToggleButton';
-import themeOptions from 'src/configs/themeOptions';
-import _ from 'lodash';
-import LightDarkModeToggle from 'src/components/LightDarkModeToggle';
+// import themeOptions from 'src/configs/themeOptions';
+// import _ from 'lodash';
+// import LightDarkModeToggle from 'src/components/LightDarkModeToggle';
 import useFuseLayoutSettings from '@fuse/core/FuseLayout/useFuseLayoutSettings';
-import NotificationPanelToggleButton from '@/app/(control-panel)/apps/notifications/components/ui/notification-panel/NotificationPanelToggleButton';
-import AdjustFontSize from '../../components/AdjustFontSize';
-import FullScreenToggle from '../../components/FullScreenToggle';
-import LanguageSwitcher from '../../components/LanguageSwitcher';
-import NavigationShortcuts from '../../components/navigation/NavigationShortcuts';
-import NavigationSearch from '../../components/navigation/NavigationSearch';
-import QuickPanelToggleButton from '../../components/quickPanel/QuickPanelToggleButton';
+// import NotificationPanelToggleButton from '@/app/(control-panel)/apps/notifications/components/ui/notification-panel/NotificationPanelToggleButton';
+// import AdjustFontSize from '../../components/AdjustFontSize';
+// import FullScreenToggle from '../../components/FullScreenToggle';
+// import LanguageSwitcher from '../../components/LanguageSwitcher';
+// import NavigationShortcuts from '../../components/navigation/NavigationShortcuts';
+// import NavigationSearch from '../../components/navigation/NavigationSearch';
+// import QuickPanelToggleButton from '../../components/quickPanel/QuickPanelToggleButton';
 import { Layout1ConfigDefaultsType } from '@/components/theme-layouts/layout1/Layout1Config';
 import useThemeMediaQuery from '../../../../@fuse/hooks/useThemeMediaQuery';
-import { AppBar, Divider } from '@mui/material';
+import { AppBar, Button, Divider } from '@mui/material';
 import ToolbarTheme from 'src/contexts/ToolbarTheme';
 
 type ToolbarLayout1Props = {
@@ -44,7 +44,7 @@ function ToolbarLayout1(props: ToolbarLayout1Props) {
 			>
 				<Toolbar className="min-h-12 p-0 md:min-h-16">
 					<div className="flex flex-1 items-center gap-3 px-2 md:px-4">
-						{config.navbar.display && config.navbar.position === 'left' && (
+						{/* {config.navbar.display && config.navbar.position === 'left' && (
 							<>
 								<NavbarToggleButton />
 
@@ -56,11 +56,11 @@ function ToolbarLayout1(props: ToolbarLayout1Props) {
 							</>
 						)}
 
-						{!isMobile && <NavigationShortcuts />}
+						{!isMobile && <NavigationShortcuts />} */}
 					</div>
 
-					<div className="flex items-center overflow-x-auto px-2 py-2 md:px-4">
-						<LanguageSwitcher />
+					<div className="flex items-center gap-3 overflow-x-auto px-2 py-2 md:px-4">
+						{/* <LanguageSwitcher />
 						<AdjustFontSize />
 						<FullScreenToggle />
 						<LightDarkModeToggle
@@ -69,7 +69,19 @@ function ToolbarLayout1(props: ToolbarLayout1Props) {
 						/>
 						<NavigationSearch />
 						<QuickPanelToggleButton />
-						<NotificationPanelToggleButton />
+						<NotificationPanelToggleButton /> */}
+						<Button
+							variant="contained"
+							color="primary"
+						>
+							Human Support
+						</Button>
+						<Button
+							variant="contained"
+							color="primary"
+						>
+							Integrate To Your App
+						</Button>
 					</div>
 
 					{config.navbar.display && config.navbar.position === 'right' && (

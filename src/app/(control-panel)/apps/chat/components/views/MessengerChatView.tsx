@@ -12,13 +12,13 @@ import Toolbar from '@mui/material/Toolbar';
 import useParams from '@fuse/hooks/useParams';
 import Box from '@mui/material/Box';
 import Error404PageView from '@/app/(public)/(errors)/components/views/Error404PageView';
-import ChatMoreMenu from '../ui/chat/ChatMoreMenu';
+// import ChatMoreMenu from '../ui/chat/ChatMoreMenu';
 import { useChats } from '../../api/hooks/chats/useChats';
 import { useChatMessages } from '../../api/hooks/chats/useChatMessages';
-import { useContact } from '../../api/hooks/contacts/useContact';
+// import { useContact } from '../../api/hooks/contacts/useContact';
 import { useProfile } from '../../api/hooks/profile/useProfile';
 import { useSendMessage } from '../../api/hooks/chats/useSendMessage';
-import UserAvatar from '../ui/UserAvatar';
+// import UserAvatar from '../ui/UserAvatar';
 import { useMessengerAppContext } from '../../contexts/MessengerAppContext/useMessengerAppContext';
 import { Message } from '../../api/types';
 import FuseLoading from '@fuse/core/FuseLoading';
@@ -156,6 +156,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			>
 				<Toolbar className="flex w-full items-center justify-between px-4">
 					<div className="flex items-center">
+						Chat
 						{/* <IconButton
 							aria-label="Open drawer"
 							onClick={() => setMainSidebarOpen(true)}
@@ -184,10 +185,10 @@ function MessengerChatView(props: MessengerChatViewProps) {
 							</Typography>
 						</div> */}
 					</div>
-					<ChatMoreMenu
+					{/* <ChatMoreMenu
 						className="-mx-2"
 						contactId={contactId}
-					/>
+					/> */}
 				</Toolbar>
 			</Box>
 			<div className="flex h-full min-h-0 w-full flex-auto">
