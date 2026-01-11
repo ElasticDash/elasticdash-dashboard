@@ -4,7 +4,7 @@ import { memo, ReactNode } from 'react';
 import { Layout1ConfigDefaultsType } from 'src/components/theme-layouts/layout1/Layout1Config';
 import Configurator from 'src/components/theme-layouts/components/configurator/Configurator';
 import useFuseLayoutSettings from '@fuse/core/FuseLayout/useFuseLayoutSettings';
-import FooterLayout1 from './components/FooterLayout1';
+// import FooterLayout1 from './components/FooterLayout1';
 import LeftSideLayout1 from './components/LeftSideLayout1';
 import NavbarWrapperLayout1 from './components/NavbarWrapperLayout1';
 import ToolbarLayout1 from './components/ToolbarLayout1';
@@ -71,9 +71,9 @@ function Layout1(props: Layout1Props) {
 
 					<div className="relative z-10 flex min-h-0 flex-auto flex-col">{children}</div>
 
-					{config.footer.display && (
+					{/* {config.footer.display && (
 						<FooterLayout1 className={config.footer.style === 'fixed' ? 'sticky bottom-0' : ''} />
-					)}
+					)} */}
 				</main>
 
 				{config.navbar.display && config.navbar.position === 'right' && <NavbarWrapperLayout1 />}

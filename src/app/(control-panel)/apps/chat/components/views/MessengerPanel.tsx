@@ -199,7 +199,17 @@ function MessengerPanel() {
 					color="secondary"
 				>
 					<Toolbar className="px-1">
-						{(!open || selectedChatId === '') && (
+						{open && selectedContact ? (
+							<div className="flex flex-1 items-center px-3">
+								<Avatar src={selectedContact.avatar} />
+								<Typography
+									className="mx-4 text-lg"
+									color="inherit"
+								>
+									{selectedContact.name}
+								</Typography>
+							</div>
+						) : (
 							<div className="flex flex-1 items-center gap-3 px-0.75">
 								<IconButton
 									className="h-14 w-14"
@@ -209,24 +219,11 @@ function MessengerPanel() {
 								>
 									<FuseSvgIcon size={20}>lucide:message-square-text</FuseSvgIcon>
 								</IconButton>
-								{selectedChatId === '' && (
-									<Typography
-										className="text-lg"
-										color="inherit"
-									>
-										Team Chat
-									</Typography>
-								)}
-							</div>
-						)}
-						{open && selectedContact && (
-							<div className="flex flex-1 items-center px-3">
-								<Avatar src={selectedContact.avatar} />
 								<Typography
-									className="mx-4 text-lg"
+									className="text-lg"
 									color="inherit"
 								>
-									{selectedContact.name}
+									Team Chat
 								</Typography>
 							</div>
 						)}

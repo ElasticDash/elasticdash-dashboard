@@ -1,3 +1,3 @@
-import MessengerFirstScreenView from '../components/views/MessengerFirstScreenView';
+import MessengerChatView from '../components/views/MessengerChatView';
 
-export default MessengerFirstScreenView;
+export default MessengerChatView;

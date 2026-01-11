@@ -82,14 +82,13 @@ function MessengerChatView(props: MessengerChatViewProps) {
 
 	const { data: chatList, isLoading: isChatsLoading } = useChats();
 
-	const chat = chatList?.find((chat) => chat.id === chatId);
+	const chat = chatList?.find((chat) => chat.id === chatId) || chatList?.[0];
 
 	const { data: user, isLoading: isUserLoading } = useProfile();
 	const { data: messages, isLoading: isMessagesLoading } = useChatMessages(chatId);
 
 	const contactId = chat?.contactIds?.find((id) => id !== user?.id);
 
-	const { data: selectedContact } = useContact(contactId);
 	const { mutate: sendMessage } = useSendMessage();
 
 	useEffect(() => {
@@ -157,7 +156,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			>
 				<Toolbar className="flex w-full items-center justify-between px-4">
 					<div className="flex items-center">
-						<IconButton
+						{/* <IconButton
 							aria-label="Open drawer"
 							onClick={() => setMainSidebarOpen(true)}
 							className="border-divider flex border lg:hidden"
@@ -183,7 +182,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 							>
 								{selectedContact?.name}
 							</Typography>
-						</div>
+						</div> */}
 					</div>
 					<ChatMoreMenu
 						className="-mx-2"

@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { ReactNode, memo } from 'react';
 import { Layout2ConfigDefaultsType } from 'src/components/theme-layouts/layout2/Layout2Config';
 import useFuseLayoutSettings from '@fuse/core/FuseLayout/useFuseLayoutSettings';
-import FooterLayout2 from './components/FooterLayout2';
+// import FooterLayout2 from './components/FooterLayout2';
 import LeftSideLayout2 from './components/LeftSideLayout2';
 import NavbarWrapperLayout2 from './components/NavbarWrapperLayout2';
 import RightSideLayout2 from './components/RightSideLayout2';
@@ -82,9 +82,9 @@ function Layout2(props: Layout2Props) {
 
 					<div className="relative z-10 flex min-h-0 flex-auto flex-col">{children}</div>
 
-					{config.footer.display && (
+					{/* {config.footer.display && (
 						<FooterLayout2 className={config.footer.style === 'fixed' ? 'sticky bottom-0' : ''} />
-					)}
+					)} */}
 				</main>
 			</div>
 

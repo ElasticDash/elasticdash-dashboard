@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { memo, ReactNode } from 'react';
 import Configurator from 'src/components/theme-layouts/components/configurator/Configurator';
 import useFuseLayoutSettings from '@fuse/core/FuseLayout/useFuseLayoutSettings';
-import FooterLayout3 from './components/FooterLayout3';
+// import FooterLayout3 from './components/FooterLayout3';
 import LeftSideLayout3 from './components/LeftSideLayout3';
 import NavbarWrapperLayout3 from './components/NavbarWrapperLayout3';
 import RightSideLayout3 from './components/RightSideLayout3';
@@ -82,9 +82,9 @@ function Layout3(props: Layout3Props) {
 
 					<div className="relative z-10 flex min-h-0 flex-auto flex-col">{children}</div>
 
-					{config.footer.display && (
+					{/* {config.footer.display && (
 						<FooterLayout3 className={config.footer.style === 'fixed' ? 'sticky bottom-0' : ''} />
-					)}
+					)} */}
 				</main>
 			</div>
 
