@@ -50,6 +50,13 @@ const navigationConfig: FuseNavItemType[] = [
 				url: '/apps/account-settings'
 			},
 			{
+				id: 'apps.tickets',
+				title: 'Tickets',
+				type: 'item',
+				icon: 'lucide:ticket',
+				url: '/apps/tickets'
+			},
+			{
 				id: 'apps.ai-image-generator',
 				title: 'AI Image Generator',
 				type: 'item',

@@ -18,7 +18,12 @@ const mockTables = [
 	{ id: 2, name: 'Orders', tags: ['e-commerce'] },
 	{ id: 3, name: 'Products', tags: ['e-commerce', 'catalog'] },
 	{ id: 4, name: 'Sessions', tags: ['auth'] },
-	{ id: 5, name: 'Logs', tags: ['system'] }
+	{ id: 5, name: 'Logs', tags: ['system'] },
+	{ id: 6, name: 'Users', tags: ['auth', 'core'] },
+	{ id: 7, name: 'Orders', tags: ['e-commerce'] },
+	{ id: 8, name: 'Products', tags: ['e-commerce', 'catalog'] },
+	{ id: 9, name: 'Sessions', tags: ['auth'] },
+	{ id: 10, name: 'Logs', tags: ['system'] }
 ];
 
 function KnowledgeBaseTable() {
@@ -80,7 +85,7 @@ function KnowledgeBaseTable() {
 	};
 	return (
 		<Paper
-			className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+			className="shadow-1 w-full overflow-hidden rounded-t-lg rounded-b-none"
 			elevation={0}
 		>
 			<DataTable

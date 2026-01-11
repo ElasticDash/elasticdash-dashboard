@@ -5,8 +5,8 @@ import PageBreadcrumb from 'src/components/PageBreadcrumb';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { useState } from 'react';
-import KnowledgeBaseTableDialog from './KnowledgeBaseTableDialog';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import KnowledgeBaseApiDialog from './KnowledgeBaseApiDialog';
 
 /**
  * The ApiKnowledgeBaseHeader component.
@@ -102,7 +102,7 @@ function ApiKnowledgeBaseHeader({
 							startIcon={<FuseSvgIcon>lucide:plus</FuseSvgIcon>}
 							onClick={handleMenuOpen}
 						>
-							Add Table
+							Add API
 						</Button>
 						<Menu
 							anchorEl={anchorEl}
@@ -179,7 +179,7 @@ function ApiKnowledgeBaseHeader({
 				</DialogActions>
 			</Dialog>
 			{/* Reusable Add/Edit Dialog */}
-			<KnowledgeBaseTableDialog
+			<KnowledgeBaseApiDialog
 				open={dialogOpen}
 				onClose={handleDialogClose}
 				onSubmit={handleDialogSubmit}

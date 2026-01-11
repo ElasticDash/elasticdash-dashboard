@@ -145,6 +145,7 @@ export default tseslint.config({
         "@typescript-eslint/no-misused-promises": "off",
         "@typescript-eslint/require-await": "off",
         "@typescript-eslint/no-empty-object-type": "off",
+        "@typescript-eslint/no-explicit-any": "off",
 
         // React
         "react/jsx-indent": "off",

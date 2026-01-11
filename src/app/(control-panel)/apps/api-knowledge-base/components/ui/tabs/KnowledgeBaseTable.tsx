@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { Paper, Chip, Button } from '@mui/material';
+import { Paper, Chip, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import Typography from '@mui/material/Typography';
-import KnowledgeBaseTableDialog from '../KnowledgeBaseTableDialog';
+import KnowledgeBaseApiDialog from '../KnowledgeBaseApiDialog';
 
 interface Tables {
 	id: number;
@@ -24,6 +24,8 @@ const mockTables = [
 function KnowledgeBaseTable() {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [editTable, setEditTable] = useState(null);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deleteTable, setDeleteTable] = useState(null);
 	const columns = useMemo<MRT_ColumnDef<Tables>[]>(
 		() => [
 			{
@@ -63,9 +65,22 @@ function KnowledgeBaseTable() {
 		setEditDialogOpen(false);
 		setEditTable(null);
 	};
+	const handleDelete = (row) => {
+		setDeleteTable(row.original);
+		setDeleteDialogOpen(true);
+	};
+	const handleDeleteClose = () => {
+		setDeleteDialogOpen(false);
+		setDeleteTable(null);
+	};
+	const handleDeleteConfirm = () => {
+		// TODO: handle actual delete logic
+		setDeleteDialogOpen(false);
+		setDeleteTable(null);
+	};
 	return (
 		<Paper
-			className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+			className="shadow-1 flex w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
 			elevation={0}
 		>
 			<DataTable
@@ -87,13 +102,14 @@ function KnowledgeBaseTable() {
 							variant="outlined"
 							color="error"
 							startIcon={<FuseSvgIcon>lucide:trash</FuseSvgIcon>}
+							onClick={() => handleDelete(row)}
 						>
 							Delete
 						</Button>
 					</div>
 				)}
 			/>
-			<KnowledgeBaseTableDialog
+			<KnowledgeBaseApiDialog
 				open={editDialogOpen}
 				onClose={handleEditClose}
 				onSubmit={() => {
@@ -102,6 +118,16 @@ function KnowledgeBaseTable() {
 				initialData={editTable}
 				mode="edit"
 			/>
+			<Dialog open={deleteDialogOpen} onClose={handleDeleteClose} maxWidth="xs">
+				<DialogTitle>Confirm Delete</DialogTitle>
+				<DialogContent>
+					Are you sure you want to delete <b>{deleteTable?.name}</b>?
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleDeleteClose}>Cancel</Button>
+					<Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
+				</DialogActions>
+			</Dialog>
 		</Paper>
 	);
 }

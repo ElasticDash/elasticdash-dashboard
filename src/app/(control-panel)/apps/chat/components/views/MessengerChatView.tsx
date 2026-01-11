@@ -233,14 +233,14 @@ function MessengerChatView(props: MessengerChatViewProps) {
 												</Typography>
 											</div>
 											{isReceived && (
-												<Button
-													size="small"
-													variant="outlined"
-													sx={{ mt: 1, alignSelf: 'flex-start' }}
-													onClick={() => setFeedbackOpen(true)}
-												>
-													Send Feedback
-												</Button>
+												<div style={{ display: 'flex', gap: 8, marginTop: 8, alignSelf: 'flex-start' }}>
+													<IconButton size="small">
+														<FuseSvgIcon>lucide:thumbs-up</FuseSvgIcon>
+													</IconButton>
+													<IconButton size="small" onClick={() => setFeedbackOpen(true)}>
+														<FuseSvgIcon>lucide:thumbs-down</FuseSvgIcon>
+													</IconButton>
+												</div>
 											)}
 										</StyledMessageRow>
 									);
