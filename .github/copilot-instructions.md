@@ -16,7 +16,7 @@ Any claim of progress **without output** is a violation.
 
 ### 1. PLAN (REQUIRED)
 
-* Create `.temp/plan.md` if missing
+* Create `.temp/plan-copilot.md` if missing
 * Status must be `PENDING_APPROVAL`
 * Plan MUST include:
 

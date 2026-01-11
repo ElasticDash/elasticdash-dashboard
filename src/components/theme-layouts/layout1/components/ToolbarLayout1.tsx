@@ -1,6 +1,6 @@
 import Toolbar from '@mui/material/Toolbar';
 import clsx from 'clsx';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import NavbarToggleButton from 'src/components/theme-layouts/components/navbar/NavbarToggleButton';
 // import themeOptions from 'src/configs/themeOptions';
 // import _ from 'lodash';
@@ -15,7 +15,8 @@ import useFuseLayoutSettings from '@fuse/core/FuseLayout/useFuseLayoutSettings';
 // import QuickPanelToggleButton from '../../components/quickPanel/QuickPanelToggleButton';
 import { Layout1ConfigDefaultsType } from '@/components/theme-layouts/layout1/Layout1Config';
 import useThemeMediaQuery from '../../../../@fuse/hooks/useThemeMediaQuery';
-import { AppBar, Button, Divider } from '@mui/material';
+import { AppBar, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Paper } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ToolbarTheme from 'src/contexts/ToolbarTheme';
 
 type ToolbarLayout1Props = {
@@ -27,10 +28,13 @@ type ToolbarLayout1Props = {
  */
 function ToolbarLayout1(props: ToolbarLayout1Props) {
 	const { className } = props;
-
 	const settings = useFuseLayoutSettings();
 	const config = settings.config as Layout1ConfigDefaultsType;
 	const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
+	const [integrateDialogOpen, setIntegrateDialogOpen] = useState(false);
+	const [copied, setCopied] = useState(false);
+
+	const codeBlock = `<!-- Widget will be mounted in this div -->\n<div id="widget-container"></div>\n<script src="https://elasticdash-public-resources.s3.ap-southeast-2.amazonaws.com/index.global.js"></script>\n<script>\n  // Mount the widget\n  const widget = ElasticWidget.mount('#widget-container', {\n    // Configure your API endpoints here\n    apiEndpoint: '/api/chat',\n    apiBaseUrl: 'http://localhost:3000',\n    // token: 'your-token-here', // Uncomment and set your token if needed\n    onTokenRequired: () => {\n      alert('Please sign in to continue');\n      console.log('Token is required');\n    }\n  });\n\n  // You can unmount the widget later if needed:\n  // widget.unmount();\n</script>`;
 
 	return (
 		<ToolbarTheme>
@@ -79,6 +83,7 @@ function ToolbarLayout1(props: ToolbarLayout1Props) {
 						<Button
 							variant="contained"
 							color="primary"
+							onClick={() => setIntegrateDialogOpen(true)}
 						>
 							Integrate To Your App
 						</Button>
@@ -101,6 +106,32 @@ function ToolbarLayout1(props: ToolbarLayout1Props) {
 						</>
 					)}
 				</Toolbar>
+				<Dialog open={integrateDialogOpen} onClose={() => setIntegrateDialogOpen(false)} maxWidth="md" fullWidth>
+					<DialogTitle>Integrate To Your App</DialogTitle>
+					<DialogContent>
+						<Paper variant="outlined" sx={{ background: '#18181b', color: '#fff', fontFamily: 'monospace', fontSize: 14, p: 2, position: 'relative' }}>
+							<pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{codeBlock}</pre>
+							<Button
+								size="small"
+								startIcon={<ContentCopyIcon sx={{ color: '#fff' }} />}
+								sx={{ position: 'absolute', top: 8, right: 8, color: '#fff', borderColor: '#fff' }}
+								variant="outlined"
+								onClick={() => {
+									navigator.clipboard.writeText(codeBlock);
+									setCopied(true);
+									setTimeout(() => setCopied(false), 1500);
+								}}
+							>
+								{copied ? 'Copied!' : 'Copy'}
+							</Button>
+						</Paper>
+					</DialogContent>
+					<DialogActions>
+						<Button onClick={() => setIntegrateDialogOpen(false)} color="primary">
+							Close
+						</Button>
+					</DialogActions>
+				</Dialog>
 			</AppBar>
 		</ToolbarTheme>
 	);

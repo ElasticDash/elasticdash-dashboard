@@ -27,7 +27,27 @@ const navigationConfig: FuseNavItemType[] = [
 				type: 'item',
 				icon: 'lucide:message-square',
 				url: '/apps/chat',
-				translate: 'CHAT'
+			},
+			{
+				id: 'apps.data-table-knowledge-base',
+				title: 'Data Table Knowledge Base',
+				type: 'item',
+				icon: 'lucide:message-square',
+				url: '/apps/data-table-knowledge-base',
+			},
+			{
+				id: 'apps.api-knowledge-base',
+				title: 'API Knowledge Base',
+				type: 'item',
+				icon: 'lucide:message-square',
+				url: '/apps/api-knowledge-base',
+			},
+			{
+				id: 'apps.account-settings',
+				title: 'Account Settings',
+				type: 'item',
+				icon: 'lucide:settings',
+				url: '/apps/account-settings'
 			},
 			{
 				id: 'apps.ai-image-generator',

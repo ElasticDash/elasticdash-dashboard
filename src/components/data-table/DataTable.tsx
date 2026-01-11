@@ -27,8 +27,8 @@ const tableIcons: Partial<MRT_Icons> = {
 	VisibilityOffIcon: () => <FuseSvgIcon>lucide:eye-off</FuseSvgIcon>
 };
 
-function DataTable<TData>(props: MaterialReactTableProps<TData>) {
-	const { columns, data, ...rest } = props;
+function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowActions?: any }) {
+	const { columns, data, renderRowActions, ...rest } = props;
 	const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
 	const defaults = useMemo(
 		() =>
@@ -39,7 +39,7 @@ function DataTable<TData>(props: MaterialReactTableProps<TData>) {
 					showGlobalFilter: true,
 					columnPinning: {
 						left: isMobile ? [] : ['mrt-row-expand', 'mrt-row-select'],
-						right: isMobile ? [] : ['mrt-row-actions']
+						right: ['mrt-row-actions']
 					},
 					pagination: {
 						pageSize: 15
@@ -52,8 +52,8 @@ function DataTable<TData>(props: MaterialReactTableProps<TData>) {
 				enableGrouping: true,
 				enableColumnPinning: true,
 				enableFacetedValues: true,
-				enableRowActions: true,
-				enableRowSelection: true,
+				enableRowActions: true, // Enable default row actions
+				enableRowSelection: true, // Enable default row selection
 				muiBottomToolbarProps: {
 					className: 'flex items-center min-h-14 h-14'
 				},
@@ -155,12 +155,12 @@ function DataTable<TData>(props: MaterialReactTableProps<TData>) {
 					pinnedRowBackgroundColor: theme.palette.background.paper,
 					pinnedColumnBackgroundColor: theme.palette.background.paper
 				}),
-				renderTopToolbar: (_props) => <DataTableTopToolbar {..._props} />,
+				renderTopToolbar: (_props) => <DataTableTopToolbar {..._props} />, 
 				icons: tableIcons,
-				positionActionsColumn: 'last'
+				renderRowActions: renderRowActions
 			} as Partial<MaterialReactTableProps<TData>>),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[rest]
+		[rest, renderRowActions]
 	);
 
 	const tableOptions = useMemo(

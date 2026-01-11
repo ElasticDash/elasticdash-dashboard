@@ -5,6 +5,12 @@ import Typography from '@mui/material/Typography';
 import clsx from 'clsx';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { useEffect, useRef, useState } from 'react';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 import InputBase from '@mui/material/InputBase';
 import Paper from '@mui/material/Paper';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
@@ -19,7 +25,6 @@ import { useChatMessages } from '../../api/hooks/chats/useChatMessages';
 import { useProfile } from '../../api/hooks/profile/useProfile';
 import { useSendMessage } from '../../api/hooks/chats/useSendMessage';
 // import UserAvatar from '../ui/UserAvatar';
-import { useMessengerAppContext } from '../../contexts/MessengerAppContext/useMessengerAppContext';
 import { Message } from '../../api/types';
 import FuseLoading from '@fuse/core/FuseLoading';
 
@@ -73,9 +78,11 @@ type MessengerChatViewProps = {
  */
 function MessengerChatView(props: MessengerChatViewProps) {
 	const { className } = props;
-	const { setMainSidebarOpen, setContactSidebarOpen } = useMessengerAppContext();
 	const chatRef = useRef<HTMLDivElement>(null);
 	const [message, setMessage] = useState('');
+	const [feedbackOpen, setFeedbackOpen] = useState(false);
+	const [feedbackWrong, setFeedbackWrong] = useState('');
+	const [feedbackExpected, setFeedbackExpected] = useState('');
 
 	const routeParams = useParams<{ chatId: string }>();
 	const { chatId } = routeParams;
@@ -83,9 +90,10 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const { data: chatList, isLoading: isChatsLoading } = useChats();
 
 	const chat = chatList?.find((chat) => chat.id === chatId) || chatList?.[0];
+	const resolvedChatId = chat?.id;
 
 	const { data: user, isLoading: isUserLoading } = useProfile();
-	const { data: messages, isLoading: isMessagesLoading } = useChatMessages(chatId);
+	const { data: messages, isLoading: isMessagesLoading } = useChatMessages(resolvedChatId);
 
 	const contactId = chat?.contactIds?.find((id) => id !== user?.id);
 
@@ -155,9 +163,8 @@ function MessengerChatView(props: MessengerChatViewProps) {
 				})}
 			>
 				<Toolbar className="flex w-full items-center justify-between px-4">
-					<div className="flex items-center">
-						Chat
-						{/* <IconButton
+					<div className="flex items-center gap-2">Chat</div>
+					{/* <IconButton
 							aria-label="Open drawer"
 							onClick={() => setMainSidebarOpen(true)}
 							className="border-divider flex border lg:hidden"
@@ -183,7 +190,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 							>
 								{selectedContact?.name}
 							</Typography>
-						</div> */}
+						</div>
 					</div>
 					{/* <ChatMoreMenu
 						className="-mx-2"
@@ -200,6 +207,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 						{messages?.length > 0 && (
 							<div className="flex flex-col pt-4 pb-10 md:px-4">
 								{messages.map((item, i) => {
+									const isReceived = item.contactId !== user.id;
 									return (
 										<StyledMessageRow
 											key={i}
@@ -224,6 +232,16 @@ function MessengerChatView(props: MessengerChatViewProps) {
 													})}
 												</Typography>
 											</div>
+											{isReceived && (
+												<Button
+													size="small"
+													variant="outlined"
+													sx={{ mt: 1, alignSelf: 'flex-start' }}
+													onClick={() => setFeedbackOpen(true)}
+												>
+													Send Feedback
+												</Button>
+											)}
 										</StyledMessageRow>
 									);
 								})}
@@ -277,6 +295,55 @@ function MessengerChatView(props: MessengerChatViewProps) {
 							</div>
 						</Paper>
 					)}
+
+					{/* Feedback Dialog */}
+					<Dialog
+						open={feedbackOpen}
+						onClose={() => setFeedbackOpen(false)}
+						maxWidth="sm"
+						fullWidth
+					>
+						<DialogTitle>Send Feedback</DialogTitle>
+						<DialogContent>
+							<TextField
+								label="What went wrong"
+								multiline
+								minRows={3}
+								fullWidth
+								margin="normal"
+								value={feedbackWrong}
+								onChange={(e) => setFeedbackWrong(e.target.value)}
+							/>
+							<TextField
+								label="What is expected"
+								multiline
+								minRows={3}
+								fullWidth
+								margin="normal"
+								value={feedbackExpected}
+								onChange={(e) => setFeedbackExpected(e.target.value)}
+							/>
+						</DialogContent>
+						<DialogActions>
+							<Button
+								onClick={() => setFeedbackOpen(false)}
+								color="primary"
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={() => {
+									setFeedbackOpen(false);
+									setFeedbackWrong('');
+									setFeedbackExpected('');
+								}}
+								color="primary"
+								variant="contained"
+							>
+								Submit
+							</Button>
+						</DialogActions>
+					</Dialog>
 				</div>
 			</div>
 		</>
