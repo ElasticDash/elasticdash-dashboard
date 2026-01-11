@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 function DashboardsPage() {
-	redirect(`/dashboards/project`);
+	redirect(`/apps/chat`);
 	return null;
 }
 
