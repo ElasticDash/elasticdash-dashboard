@@ -4,7 +4,6 @@ import { styled } from '@mui/material/styles';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 
 import FusePageSimple from '@fuse/core/FusePageSimple';
-import MainSidebar from '../sidebars/main/MainSidebar';
 import ContactSidebar from '../sidebars/contact/ContactSidebar';
 import UserSidebar from '../sidebars/user/UserSidebar';
 import { MessengerAppContextProvider } from '../../contexts/MessengerAppContext/MessengerAppContextProvider';
@@ -74,14 +73,6 @@ function MessengerAppView(props: MessengerAppViewProps) {
 						{children}
 					</Paper>
 				}
-				leftSidebarProps={{
-					content: <MainSidebar />,
-					open: mainSidebarOpen,
-					onClose: () => {
-						setMainSidebarOpen(false);
-					},
-					width: 400
-				}}
 				rightSidebarProps={{
 					content: <ContactSidebar />,
 					open: Boolean(contactSidebarOpen),

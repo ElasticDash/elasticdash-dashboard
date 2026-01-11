@@ -68,3 +68,5 @@ amplifytools.xcconfig
 # Environment files
 .env
 .env.*.local
+temp/
+.temp/
