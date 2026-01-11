@@ -11,7 +11,6 @@ import { useSwipeable } from 'react-swipeable';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import _ from 'lodash';
 import Chat from '../ui/messenger-panel/Chat';
-import ContactList from '../ui/messenger-panel/ContactList';
 import { useContacts } from '../../api/hooks/contacts/useContacts';
 import { useChats } from '../../api/hooks/chats/useChats';
 import { useProfile } from '../../api/hooks/profile/useProfile';
@@ -243,26 +242,7 @@ function MessengerPanel() {
 					</Toolbar>
 				</AppBar>
 				<Paper className="shadow-0 flex min-h-px flex-1 flex-row">
-					<ContactList className="flex shrink-0" />
-
-					{open && selectedChatId ? (
-						<Chat className="z-10 flex flex-1" />
-					) : (
-						<div className="flex flex-1 flex-col items-center justify-center p-6">
-							<FuseSvgIcon
-								size={64}
-								color="disabled"
-							>
-								lucide:message-square-text
-							</FuseSvgIcon>
-							<Typography
-								className="mt-6 px-4 pb-6 text-center"
-								color="text.secondary"
-							>
-								Select a contact to start a conversation.
-							</Typography>
-						</div>
-					)}
+					<Chat className="z-10 flex flex-1" />
 				</Paper>
 			</div>
 		</Root>

@@ -14,44 +14,6 @@ i18n.addResourceBundle('ar', 'navigation', ar);
  */
 const navigationConfig: FuseNavItemType[] = [
 	{
-		id: 'dashboards',
-		title: 'Dashboards',
-		subtitle: 'Unique dashboard designs',
-		type: 'group',
-		icon: 'lucide:layout-dashboard',
-		translate: 'DASHBOARDS',
-		children: [
-			{
-				id: 'dashboards.project',
-				title: 'Project',
-				type: 'item',
-				icon: 'lucide:clipboard-check',
-				url: '/dashboards/project'
-			},
-			{
-				id: 'dashboards.analytics',
-				title: 'Analytics',
-				type: 'item',
-				icon: 'lucide:chart-pie',
-				url: '/dashboards/analytics'
-			},
-			{
-				id: 'dashboards.finance',
-				title: 'Finance',
-				type: 'item',
-				icon: 'lucide:banknote',
-				url: '/dashboards/finance'
-			},
-			{
-				id: 'dashboards.crypto',
-				title: 'Crypto',
-				type: 'item',
-				icon: 'lucide:dollar-sign',
-				url: '/dashboards/crypto'
-			}
-		]
-	},
-	{
 		id: 'apps',
 		title: 'Applications',
 		subtitle: 'Custom made application designs',
@@ -59,6 +21,14 @@ const navigationConfig: FuseNavItemType[] = [
 		icon: 'lucide:box',
 		translate: 'APPLICATIONS',
 		children: [
+			{
+				id: 'apps.chat',
+				title: 'Chat',
+				type: 'item',
+				icon: 'lucide:message-square',
+				url: '/apps/chat',
+				translate: 'CHAT'
+			},
 			{
 				id: 'apps.ai-image-generator',
 				title: 'AI Image Generator',
@@ -244,6 +214,44 @@ const navigationConfig: FuseNavItemType[] = [
 				badge: {
 					title: 'NEW'
 				}
+			}
+		]
+	},
+	{
+		id: 'dashboards',
+		title: 'Dashboards',
+		subtitle: 'Unique dashboard designs',
+		type: 'group',
+		icon: 'lucide:layout-dashboard',
+		translate: 'DASHBOARDS',
+		children: [
+			{
+				id: 'dashboards.project',
+				title: 'Project',
+				type: 'item',
+				icon: 'lucide:clipboard-check',
+				url: '/dashboards/project'
+			},
+			{
+				id: 'dashboards.analytics',
+				title: 'Analytics',
+				type: 'item',
+				icon: 'lucide:chart-pie',
+				url: '/dashboards/analytics'
+			},
+			{
+				id: 'dashboards.finance',
+				title: 'Finance',
+				type: 'item',
+				icon: 'lucide:banknote',
+				url: '/dashboards/finance'
+			},
+			{
+				id: 'dashboards.crypto',
+				title: 'Crypto',
+				type: 'item',
+				icon: 'lucide:dollar-sign',
+				url: '/dashboards/crypto'
 			}
 		]
 	},

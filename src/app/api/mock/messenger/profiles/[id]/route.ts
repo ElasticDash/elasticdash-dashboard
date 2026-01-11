@@ -1,5 +1,5 @@
 import mockApi from 'src/@mock-utils/mockApi';
-import { Profile } from '@/app/(control-panel)/apps/messenger/api/types';
+import { Profile } from '@/app/(control-panel)/apps/chat/api/types';
 
 /**
  * GET api/mock/messenger/profiles/{id}
