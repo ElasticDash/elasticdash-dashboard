@@ -9,9 +9,9 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Link from '@fuse/core/Link';
 import Button from '@mui/material/Button';
-import { signIn } from 'next-auth/react';
+import { useLogin } from '@/services/authService';
 import { Alert } from '@mui/material';
-import signinErrors from './signinErrors';
+import { redirect } from 'next/navigation';
 
 /**
  * Form Validation Schema
@@ -41,6 +41,7 @@ function AuthJsCredentialsSignInForm() {
 	});
 
 	const { isValid, dirtyFields, errors } = formState;
+	const { handleLogin, loading, error } = useLogin();
 
 	useEffect(() => {
 		setValue('email', 'admin@fusetheme.com', {
@@ -54,20 +55,15 @@ function AuthJsCredentialsSignInForm() {
 	}, [setValue]);
 
 	async function onSubmit(formData: FormType) {
-		const { email, password } = formData;
+		const { email, password, remember } = formData;
+		const success = await handleLogin(email, password, !!remember);
 
-		const result = await signIn('credentials', {
-			email,
-			password,
-			formType: 'signin',
-			redirect: false
-		});
-
-		if (result?.error) {
-			setError('root', { type: 'manual', message: signinErrors[result.error] });
+		if (!success) {
+			setError('root', { type: 'manual', message: error || 'Login failed' });
 			return false;
 		}
 
+		redirect(`/apps/chat`);
 		return true;
 	}
 
@@ -88,6 +84,18 @@ function AuthJsCredentialsSignInForm() {
 					})}
 				>
 					{errors?.root?.message}
+				</Alert>
+			)}
+			{error && !errors?.root?.message && (
+				<Alert
+					className="mb-8"
+					severity="error"
+					sx={(theme) => ({
+						backgroundColor: theme.palette.error.light,
+						color: theme.palette.error.dark
+					})}
+				>
+					{error}
 				</Alert>
 			)}
 			<Controller
@@ -156,11 +164,11 @@ function AuthJsCredentialsSignInForm() {
 				color="secondary"
 				className="mt-4 w-full"
 				aria-label="Sign in"
-				disabled={_.isEmpty(dirtyFields) || !isValid}
+				disabled={_.isEmpty(dirtyFields) || !isValid || loading}
 				type="submit"
 				size="large"
 			>
-				Sign in
+				{loading ? 'Signing in...' : 'Sign in'}
 			</Button>
 		</form>
 	);

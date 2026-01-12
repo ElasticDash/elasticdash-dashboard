@@ -2,6 +2,8 @@ import FuseScrollbars from '@fuse/core/FuseScrollbars';
 import { styled } from '@mui/material/styles';
 import clsx from 'clsx';
 import { memo } from 'react';
+import Button from '@mui/material/Button';
+import { useRouter } from 'next/navigation';
 import Navigation from 'src/components/theme-layouts/components/navigation/Navigation';
 import UserMenu from 'src/components/theme-layouts/components/UserMenu';
 import Logo from '../../../../components/Logo';
@@ -43,6 +45,13 @@ type NavbarStyle1ContentProps = {
  */
 function NavbarStyle1Content(props: NavbarStyle1ContentProps) {
 	const { className = '' } = props;
+	const router = useRouter();
+
+	const handleSignOut = () => {
+		localStorage.removeItem('token');
+		localStorage.removeItem('currentUser');
+		router.push('/sign-in');
+	};
 
 	return (
 		<Root className={clsx('flex h-full flex-auto flex-col overflow-hidden', className)}>
@@ -59,8 +68,15 @@ function NavbarStyle1Content(props: NavbarStyle1ContentProps) {
 
 			<div className="flex flex-col gap-3 p-3">
 				<GoToDocBox className="mx-1" />
-
 				<UserMenu className="w-full" />
+				<Button
+					variant="outlined"
+					color="error"
+					className="mt-2 w-full"
+					onClick={handleSignOut}
+				>
+					Sign Out
+				</Button>
 			</div>
 		</Root>
 	);

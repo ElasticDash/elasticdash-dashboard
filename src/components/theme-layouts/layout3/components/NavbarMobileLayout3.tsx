@@ -2,6 +2,8 @@ import FuseScrollbars from '@fuse/core/FuseScrollbars';
 import { styled } from '@mui/material/styles';
 import clsx from 'clsx';
 import { memo } from 'react';
+import Button from '@mui/material/Button';
+import { useRouter } from 'next/navigation';
 import { Divider } from '@mui/material';
 import UserMenu from 'src/components/theme-layouts/components/UserMenu';
 import Navigation from '../../components/navigation/Navigation';
@@ -44,6 +46,13 @@ type NavbarMobileLayout3Props = {
  */
 function NavbarMobileLayout3(props: NavbarMobileLayout3Props) {
 	const { className = '' } = props;
+	const router = useRouter();
+
+	const handleSignOut = () => {
+		localStorage.removeItem('token');
+		localStorage.removeItem('currentUser');
+		router.push('/sign-in');
+	};
 
 	return (
 		<Root className={clsx('flex h-full flex-col overflow-hidden', className)}>
@@ -70,8 +79,16 @@ function NavbarMobileLayout3(props: NavbarMobileLayout3Props) {
 
 			<Divider />
 
-			<div className="w-full p-1 md:p-4">
+			<div className="flex w-full flex-col gap-2 p-1 md:p-4">
 				<UserMenu className="w-full" />
+				<Button
+					variant="outlined"
+					color="error"
+					className="mt-2 w-full"
+					onClick={handleSignOut}
+				>
+					Sign Out
+				</Button>
 			</div>
 		</Root>
 	);

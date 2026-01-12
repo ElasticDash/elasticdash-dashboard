@@ -7,10 +7,8 @@ import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Button from '@mui/material/Button';
-import { signIn } from 'next-auth/react';
 import FormHelperText from '@mui/material/FormHelperText';
 import { Alert } from '@mui/material';
-import signinErrors from './signinErrors';
 
 /**
  * Form Validation Schema
@@ -56,20 +54,15 @@ function AuthJsCredentialsSignUpForm() {
 
 	async function onSubmit(formData: FormType) {
 		const { displayName, email, password } = formData;
-		const result = await signIn('credentials', {
-			displayName,
-			email,
-			password,
-			formType: 'signup',
-			redirect: false
-		});
-
-		if (result?.error) {
-			setError('root', { type: 'manual', message: signinErrors[result.error] });
+		// TODO: Replace with your custom signup API call
+		try {
+			// Example: await signup({ displayName, email, password });
+			// Simulate success for now
+			return true;
+		} catch (err: any) {
+			setError('root', { type: 'manual', message: err.message || 'Signup failed' });
 			return false;
 		}
-
-		return true;
 	}
 
 	return (

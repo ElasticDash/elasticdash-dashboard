@@ -1,5 +1,7 @@
 'use client';
 import { Controller, useForm } from 'react-hook-form';
+import { useLogin } from '@/services/authService';
+import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
@@ -18,10 +20,7 @@ import FormLabel from '@mui/material/FormLabel';
  */
 const schema = z.object({
 	email: z.string().email('You must enter a valid email').nonempty('You must enter an email'),
-	password: z
-		.string()
-		.min(8, 'Password is too short - must be at least 8 chars.')
-		.nonempty('Please enter your password.'),
+	password: z.string().min(1, 'Please enter your password.'),
 	remember: z.boolean().optional()
 });
 
@@ -33,18 +32,26 @@ const defaultValues = {
 	remember: true
 };
 
+
+
 function SignInPageForm() {
-	const { control, formState, handleSubmit, reset } = useForm<FormType>({
-		mode: 'onChange',
-		defaultValues,
-		resolver: zodResolver(schema)
-	});
+       const { control, formState, handleSubmit, reset } = useForm<FormType>({
+	       mode: 'onChange',
+	       defaultValues,
+	       resolver: zodResolver(schema)
+       });
 
-	const { isValid, dirtyFields, errors } = formState;
+       const { isValid, dirtyFields, errors } = formState;
+       const { handleLogin, loading, error } = useLogin();
+       const router = useRouter();
 
-	function onSubmit() {
-		reset(defaultValues);
-	}
+       async function onSubmit(data: FormType) {
+	       const success = await handleLogin(data.email, data.password, !!data.remember);
+	       if (success) {
+		       reset(defaultValues);
+		       router.push('/apps/chat');
+	       }
+       }
 
 	return (
 		<form
@@ -53,6 +60,11 @@ function SignInPageForm() {
 			className="flex w-full flex-col justify-center gap-4"
 			onSubmit={handleSubmit(onSubmit)}
 		>
+			{error && (
+				<Typography color="error" variant="body2" sx={{ mb: 1 }}>
+					{error}
+				</Typography>
+			)}
 			<Controller
 				name="email"
 				control={control}
@@ -122,11 +134,11 @@ function SignInPageForm() {
 				color="secondary"
 				className="w-full"
 				aria-label="Sign in"
-				disabled={_.isEmpty(dirtyFields) || !isValid}
+				disabled={_.isEmpty(dirtyFields) || !isValid || loading}
 				type="submit"
 				size="medium"
 			>
-				Sign in
+				{loading ? 'Signing in...' : 'Sign in'}
 			</Button>
 
 			<div className="flex items-center py-4">

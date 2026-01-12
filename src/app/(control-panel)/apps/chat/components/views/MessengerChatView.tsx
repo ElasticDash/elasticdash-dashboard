@@ -18,15 +18,13 @@ import Toolbar from '@mui/material/Toolbar';
 import useParams from '@fuse/hooks/useParams';
 import Box from '@mui/material/Box';
 import Error404PageView from '@/app/(public)/(errors)/components/views/Error404PageView';
-// import ChatMoreMenu from '../ui/chat/ChatMoreMenu';
 import { useChats } from '../../api/hooks/chats/useChats';
 import { useChatMessages } from '../../api/hooks/chats/useChatMessages';
-// import { useContact } from '../../api/hooks/contacts/useContact';
 import { useProfile } from '../../api/hooks/profile/useProfile';
-import { useSendMessage } from '../../api/hooks/chats/useSendMessage';
-// import UserAvatar from '../ui/UserAvatar';
 import { Message } from '../../api/types';
 import FuseLoading from '@fuse/core/FuseLoading';
+import { useChat } from '@/hooks/useChat';
+import PlanReviewPanel from './PlanReviewPanel';
 
 const StyledMessageRow = styled('div')(({ theme }) => ({
 	'&.contact': {
@@ -78,6 +76,8 @@ type MessengerChatViewProps = {
  */
 function MessengerChatView(props: MessengerChatViewProps) {
 	const { className } = props;
+	// Plan approval chat hook
+	const { pendingPlan, isProcessing, approvePlan, rejectPlan, sendMessage } = useChat();
 	const chatRef = useRef<HTMLDivElement>(null);
 	const [message, setMessage] = useState('');
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -95,9 +95,9 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const { data: user, isLoading: isUserLoading } = useProfile();
 	const { data: messages, isLoading: isMessagesLoading } = useChatMessages(resolvedChatId);
 
-	const contactId = chat?.contactIds?.find((id) => id !== user?.id);
+	// const contactId = chat?.contactIds?.find((id) => id !== user?.id); // Unused variable, commented to satisfy linter
 
-	const { mutate: sendMessage } = useSendMessage();
+	// Use sendMessage from useChat instead of mock API
 
 	useEffect(() => {
 		if (messages) {
@@ -135,10 +135,13 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			return;
 		}
 
-		sendMessage({
-			message,
-			chatId
-		});
+		// Use sendMessage from useChat (posts to /chat/completion)
+		// Only pass the message string, as useChat manages session/chat state
+		// (chatId is not needed for the new API, but can be added to useChat if required)
+		// @ts-ignore
+		if (typeof sendMessage === 'function') {
+			sendMessage(message);
+		}
 
 		setMessage('');
 	}
@@ -148,7 +151,8 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	}
 
 	if (!user || !messages || !chat) {
-		return <Error404PageView />;
+		// Show a generic error or fallback UI, but not a 404 page
+		return <Box p={4}><Typography color="error">An error occurred while loading the chat. Please try again later.</Typography></Box>;
 	}
 
 	return (
@@ -164,38 +168,6 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			>
 				<Toolbar className="flex w-full items-center justify-between px-4">
 					<div className="flex items-center gap-2">Chat</div>
-					{/* <IconButton
-							aria-label="Open drawer"
-							onClick={() => setMainSidebarOpen(true)}
-							className="border-divider flex border lg:hidden"
-						>
-							<FuseSvgIcon>lucide:message-square-text</FuseSvgIcon>
-						</IconButton>
-						<div
-							className="flex cursor-pointer items-center"
-							onClick={() => {
-								setContactSidebarOpen(contactId);
-							}}
-							onKeyDown={() => setContactSidebarOpen(contactId)}
-							role="button"
-							tabIndex={0}
-						>
-							<UserAvatar
-								className="relative mx-2"
-								user={selectedContact}
-							/>
-							<Typography
-								color="inherit"
-								className="px-1 text-lg font-semibold"
-							>
-								{selectedContact?.name}
-							</Typography>
-						</div>
-					</div>
-					{/* <ChatMoreMenu
-						className="-mx-2"
-						contactId={contactId}
-					/> */}
 				</Toolbar>
 			</Box>
 			<div className="flex h-full min-h-0 w-full flex-auto">
@@ -233,11 +205,21 @@ function MessengerChatView(props: MessengerChatViewProps) {
 												</Typography>
 											</div>
 											{isReceived && (
-												<div style={{ display: 'flex', gap: 8, marginTop: 8, alignSelf: 'flex-start' }}>
+												<div
+													style={{
+														display: 'flex',
+														gap: 8,
+														marginTop: 8,
+														alignSelf: 'flex-start'
+													}}
+												>
 													<IconButton size="small">
 														<FuseSvgIcon>lucide:thumbs-up</FuseSvgIcon>
 													</IconButton>
-													<IconButton size="small" onClick={() => setFeedbackOpen(true)}>
+													<IconButton
+														size="small"
+														onClick={() => setFeedbackOpen(true)}
+													>
 														<FuseSvgIcon>lucide:thumbs-down</FuseSvgIcon>
 													</IconButton>
 												</div>
@@ -248,6 +230,17 @@ function MessengerChatView(props: MessengerChatViewProps) {
 							</div>
 						)}
 					</div>
+
+					{/* Plan Approval Panel: show only if a plan is pending */}
+					{pendingPlan && (
+						<PlanReviewPanel
+							plan={pendingPlan}
+							onApprove={approvePlan}
+							onReject={rejectPlan}
+							isProcessing={isProcessing}
+						/>
+					)}
+
 					{messages && (
 						<Paper
 							square
