@@ -15,16 +15,21 @@ import InputBase from '@mui/material/InputBase';
 import Paper from '@mui/material/Paper';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import Toolbar from '@mui/material/Toolbar';
-import useParams from '@fuse/hooks/useParams';
 import Box from '@mui/material/Box';
-import Error404PageView from '@/app/(public)/(errors)/components/views/Error404PageView';
-import { useChats } from '../../api/hooks/chats/useChats';
-import { useChatMessages } from '../../api/hooks/chats/useChatMessages';
-import { useProfile } from '../../api/hooks/profile/useProfile';
-import { Message } from '../../api/types';
 import FuseLoading from '@fuse/core/FuseLoading';
 import { useChat } from '@/hooks/useChat';
 import PlanReviewPanel from './PlanReviewPanel';
+import { fetchConversations, fetchConversationMessages } from '@/services/chatService';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+export type ChatMessage = {
+	id: number;
+	role: 'user' | 'agent';
+	content: string;
+	time: string | null;
+	messageType: string;
+};
 
 const StyledMessageRow = styled('div')(({ theme }) => ({
 	'&.contact': {
@@ -83,21 +88,59 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
 	const [feedbackWrong, setFeedbackWrong] = useState('');
 	const [feedbackExpected, setFeedbackExpected] = useState('');
+	const [messages, setMessages] = useState<ChatMessage[] | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [conversationId, setConversationId] = useState<number | null>(null);
+	const [hasMore, setHasMore] = useState(true);
 
-	const routeParams = useParams<{ chatId: string }>();
-	const { chatId } = routeParams;
+	// On mount, fetch conversations and latest messages
+	useEffect(() => {
+		async function loadChat() {
+			setLoading(true);
+			try {
+				const convRes = await fetchConversations();
+				const conversations = convRes.conversations || [];
 
-	const { data: chatList, isLoading: isChatsLoading } = useChats();
+				console.log('conversations: ', conversations);
 
-	const chat = chatList?.find((chat) => chat.id === chatId) || chatList?.[0];
-	const resolvedChatId = chat?.id;
+				if (!Array.isArray(conversations) || conversations.length === 0) {
+					setMessages([]);
+					setConversationId(null);
+					setLoading(false);
+					return;
+				}
 
-	const { data: user, isLoading: isUserLoading } = useProfile();
-	const { data: messages, isLoading: isMessagesLoading } = useChatMessages(resolvedChatId);
+				// Use the latest conversation (ordered by updated_at desc)
+				const latestConv = conversations[0];
+				setConversationId(latestConv.id);
+				const msgRes = await fetchConversationMessages(latestConv.id, 0);
+				const msgs = msgRes.messages || [];
+				console.log('messages: ', msgs);
+				setMessages(msgs);
 
-	// const contactId = chat?.contactIds?.find((id) => id !== user?.id); // Unused variable, commented to satisfy linter
+				if (!Array.isArray(conversations) || conversations.length === 0) {
+					setMessages([]);
+					setConversationId(null);
+					setLoading(false);
+					return;
+				}
 
-	// Use sendMessage from useChat instead of mock API
+				setLoading(false);
+			} catch (error) {
+				setLoading(false);
+				setMessages([]);
+				setConversationId(null);
+				console.error('Failed to load chat:', error);
+			}
+		}
+
+		loadChat().catch((error) => {
+			setLoading(false);
+			setMessages([]);
+			setConversationId(null);
+			console.error('Failed to load chat:', error);
+		});
+	}, []);
 
 	useEffect(() => {
 		if (messages) {
@@ -116,12 +159,12 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		});
 	}
 
-	function isFirstMessageOfGroup(item: Message, i: number) {
-		return i === 0 || (messages[i - 1] && messages[i - 1].contactId !== item.contactId);
+	function isFirstMessageOfGroup(item: ChatMessage, i: number) {
+		return i === 0 || (messages[i - 1] && messages[i - 1].role !== item.role);
 	}
 
-	function isLastMessageOfGroup(item: Message, i: number) {
-		return i === messages.length - 1 || (messages[i + 1] && messages[i + 1].contactId !== item.contactId);
+	function isLastMessageOfGroup(item: ChatMessage, i: number) {
+		return i === messages.length - 1 || (messages[i + 1] && messages[i + 1].role !== item.role);
 	}
 
 	function onInputChange(ev: React.ChangeEvent<HTMLInputElement>) {
@@ -135,10 +178,17 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			return;
 		}
 
-		// Use sendMessage from useChat (posts to /chat/completion)
-		// Only pass the message string, as useChat manages session/chat state
-		// (chatId is not needed for the new API, but can be added to useChat if required)
-		// @ts-ignore
+		setMessages((prev) => [
+			...(prev || []),
+			{
+				id: Date.now(),
+				role: 'user',
+				content: message,
+				time: new Date().toISOString(),
+				messageType: 'text'
+			}
+		]);
+
 		if (typeof sendMessage === 'function') {
 			sendMessage(message);
 		}
@@ -146,13 +196,8 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		setMessage('');
 	}
 
-	if (isUserLoading || isChatsLoading || isMessagesLoading) {
+	if (loading) {
 		return <FuseLoading />;
-	}
-
-	if (!user || !messages || !chat) {
-		// Show a generic error or fallback UI, but not a 404 page
-		return <Box p={4}><Typography color="error">An error occurred while loading the chat. Please try again later.</Typography></Box>;
 	}
 
 	return (
@@ -175,17 +220,38 @@ function MessengerChatView(props: MessengerChatViewProps) {
 					<div
 						ref={chatRef}
 						className="flex flex-1 flex-col overflow-y-auto"
+						onScroll={async (e) => {
+							const el = e.currentTarget;
+
+							if (el.scrollTop === 0 && hasMore && messages && messages.length > 0 && conversationId) {
+								// Fetch previous messages using earliest message id
+								const earliestId = messages[0].id;
+								try {
+									const msgRes = await fetchConversationMessages(conversationId, earliestId);
+									const prevMsgs = msgRes.messages || [];
+
+									if (prevMsgs.length > 0) {
+										setMessages([...prevMsgs, ...messages]);
+										setHasMore(prevMsgs.length === 20);
+									} else {
+										setHasMore(false);
+									}
+								} catch {
+									setHasMore(false);
+								}
+							}
+						}}
 					>
 						{messages?.length > 0 && (
 							<div className="flex flex-col pt-4 pb-10 md:px-4">
 								{messages.map((item, i) => {
-									const isReceived = item.contactId !== user.id;
+									const isReceived = item.role != 'user';
 									return (
 										<StyledMessageRow
-											key={i}
+											key={item.id ?? i}
 											className={clsx(
 												'relative flex shrink-0 grow-0 flex-col items-start justify-end px-4 pb-1',
-												item.contactId === user.id ? 'me' : 'contact',
+												isReceived ? 'contact' : 'me',
 												{ 'first-of-group': isFirstMessageOfGroup(item, i) },
 												{ 'last-of-group': isLastMessageOfGroup(item, i) },
 												i + 1 === messages.length && 'pb-18'
@@ -193,16 +259,22 @@ function MessengerChatView(props: MessengerChatViewProps) {
 										>
 											<div className="bubble relative flex max-w-full items-center justify-center px-3 py-2">
 												<Typography className="text-md whitespace-pre-wrap">
-													{item.value}
+													<ReactMarkdown remarkPlugins={[remarkGfm]}>
+														{typeof item.content === 'string'
+															? item.content
+															: JSON.stringify(item.content)}
+													</ReactMarkdown>
 												</Typography>
-												<Typography
-													className="time absolute bottom-0 -mb-5 hidden w-full text-sm whitespace-nowrap ltr:left-0 rtl:right-0"
-													color="text.secondary"
-												>
-													{formatDistanceToNow(new Date(item.createdAt), {
-														addSuffix: true
-													})}
-												</Typography>
+												{item.time && (
+													<Typography
+														className="time absolute bottom-0 -mb-5 hidden w-full text-sm whitespace-nowrap ltr:left-0 rtl:right-0"
+														color="text.secondary"
+													>
+														{formatDistanceToNow(new Date(item.time), {
+															addSuffix: true
+														})}
+													</Typography>
+												)}
 											</div>
 											{isReceived && (
 												<div

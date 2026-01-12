@@ -87,6 +87,7 @@
     "react-virtuoso": "4.12.6",
     "react-window": "1.8.11",
     "redoc": "2.5.0",
+    "remark-gfm": "^4.0.1",
     "socket.io-client": "^4.7.4",
     "styled-components": "6.1.17",
     "stylis": "4.3.6",

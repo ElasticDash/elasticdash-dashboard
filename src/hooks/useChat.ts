@@ -73,24 +73,32 @@ export function useChat() {
 			setError(null);
 			setIsProcessing(false);
 			setPendingPlan(null);
+			const token = localStorage.getItem('token');
+
+			if (!token) {
+				setError('User not authenticated.');
+				return;
+			}
+
 			const userMessage = {
-				id: `msg-${Date.now()}`,
-				type: 'user',
+				role: 'user',
 				content: userContent,
 				createdAt: new Date().toISOString()
 			};
 			setChatHistory((prev) => [...prev, userMessage]);
+			const userMessageBody = {
+				messages: [{ type: 'user', content: userContent }],
+				conversationId: conversationId || undefined,
+				isApproval: false
+			};
 			try {
-				const response = await fetch('/api/chat/completion', {
+				const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/chat/completion', {
 					method: 'POST',
 					headers: {
-						'Content-Type': 'application/json'
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`
 					},
-					body: JSON.stringify({
-						message: userContent,
-						sessionId,
-						conversationId
-					})
+					body: JSON.stringify(userMessageBody)
 				});
 				const data = await response.json();
 
@@ -116,7 +124,7 @@ export function useChat() {
 		setError(null);
 		setIsProcessing(true);
 		try {
-			const response = await fetch('/api/chat/completion', {
+			const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/chat/completion', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
