@@ -106,6 +106,14 @@ On “resume” / “continue”:
 
 ---
 
+## API Calling
+
+When you are about to call an internal API:
+
+Always add `process.env.NEXT_PUBLIC_BASE_URL` as the base url.
+
+---
+
 ## FINAL GUARANTEE
 
 Execution **only exists when output exists**.

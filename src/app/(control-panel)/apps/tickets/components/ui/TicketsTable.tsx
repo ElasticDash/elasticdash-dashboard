@@ -1,28 +1,25 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Chip, Button } from '@mui/material';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import Typography from '@mui/material/Typography';
+import { getUnhelpfulFeedbacks, withdrawFeedback } from '../../api';
 
 interface Ticket {
-	id: string;
-	name: string;
-	status: 'open' | 'in-progress' | 'resolved' | 'closed';
+	id: number;
+	message_id: number;
+	conversation_id: number;
+	feedback_type: string;
+	is_helpful: boolean;
+	status: 'open' | 'in-progress' | 'resolved' | 'closed' | 'withdrawn';
+	created_at: string;
+	updated_at: string;
+	reason_category?: string;
+	description?: string;
 }
-
-// Mock data for demonstration
-const mockTickets: Ticket[] = [
-	{ id: 'TKT-001', name: 'Login Issue', status: 'open' },
-	{ id: 'TKT-002', name: 'Payment Gateway Error', status: 'in-progress' },
-	{ id: 'TKT-003', name: 'Data Export Request', status: 'resolved' },
-	{ id: 'TKT-004', name: 'API Rate Limit Exceeded', status: 'open' },
-	{ id: 'TKT-005', name: 'UI Bug in Dashboard', status: 'closed' },
-	{ id: 'TKT-006', name: 'Email Notification Not Working', status: 'in-progress' },
-	{ id: 'TKT-007', name: 'Database Connection Timeout', status: 'open' }
-];
 
 // Helper function to get status color
 const getStatusColor = (status: Ticket['status']) => {
@@ -40,12 +37,42 @@ const getStatusColor = (status: Ticket['status']) => {
 	}
 };
 
-// Helper function to format status label
 const formatStatus = (status: Ticket['status']) => {
-	return status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+	return status
+		.split('-')
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(' ');
 };
 
 function TicketsTable() {
+	const [tickets, setTickets] = useState<Ticket[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState('');
+
+	const fetchTickets = () => {
+		setLoading(true);
+		getUnhelpfulFeedbacks()
+			.then((res) => {
+				// Map feedbacks to Ticket type
+				const mapped = (Array.isArray(res) ? res : res?.result || []).map((fb: any) => ({
+					id: fb.id,
+					message: fb.message || fb.content || '',
+					created_at: fb.created_at,
+					status: fb.status || 'open'
+				}));
+				setTickets(mapped);
+				setError('');
+			})
+			.catch((err) => {
+				setError(err.message || 'Failed to fetch tickets');
+			})
+			.finally(() => setLoading(false));
+	};
+
+	useEffect(() => {
+		fetchTickets();
+	}, []);
+
 	const columns = useMemo<MRT_ColumnDef<Ticket>[]>(
 		() => [
 			{
@@ -61,9 +88,14 @@ function TicketsTable() {
 				)
 			},
 			{
-				accessorKey: 'name',
-				header: 'Ticket Name',
-				Cell: ({ row }) => <Typography>{row.original.name}</Typography>
+				accessorKey: 'message',
+				header: 'Message',
+				Cell: ({ row }) => <Typography>{row.original.description}</Typography>
+			},
+			{
+				accessorKey: 'created_at',
+				header: 'Created At',
+				Cell: ({ row }) => <Typography>{new Date(row.original.created_at).toLocaleString()}</Typography>
 			},
 			{
 				accessorKey: 'status',
@@ -80,9 +112,17 @@ function TicketsTable() {
 		[]
 	);
 
-	const handleWithdraw = (ticket: Ticket) => {
-		console.log('Withdrawing ticket:', ticket.id);
-		// TODO: Implement withdraw logic
+	const handleWithdraw = async (ticket: Ticket) => {
+		if (ticket.status === 'withdrawn') return;
+
+		setLoading(true);
+		try {
+			await withdrawFeedback(ticket.id);
+			fetchTickets();
+		} catch (err: any) {
+			setError(err.message || 'Failed to withdraw ticket');
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -91,22 +131,42 @@ function TicketsTable() {
 			elevation={0}
 		>
 			<DataTable
-				data={mockTickets}
+				data={tickets}
 				columns={columns}
 				renderRowActions={({ row }) => (
 					<div style={{ display: 'flex', gap: 8 }}>
-						<Button
-							size="small"
-							variant="outlined"
-							color="error"
-							startIcon={<FuseSvgIcon>lucide:trash</FuseSvgIcon>}
-							onClick={() => handleWithdraw(row.original)}
-						>
-							Withdraw
-						</Button>
+						{row.original.status === 'withdrawn' ? (
+							<Button
+								size="small"
+								variant="outlined"
+								color="inherit"
+								disabled
+							>
+								Withdrawn
+							</Button>
+						) : (
+							<Button
+								size="small"
+								variant="outlined"
+								color="error"
+								startIcon={<FuseSvgIcon>lucide:trash</FuseSvgIcon>}
+								onClick={() => handleWithdraw(row.original)}
+								disabled={loading}
+							>
+								Withdraw
+							</Button>
+						)}
 					</div>
 				)}
 			/>
+			{error && (
+				<Typography
+					color="error"
+					className="p-4"
+				>
+					{error}
+				</Typography>
+			)}
 		</Paper>
 	);
 }
