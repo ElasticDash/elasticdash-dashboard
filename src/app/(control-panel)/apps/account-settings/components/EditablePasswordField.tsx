@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { updatePassword } from '../api';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
@@ -10,17 +11,19 @@ import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 
 type EditablePasswordFieldProps = {
 	label: string;
-	onSave: (newPassword: string, confirmPassword: string) => void;
 };
 
 /**
  * EditablePasswordField component with two password inputs for new password and confirmation
  */
-export default function EditablePasswordField({ label, onSave }: EditablePasswordFieldProps) {
+export default function EditablePasswordField({ label }: EditablePasswordFieldProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [newPassword, setNewPassword] = useState('');
+	const [oldPassword, setOldPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [error, setError] = useState('');
+	const [success, setSuccess] = useState('');
+	const [loading, setLoading] = useState(false);
 
 	const handleEdit = () => {
 		setNewPassword('');
@@ -36,10 +39,13 @@ export default function EditablePasswordField({ label, onSave }: EditablePasswor
 		setIsEditing(false);
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
+		setError('');
+		setSuccess('');
+
 		// Basic validation
-		if (!newPassword || !confirmPassword) {
-			setError('Both fields are required');
+		if (!oldPassword || !newPassword || !confirmPassword) {
+			setError('All fields are required');
 			return;
 		}
 
@@ -53,11 +59,19 @@ export default function EditablePasswordField({ label, onSave }: EditablePasswor
 			return;
 		}
 
-		onSave(newPassword, confirmPassword);
-		setNewPassword('');
-		setConfirmPassword('');
-		setError('');
-		setIsEditing(false);
+		setLoading(true);
+		try {
+			await updatePassword({ oldPassword, password: newPassword });
+			setSuccess('Password updated successfully');
+			setIsEditing(false);
+			setOldPassword('');
+			setNewPassword('');
+			setConfirmPassword('');
+		} catch (err: any) {
+			setError(err.message || 'Failed to update password');
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -85,6 +99,18 @@ export default function EditablePasswordField({ label, onSave }: EditablePasswor
 					<TextField
 						fullWidth
 						type="password"
+						label="Old Password"
+						value={oldPassword}
+						onChange={(e) => setOldPassword(e.target.value)}
+						variant="outlined"
+						size="small"
+						autoFocus
+						error={!!error}
+						className="mb-3"
+					/>
+					<TextField
+						fullWidth
+						type="password"
 						label="New Password"
 						value={newPassword}
 						onChange={(e) => setNewPassword(e.target.value)}
@@ -103,7 +129,7 @@ export default function EditablePasswordField({ label, onSave }: EditablePasswor
 						variant="outlined"
 						size="small"
 						error={!!error}
-						helperText={error}
+						helperText={error || success}
 					/>
 					<Box className="mt-3 flex gap-2">
 						<Button
@@ -111,13 +137,15 @@ export default function EditablePasswordField({ label, onSave }: EditablePasswor
 							color="primary"
 							size="small"
 							onClick={handleSave}
+							disabled={loading}
 						>
-							Submit
+							{loading ? 'Saving...' : 'Submit'}
 						</Button>
 						<Button
 							variant="outlined"
 							size="small"
 							onClick={handleCancel}
+							disabled={loading}
 						>
 							Cancel
 						</Button>

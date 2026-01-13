@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import { lighten } from '@mui/material/styles';
+import { useState, useEffect } from 'react';
+import { getDatabaseConnection, updateDatabaseConnection } from './dbApi';
+import { Typography, Paper, Divider } from '@mui/material';
+import { Box, lighten } from '@mui/system';
 import EditableField from './components/EditableField';
 import EditablePasswordField from './components/EditablePasswordField';
 
@@ -13,13 +11,32 @@ import EditablePasswordField from './components/EditablePasswordField';
  * Account Settings Page
  */
 export default function AccountSettingsPage() {
-	const [dbConnectString, setDbConnectString] = useState('mongodb://localhost:27017/mydb');
+	const [dbConnectString, setDbConnectString] = useState('');
+	const [dbError, setDbError] = useState('');
+	const [dbSuccess, setDbSuccess] = useState('');
 	const [email, setEmail] = useState('user@example.com');
 
-	const handleDbConnectStringSave = (value: string) => {
-		setDbConnectString(value);
-		console.log('Database Connect String saved:', value);
-		// TODO: Add API call to save to backend
+	useEffect(() => {
+		getDatabaseConnection()
+			.then((res) => {
+				console.log('res: ', res);
+				setDbConnectString(res?.result.connectionString || '');
+			})
+			.catch((err) => {
+				setDbError(err.message || 'Failed to fetch database connection');
+			});
+	}, []);
+
+	const handleDbConnectStringSave = async (value: string) => {
+		setDbError('');
+		setDbSuccess('');
+		try {
+			await updateDatabaseConnection(value);
+			setDbConnectString(value);
+			setDbSuccess('Database connection updated successfully');
+		} catch (err: any) {
+			setDbError(err.message || 'Failed to update database connection');
+		}
 	};
 
 	const handleEmailSave = (value: string) => {
@@ -28,10 +45,7 @@ export default function AccountSettingsPage() {
 		// TODO: Add API call to save to backend
 	};
 
-	const handlePasswordSave = (newPassword: string, confirmPassword: string) => {
-		console.log('Password saved');
-		// TODO: Add API call to save to backend
-	};
+
 
 	return (
 		<Box className="flex flex-col w-full p-6 sm:p-8 md:p-12">
@@ -91,11 +105,9 @@ export default function AccountSettingsPage() {
 					value={email}
 					onSave={handleEmailSave}
 					type="text"
+					editable={false}
 				/>
-				<EditablePasswordField
-					label="Password"
-					onSave={handlePasswordSave}
-				/>
+				<EditablePasswordField label="Password" />
 			</Paper>
 		</Box>
 	);

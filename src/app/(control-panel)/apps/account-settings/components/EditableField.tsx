@@ -14,6 +14,7 @@ type EditableFieldProps = {
 	onSave: (value: string) => void;
 	type?: 'text' | 'password';
 	multiline?: boolean;
+	editable?: boolean;
 };
 
 /**
@@ -24,7 +25,8 @@ export default function EditableField({
 	value,
 	onSave,
 	type = 'text',
-	multiline = false
+	multiline = false,
+	editable = true
 }: EditableFieldProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [editValue, setEditValue] = useState(value);
@@ -61,13 +63,15 @@ export default function EditableField({
 					>
 						{type === 'password' ? '••••••••' : value || 'Not set'}
 					</Typography>
-					<IconButton
-						size="small"
-						onClick={handleEdit}
-						color="primary"
-					>
-						<FuseSvgIcon size={20}>lucide:pencil</FuseSvgIcon>
-					</IconButton>
+					{editable && (
+						<IconButton
+							size="small"
+							onClick={handleEdit}
+							color="primary"
+						>
+							<FuseSvgIcon size={20}>lucide:pencil</FuseSvgIcon>
+						</IconButton>
+					)}
 				</Box>
 			) : (
 				<Box>
