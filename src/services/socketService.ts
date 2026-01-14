@@ -6,9 +6,12 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 let socket: Socket | null = null;
 
 export function initSocket() {
+	console.log('initSocket is triggered with api base url:', API_BASE_URL);
+	const socketUrl = API_BASE_URL.replace('/api', ''); // Adjust if your API URL includes a path
+
 	if (socket) return socket;
 
-	socket = io(API_BASE_URL, {
+	socket = io(socketUrl, {
 		transports: ['websocket', 'polling'],
 		reconnection: true,
 		reconnectionDelay: 1000,
@@ -23,7 +26,37 @@ export function initSocket() {
 		if (sessionId) {
 			socket!.emit('join', sessionId);
 		}
+
+		const userId = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('hb-user') || 'null')?.id : null;
+		console.log('[Socket] Joining user room:', userId);
+
+		if (userId) {
+			socket!.emit('join', userId);
+		}
 	});
+
+	// Listen for localStorage changes and join when data becomes available
+	if (typeof window !== 'undefined') {
+		window.addEventListener('storage', (event) => {
+			if (!socket) return;
+
+			if (event.key === 'chatSessionId' && event.newValue) {
+				socket.emit('join', event.newValue);
+			}
+
+			if (event.key === 'hb-user' && event.newValue) {
+				try {
+					const userId = JSON.parse(event.newValue)?.id;
+
+					if (userId) {
+						socket.emit('join', userId);
+					}
+				} catch (error) {
+					console.error('Failed to parse hb-user from localStorage', error);
+				}
+			}
+		});
+	}
 
 	socket.on('disconnect', () => {
 		// Optionally handle disconnect

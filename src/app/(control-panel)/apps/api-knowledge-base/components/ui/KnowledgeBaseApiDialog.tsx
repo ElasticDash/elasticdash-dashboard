@@ -1,4 +1,5 @@
 import React from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Table from '@mui/material/Table';
@@ -60,6 +61,7 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 	const [tags, setTags] = React.useState<string[]>(initialData?.tags || []);
 	const [keys, setKeys] = React.useState<KeyRow[]>([]);
 	const [formTouched, setFormTouched] = React.useState(false);
+	const [isUploading, setIsUploading] = React.useState(false);
 
 	const typeOptions = ['integer', 'string', 'boolean', 'float', 'date', 'text'];
 	const categoryOptions = ['Param', 'Query', 'Body'];
@@ -126,12 +128,13 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 	const handleKeyChange = (idx: number, field: string, value: string) => {
 		setKeys(keys.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
 	};
-	const allKeysValid = keys.length > 0 && keys.every((k) => k.key && k.category && k.type && k.description);
+	const allKeysValid = keys.length === 0 || keys.every((k) => k.key && k.category && k.type && k.description);
 
-	const handleSubmit = () => {
+	const handleSubmit = async () => {
 		setFormTouched(true);
 
 		if (path.trim() && method && description.trim() && allKeysValid) {
+			setIsUploading(true);
 			// Convert keys back to openapiOperation
 			const parameters = keys
 				.filter((k) => k.category === 'Param' || k.category === 'Query')
@@ -163,7 +166,26 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 				};
 			}
 
-			onSubmit({ apiPath: path, apiMethod: method, description, tags, openapiOperation });
+			// Wrap onSubmit in a promise to allow async
+			try {
+				await Promise.resolve(
+					onSubmit({ apiPath: path, apiMethod: method, description, tags, openapiOperation })
+				);
+			} finally {
+				setIsUploading(false);
+			}
+		} else {
+			let errorMsg = '';
+
+			if (!path.trim()) errorMsg += 'Path is required. ';
+
+			if (!method) errorMsg += 'Method is required. ';
+
+			if (!description.trim()) errorMsg += 'Short Description is required. ';
+
+			if (!allKeysValid) errorMsg += 'All keys must be valid. ';
+
+			alert(`Invalid input: ${errorMsg.trim()}`);
 		}
 	};
 
@@ -354,13 +376,25 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 				</TableContainer>
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onClose}>Cancel</Button>
+				<Button
+					onClick={onClose}
+					disabled={isUploading}
+				>
+					Cancel
+				</Button>
 				<Button
 					onClick={handleSubmit}
 					variant="contained"
 					color="primary"
+					disabled={isUploading}
 				>
-					{mode === 'add' ? 'Add' : 'Save'}
+					{isUploading ? (
+						<CircularProgress
+							size={20}
+							sx={{ mr: 1 }}
+						/>
+					) : null}
+					{isUploading ? 'Uploading...' : mode === 'add' ? 'Add' : 'Save'}
 				</Button>
 			</DialogActions>
 		</Dialog>

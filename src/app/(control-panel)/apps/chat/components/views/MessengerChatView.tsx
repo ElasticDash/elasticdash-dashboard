@@ -1,9 +1,7 @@
 'use client';
 import { lighten, styled } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
 import clsx from 'clsx';
-import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { useEffect, useRef, useState } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -18,14 +16,16 @@ import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
 import FuseLoading from '@fuse/core/FuseLoading';
 import { useChat } from '@/hooks/useChat';
-import PlanReviewPanel from './PlanReviewPanel';
 import { fetchConversations, fetchConversationMessages } from '@/services/chatService';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { saveSession } from '@/utils/storageUtils';
+import { postFeedback } from '@/app/(control-panel)/apps/tickets/api';
+import '@/styles/chat-widget.css';
 
 export type ChatMessage = {
 	id: number;
-	role: 'user' | 'agent';
+	role: 'user' | 'assistant';
 	content: string;
 	time: string | null;
 	messageType: string;
@@ -92,6 +92,8 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const [loading, setLoading] = useState(true);
 	const [conversationId, setConversationId] = useState<number | null>(null);
 	const [hasMore, setHasMore] = useState(true);
+	// Add state for selectedFeedbackMsgId
+	const [selectedFeedbackMsgId, setSelectedFeedbackMsgId] = useState<number | null>(null);
 
 	// On mount, fetch conversations and latest messages
 	useEffect(() => {
@@ -113,6 +115,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 				// Use the latest conversation (ordered by updated_at desc)
 				const latestConv = conversations[0];
 				setConversationId(latestConv.id);
+				saveSession('', String(latestConv.id));
 				const msgRes = await fetchConversationMessages(latestConv.id, 0);
 				const msgs = msgRes.messages || [];
 				console.log('messages: ', msgs);
@@ -171,7 +174,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		setMessage(ev.target.value);
 	}
 
-	function onMessageSubmit(ev: React.FormEvent<HTMLFormElement>) {
+	async function onMessageSubmit(ev: React.FormEvent<HTMLFormElement>) {
 		ev.preventDefault();
 
 		if (message === '') {
@@ -190,10 +193,41 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		]);
 
 		if (typeof sendMessage === 'function') {
-			sendMessage(message);
+			try {
+				await sendMessage(message);
+
+				// After sending, fetch latest messages
+				if (conversationId) {
+					const msgRes = await fetchConversationMessages(conversationId, 0);
+					const msgs = msgRes.messages || [];
+					setMessages(msgs);
+				}
+			} catch (err) {
+				// Optionally handle error
+			}
 		}
 
 		setMessage('');
+	}
+
+	// Feedback submission logic
+	async function handleFeedbackSubmit(
+		messageId: number,
+		isHelpful: boolean,
+		description?: string,
+		expectedResponse?: string
+	) {
+		try {
+			await postFeedback({
+				messageId,
+				conversationId,
+				isHelpful,
+				description,
+				expectedResponse
+			});
+		} catch (err) {
+			// Optionally handle error
+		}
 	}
 
 	if (loading) {
@@ -219,7 +253,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 				<div className={clsx('relative z-10 flex flex-1 flex-col', className)}>
 					<div
 						ref={chatRef}
-						className="flex flex-1 flex-col overflow-y-auto"
+						className="chat-container flex flex-1 flex-col overflow-y-auto"
 						onScroll={async (e) => {
 							const el = e.currentTarget;
 
@@ -244,73 +278,138 @@ function MessengerChatView(props: MessengerChatViewProps) {
 					>
 						{messages?.length > 0 && (
 							<div className="flex flex-col pt-4 pb-10 md:px-4">
-								{messages.map((item, i) => {
-									const isReceived = item.role != 'user';
-									return (
-										<StyledMessageRow
-											key={item.id ?? i}
-											className={clsx(
-												'relative flex shrink-0 grow-0 flex-col items-start justify-end px-4 pb-1',
-												isReceived ? 'contact' : 'me',
-												{ 'first-of-group': isFirstMessageOfGroup(item, i) },
-												{ 'last-of-group': isLastMessageOfGroup(item, i) },
-												i + 1 === messages.length && 'pb-18'
-											)}
-										>
-											<div className="bubble relative flex max-w-full items-center justify-center px-3 py-2">
-												<Typography className="text-md whitespace-pre-wrap">
-													<ReactMarkdown remarkPlugins={[remarkGfm]}>
-														{typeof item.content === 'string'
-															? item.content
-															: JSON.stringify(item.content)}
-													</ReactMarkdown>
-												</Typography>
-												{item.time && (
-													<Typography
-														className="time absolute bottom-0 -mb-5 hidden w-full text-sm whitespace-nowrap ltr:left-0 rtl:right-0"
-														color="text.secondary"
+								{messages.map((msg: any, index) => (
+									<div
+										key={index}
+										className={`message ${msg.role === 'user' ? 'user' : 'assistant'}`}
+									>
+										<div className="message-content-wrapper">
+											<div className="message-content">
+												<ReactMarkdown remarkPlugins={[remarkGfm]}>
+													{typeof msg.content === 'string'
+														? msg.content
+														: JSON.stringify(msg.content)}
+												</ReactMarkdown>
+
+												{/* Planning metrics */}
+												{msg.role === 'assistant' &&
+													(msg.planningDurationMs !== undefined || msg.usedReferencePlan) && (
+														<div className="mt-2 border-t border-gray-700 pt-2 text-xs text-gray-400">
+															{msg.usedReferencePlan && <div>🪄 Used reference plan</div>}
+															{msg.planningDurationMs !== undefined && (
+																<div>⏱️ Planning: {msg.planningDurationMs}ms</div>
+															)}
+														</div>
+													)}
+
+												{/* Save Task button */}
+												{/* {msg.role === 'assistant' && msg.planSummary && msg.planSummary.steps && msg.planSummary.steps.length > 0 && (
+													<div className="mt-3 flex flex-col gap-2">
+														<button
+															onClick={() => handleSaveTask(msg)}
+															disabled={isSavingTask}
+															className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-700 disabled:opacity-50"
+														>
+															Save this task
+														</button>
+													</div>
+												)} */}
+
+												{/* Approve/Reject buttons */}
+												{msg.awaitingApproval && index === messages.length - 1 && (
+													<div className="mt-3 flex gap-2">
+														<button
+															onClick={() => approvePlan()}
+															className="flex-1 rounded-lg bg-green-100 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-200 disabled:opacity-50"
+														>
+															✓ Approve
+														</button>
+														<button
+															onClick={() => rejectPlan()}
+															className="flex-1 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-all hover:bg-red-200 disabled:opacity-50"
+														>
+															✗ Reject
+														</button>
+													</div>
+												)}
+
+												{/* Feedback buttons */}
+												{msg.role === 'assistant' && (
+													<div
+														style={{
+															display: 'flex',
+															gap: 8,
+															marginTop: 8,
+															alignSelf: 'flex-start'
+														}}
 													>
-														{formatDistanceToNow(new Date(item.time), {
-															addSuffix: true
-														})}
-													</Typography>
+														<IconButton
+															size="small"
+															onClick={async () => {
+																await handleFeedbackSubmit(msg.id, true);
+															}}
+														>
+															<FuseSvgIcon>lucide:thumbs-up</FuseSvgIcon>
+														</IconButton>
+														<IconButton
+															size="small"
+															onClick={() => {
+																setFeedbackOpen(true);
+																setSelectedFeedbackMsgId(msg.id);
+															}}
+														>
+															<FuseSvgIcon>lucide:thumbs-down</FuseSvgIcon>
+														</IconButton>
+													</div>
 												)}
 											</div>
-											{isReceived && (
-												<div
-													style={{
-														display: 'flex',
-														gap: 8,
-														marginTop: 8,
-														alignSelf: 'flex-start'
-													}}
-												>
-													<IconButton size="small">
-														<FuseSvgIcon>lucide:thumbs-up</FuseSvgIcon>
-													</IconButton>
-													<IconButton
-														size="small"
-														onClick={() => setFeedbackOpen(true)}
-													>
-														<FuseSvgIcon>lucide:thumbs-down</FuseSvgIcon>
-													</IconButton>
-												</div>
-											)}
-										</StyledMessageRow>
-									);
-								})}
+										</div>
+									</div>
+								))}
 							</div>
 						)}
 					</div>
 
-					{/* Plan Approval Panel: show only if a plan is pending */}
+					{/* Render pending plan as a chat message with approve/reject buttons */}
 					{pendingPlan && (
-						<PlanReviewPanel
-							plan={pendingPlan}
-							onApprove={approvePlan}
-							onReject={rejectPlan}
-							isProcessing={isProcessing}
-						/>
+						<div className="message assistant">
+							<div className="message-content-wrapper">
+								<div className="message-content">
+									<strong>Plan Approval Required</strong>
+									<div style={{ margin: '8px 0' }}>
+										<pre
+											style={{
+												whiteSpace: 'pre-wrap',
+												wordBreak: 'break-word',
+												background: 'none',
+												padding: 0,
+												margin: 0,
+												fontFamily: 'inherit',
+												fontSize: 'inherit'
+											}}
+										>
+											{pendingPlan.description || JSON.stringify(pendingPlan, null, 2)}
+										</pre>
+									</div>
+									<div className="mt-3 flex gap-2">
+										<Button
+											onClick={approvePlan}
+											disabled={isProcessing}
+											className="flex-1 rounded-lg bg-green-100 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-200 disabled:opacity-50"
+										>
+											{isProcessing ? 'Processing...' : '✓ Approve'}
+										</Button>
+										<Button
+											onClick={rejectPlan}
+											disabled={isProcessing}
+											className="flex-1 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-all hover:bg-red-200 disabled:opacity-50"
+										>
+											✗ Reject
+										</Button>
+									</div>
+								</div>
+							</div>
+						</div>
 					)}
 
 					{messages && (
@@ -361,6 +460,9 @@ function MessengerChatView(props: MessengerChatViewProps) {
 						</Paper>
 					)}
 
+					{/* Feedback Dialog State */}
+					{/** Track which message is being given feedback */}
+					{/** Add state for selectedFeedbackMsgId */}
 					{/* Feedback Dialog */}
 					<Dialog
 						open={feedbackOpen}
@@ -397,8 +499,14 @@ function MessengerChatView(props: MessengerChatViewProps) {
 								Cancel
 							</Button>
 							<Button
-								onClick={() => {
+								onClick={async () => {
 									setFeedbackOpen(false);
+									await handleFeedbackSubmit(
+										selectedFeedbackMsgId,
+										false,
+										feedbackWrong,
+										feedbackExpected
+									);
 									setFeedbackWrong('');
 									setFeedbackExpected('');
 								}}

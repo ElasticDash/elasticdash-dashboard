@@ -1,14 +1,16 @@
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 import Button from '@mui/material/Button';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import PageBreadcrumb from 'src/components/PageBreadcrumb';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Alert from '@mui/material/Alert';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import KnowledgeBaseApiDialog from './KnowledgeBaseApiDialog';
-import { uploadOpenApi } from '@/services/knowledgeBaseService';
+import { uploadOpenApi, createDraftApi, submitDraftKbApi } from '@/services/knowledgeBaseService';
+import { initSocket } from '@/services/socketService';
 
 /**
  * The ApiKnowledgeBaseHeader component.
@@ -16,14 +18,55 @@ import { uploadOpenApi } from '@/services/knowledgeBaseService';
 
 function ApiKnowledgeBaseHeader({
 	editApi,
-	isChangesTab
+	isChangesTab,
+	onApiCreated
 }: {
 	editApi?: { apiPath: string; apiMethod: string; description: string; tags: string[]; openapiOperation: any } | null;
 	onEditClose?: () => void;
 	isChangesTab?: boolean;
+	onApiCreated?: () => void;
 }) {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [deleteTable, setDeleteTable] = useState<any>(null);
+	const [isUploading, setIsUploading] = useState(false);
+	const [isApplying, setIsApplying] = useState(false);
+
+	// Socket event handlers for async Apply To Live
+	useEffect(() => {
+		let socket;
+		try {
+			socket = initSocket();
+		} catch (error) {
+			console.error('Socket initialization error:', error);
+		}
+
+		function showSuccessNotification(msg: string) {
+			// TODO: Replace with your notification system
+			alert(msg);
+		}
+		function showErrorNotification(msg: string) {
+			// TODO: Replace with your notification system
+			alert(msg);
+		}
+
+		if (socket) {
+			socket.on('kb:submit-api:complete', (data: any) => {
+				setIsApplying(false);
+				showSuccessNotification('API RAG build completed!');
+				if (onApiCreated) onApiCreated();
+			});
+			socket.on('kb:submit-api:error', (data: any) => {
+				setIsApplying(false);
+				showErrorNotification('API RAG build failed: ' + (data?.error || 'Unknown error'));
+			});
+		}
+		return () => {
+			if (socket) {
+				socket.off('kb:submit-api:complete');
+				socket.off('kb:submit-api:error');
+			}
+		};
+	}, [onApiCreated]);
 	// const handleDelete = (row: any) => {
 	//     setDeleteTable(row.original);
 	//     setDeleteDialogOpen(true);
@@ -69,9 +112,16 @@ function ApiKnowledgeBaseHeader({
 	const handleDialogClose = () => {
 		setDialogOpen(false);
 	};
-	const handleDialogSubmit = () => {
-		// TODO: handle submit logic
-		setDialogOpen(false);
+	const handleDialogSubmit = async (formData: any) => {
+		try {
+			const token = typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+			await createDraftApi(formData, token);
+			setDialogOpen(false);
+
+			if (onApiCreated) onApiCreated();
+		} catch (err) {
+			alert('Failed to create API.');
+		}
 	};
 	const dragRef = useRef<HTMLDivElement>(null);
 	const [dragActive, setDragActive] = useState(false);
@@ -182,8 +232,26 @@ function ApiKnowledgeBaseHeader({
 							variant="contained"
 							color="secondary"
 							startIcon={<FuseSvgIcon>lucide:rocket</FuseSvgIcon>}
+							disabled={isApplying}
+							onClick={async () => {
+								setIsApplying(true);
+								try {
+									const token =
+										typeof window !== 'undefined'
+											? localStorage.getItem('token') || undefined
+											: undefined;
+									await submitDraftKbApi(0, token);
+
+									if (onApiCreated) onApiCreated();
+								} catch (err) {
+									alert('Failed to submit draft KB API.');
+								} finally {
+									setIsApplying(false);
+								}
+							}}
 						>
-							Apply To Live
+							{isApplying ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+							{isApplying ? 'Applying...' : 'Apply To Live'}
 						</Button>
 					</div>
 				)}
@@ -343,8 +411,9 @@ function ApiKnowledgeBaseHeader({
 					<Button
 						variant="contained"
 						color="primary"
-						disabled={!file || !!uploadError || apiList.length === 0}
+						disabled={!file || !!uploadError || apiList.length === 0 || isUploading}
 						onClick={async () => {
+							setIsUploading(true);
 							try {
 								const token =
 									typeof window !== 'undefined'
@@ -358,10 +427,13 @@ function ApiKnowledgeBaseHeader({
 								setApiList([]);
 							} catch (_err) {
 								setUploadError('Failed to upload OpenAPI file.');
+							} finally {
+								setIsUploading(false);
 							}
 						}}
 					>
-						Upload
+						{isUploading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+						{isUploading ? 'Uploading...' : 'Upload'}
 					</Button>
 				</DialogActions>
 			</Dialog>

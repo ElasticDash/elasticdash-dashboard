@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { getSocket, joinSessionRoom } from '@/services/socketService';
 import { getChatHistory, getSession, saveChatHistory, saveSession } from '@/utils/storageUtils';
+import { sendChatCompletion } from '@/services/chatService';
 
 const SOCKET_EVENT = 'chat:plan:result';
 const SOCKET_TIMEOUT = 60000; // 60 seconds
@@ -80,6 +81,10 @@ export function useChat() {
 				return;
 			}
 
+			// Always sync conversationId from localStorage before sending
+			const latestSession = getSession();
+			const currentConversationId = latestSession.conversationId || conversationId;
+
 			const userMessage = {
 				role: 'user',
 				content: userContent,
@@ -88,23 +93,23 @@ export function useChat() {
 			setChatHistory((prev) => [...prev, userMessage]);
 			const userMessageBody = {
 				messages: [{ type: 'user', content: userContent }],
-				conversationId: conversationId || undefined,
+				conversationId: currentConversationId || undefined,
 				isApproval: false
 			};
 			try {
-				const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/chat/completion', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${token}`
-					},
-					body: JSON.stringify(userMessageBody)
-				});
-				const data = await response.json();
+				// Use chatService for API call
+				const data = await sendChatCompletion(userMessageBody, token);
 
 				if (data.plan && data.sessionId) {
 					setPendingPlan({ ...data.plan, sessionId: data.sessionId, query: userContent });
 					setSessionId(data.sessionId);
+
+					// If conversationId is returned, update it and localStorage
+					if (data.conversationId) {
+						setConversationId(String(data.conversationId));
+						saveSession(data.sessionId, String(data.conversationId));
+					}
+
 					joinSessionRoom(data.sessionId);
 				} else if (data.error) {
 					setError(data.error);
@@ -114,7 +119,7 @@ export function useChat() {
 				setError('Failed to send message.');
 			}
 		},
-		[sessionId, conversationId]
+		[conversationId]
 	);
 
 	// Approve pending plan

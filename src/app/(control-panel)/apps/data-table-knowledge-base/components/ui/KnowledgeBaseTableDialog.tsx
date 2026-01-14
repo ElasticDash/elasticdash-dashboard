@@ -1,4 +1,5 @@
 import React from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Table from '@mui/material/Table';
@@ -53,6 +54,7 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 	const [tags, setTags] = React.useState<string[]>(initialData?.tags || []);
 	const [keys, setKeys] = React.useState<KeyRow[]>(initialData?.keys || []);
 	const [formTouched, setFormTouched] = React.useState(false);
+	const [isUploading, setIsUploading] = React.useState(false);
 
 	const categoryOptions = ['Primary Key', 'Foreign Key', 'Others'];
 
@@ -80,13 +82,18 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 	};
 	const hasPrimaryKey = keys.some((k) => k.category === 'Primary Key');
 	const allKeysValid = keys.length > 0 && keys.every((k) => k.name && k.category && k.type);
-	const handleSubmit = () => {
+	const handleSubmit = async () => {
 		setFormTouched(true);
 
 		console.log('keys: ', keys);
 
 		if (tableName.trim() && description.trim() && hasPrimaryKey && allKeysValid) {
-			onSubmit({ tableName, description, tags, keys });
+			setIsUploading(true);
+			try {
+				await Promise.resolve(onSubmit({ tableName, description, tags, keys }));
+			} finally {
+				setIsUploading(false);
+			}
 		}
 	};
 
@@ -247,13 +254,15 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 				)}
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={onClose}>Cancel</Button>
+				<Button onClick={onClose} disabled={isUploading}>Cancel</Button>
 				<Button
 					onClick={handleSubmit}
 					variant="contained"
 					color="primary"
+					disabled={isUploading}
 				>
-					{mode === 'add' ? 'Add' : 'Save'}
+					{isUploading ? <CircularProgress size={20} sx={{ mr: 1 }} /> : null}
+					{isUploading ? 'Uploading...' : mode === 'add' ? 'Add' : 'Save'}
 				</Button>
 			</DialogActions>
 		</Dialog>

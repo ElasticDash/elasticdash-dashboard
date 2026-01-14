@@ -1,14 +1,16 @@
-import { uploadSqlDdl } from '@/services/knowledgeBaseService';
+import { uploadSqlDdl, submitDraftKbTable } from '@/services/knowledgeBaseService';
+import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import PageBreadcrumb from 'src/components/PageBreadcrumb';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import KnowledgeBaseTableDialog from './KnowledgeBaseTableDialog';
 import Alert from '@mui/material/Alert';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { initSocket } from '@/services/socketService';
 
 /**
  * The DataTableKnowledgeBaseHeader component.
@@ -16,11 +18,13 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material
 
 function DataTableKnowledgeBaseHeader({
 	editTable,
-	isChangesTab
+	isChangesTab,
+	onTableCreated
 }: {
 	editTable?: { tableName: string; description: string; tags: string[]; keys: any[] } | null;
 	onEditClose?: () => void;
 	isChangesTab?: boolean;
+	onTableCreated?: () => void;
 }) {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -29,6 +33,48 @@ function DataTableKnowledgeBaseHeader({
 	const [uploadError, setUploadError] = useState('');
 	const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
+	const [isApplying, setIsApplying] = useState(false);
+
+	// Socket event handlers for async Apply To Live
+	useEffect(() => {
+		let socket;
+		try {
+			socket = initSocket();
+		} catch (error) {
+			console.error('Socket initialization error:', error);
+		}
+
+		function showSuccessNotification(msg: string) {
+			// TODO: Replace with your notification system
+			alert(msg);
+		}
+
+		function showErrorNotification(msg: string) {
+			// TODO: Replace with your notification system
+			alert(msg);
+		}
+
+		if (socket) {
+			socket.on('kb:submit-table:complete', (data: any) => {
+				setIsApplying(false);
+				showSuccessNotification('Table RAG build completed!');
+
+				if (onTableCreated) onTableCreated();
+			});
+			socket.on('kb:submit-table:error', (data: any) => {
+				setIsApplying(false);
+				showErrorNotification('Table RAG build failed: ' + (data?.error || 'Unknown error'));
+			});
+		}
+
+		return () => {
+			if (socket) {
+				socket.off('kb:submit-table:complete');
+				socket.off('kb:submit-table:error');
+			}
+		};
+	}, [onTableCreated]);
 
 	const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
 		setAnchorEl(event.currentTarget);
@@ -155,8 +201,31 @@ function DataTableKnowledgeBaseHeader({
 							variant="contained"
 							color="secondary"
 							startIcon={<FuseSvgIcon>lucide:rocket</FuseSvgIcon>}
+							disabled={isApplying}
+							onClick={async () => {
+								setIsApplying(true);
+								try {
+									const token =
+										typeof window !== 'undefined'
+											? localStorage.getItem('token') || undefined
+											: undefined;
+									await submitDraftKbTable(0, token);
+
+									if (onTableCreated) onTableCreated();
+								} catch (err) {
+									alert('Failed to submit draft KB Table.');
+								} finally {
+									setIsApplying(false);
+								}
+							}}
 						>
-							Apply To Live
+							{isApplying ? (
+								<CircularProgress
+									size={20}
+									sx={{ mr: 1 }}
+								/>
+							) : null}
+							{isApplying ? 'Applying...' : 'Apply To Live'}
 						</Button>
 					</div>
 				)}
@@ -282,8 +351,9 @@ function DataTableKnowledgeBaseHeader({
 					<Button
 						variant="contained"
 						color="primary"
-						disabled={!file || !!uploadError || tableList.length === 0}
+						disabled={!file || !!uploadError || tableList.length === 0 || isUploading}
 						onClick={async () => {
+							setIsUploading(true);
 							try {
 								const token =
 									typeof window !== 'undefined'
@@ -300,10 +370,18 @@ function DataTableKnowledgeBaseHeader({
 								setTableList([]);
 							} catch (_err) {
 								setUploadError('Failed to upload SQL file.');
+							} finally {
+								setIsUploading(false);
 							}
 						}}
 					>
-						Upload
+						{isUploading ? (
+							<CircularProgress
+								size={20}
+								sx={{ mr: 1 }}
+							/>
+						) : null}
+						{isUploading ? 'Uploading...' : 'Upload'}
 					</Button>
 				</DialogActions>
 			</Dialog>

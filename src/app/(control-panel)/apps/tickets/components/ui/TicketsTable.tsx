@@ -19,6 +19,7 @@ interface Ticket {
 	updated_at: string;
 	reason_category?: string;
 	description?: string;
+	expectedResponse?: string;
 }
 
 // Helper function to get status color
@@ -53,14 +54,7 @@ function TicketsTable() {
 		setLoading(true);
 		getUnhelpfulFeedbacks()
 			.then((res) => {
-				// Map feedbacks to Ticket type
-				const mapped = (Array.isArray(res) ? res : res?.result || []).map((fb: any) => ({
-					id: fb.id,
-					message: fb.message || fb.content || '',
-					created_at: fb.created_at,
-					status: fb.status || 'open'
-				}));
-				setTickets(mapped);
+				setTickets(Array.isArray(res) ? res : res?.result || []);
 				setError('');
 			})
 			.catch((err) => {
@@ -91,6 +85,11 @@ function TicketsTable() {
 				accessorKey: 'message',
 				header: 'Message',
 				Cell: ({ row }) => <Typography>{row.original.description}</Typography>
+			},
+			{
+				accessorKey: 'expected_response',
+				header: 'Expected Response',
+				Cell: ({ row }) => <Typography>{row.original.expectedResponse || 'N/A'}</Typography>
 			},
 			{
 				accessorKey: 'created_at',

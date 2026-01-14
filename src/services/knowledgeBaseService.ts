@@ -1,5 +1,81 @@
 import axios from 'axios';
 
+// Submit draft KB API (mark as submitted, doesn't promote yet)
+export async function submitDraftKbApi(projectId = 0, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.post(
+			`${baseUrl}/project/kb/submit/api`,
+			{ projectId },
+			{
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				}
+			}
+		);
+		return res.data;
+	} catch (err) {
+		console.error('submitDraftKbApi error:', err);
+		throw new Error('Failed to submit draft KB API');
+	}
+}
+
+// Submit draft KB Table (mark as submitted, doesn't promote yet)
+export async function submitDraftKbTable(projectId = 0, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.post(
+			`${baseUrl}/project/kb/submit/table`,
+			{ projectId },
+			{
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { Authorization: `Bearer ${token}` } : {})
+				}
+			}
+		);
+		return res.data;
+	} catch (err) {
+		console.error('submitDraftKbTable error:', err);
+		throw new Error('Failed to submit draft KB Table');
+	}
+}
+
+// Create draft table (manual add, no id required)
+export async function createDraftTable(updates: any, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.post(`${baseUrl}/project/kb/tables`, updates, {
+			headers: {
+				'Content-Type': 'application/json',
+				...(token ? { Authorization: `Bearer ${token}` } : {})
+			}
+		});
+		return res.data;
+	} catch (err) {
+		console.error('createDraftTable error:', err);
+		throw new Error('Failed to create draft table');
+	}
+}
+
+// Update draft API
+export async function createDraftApi(updates: any, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.post(`${baseUrl}/project/kb/apis`, updates, {
+			headers: {
+				'Content-Type': 'application/json',
+				...(token ? { Authorization: `Bearer ${token}` } : {})
+			}
+		});
+		return res.data;
+	} catch (err) {
+		console.error('createDraftApi error:', err);
+		throw new Error('Failed to create draft API');
+	}
+}
+
 // Update draft API
 export async function updateDraftApi(id: number, updates: any, token?: string) {
 	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;

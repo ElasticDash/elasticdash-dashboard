@@ -18,6 +18,7 @@ import useThemeMediaQuery from '../../../../@fuse/hooks/useThemeMediaQuery';
 import { AppBar, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, Paper } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ToolbarTheme from 'src/contexts/ToolbarTheme';
+import Link from '@fuse/core/Link';
 
 type ToolbarLayout1Props = {
 	className?: string;
@@ -74,12 +75,14 @@ function ToolbarLayout1(props: ToolbarLayout1Props) {
 						<NavigationSearch />
 						<QuickPanelToggleButton />
 						<NotificationPanelToggleButton /> */}
-						<Button
-							variant="contained"
-							color="primary"
-						>
-							Human Support
-						</Button>
+						<Link href="mailto:contact@elasticdash.com">
+							<Button
+								variant="contained"
+								color="primary"
+							>
+								Human Support
+							</Button>
+						</Link>
 						<Button
 							variant="contained"
 							color="primary"

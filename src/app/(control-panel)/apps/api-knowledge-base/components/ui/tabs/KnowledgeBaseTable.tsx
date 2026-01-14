@@ -1,5 +1,11 @@
 import { useMemo, useState, useEffect } from 'react';
-import { fetchDraftApis, fetchActiveApis, updateDraftApi, deleteDraftApi } from '@/services/knowledgeBaseService';
+import {
+	fetchDraftApis,
+	fetchActiveApis,
+	updateDraftApi,
+	deleteDraftApi,
+	createDraftTable
+} from '@/services/knowledgeBaseService';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Chip, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
@@ -108,6 +114,7 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 	};
 	const handleDeleteConfirm = async () => {
 		if (!deleteTable?.id) return;
+
 		setLoading(true);
 		setError('');
 		try {
@@ -169,12 +176,21 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 				open={editDialogOpen}
 				onClose={handleEditClose}
 				onSubmit={async (formData) => {
-					if (!editTable?.id) return;
 					setLoading(true);
 					setError('');
+					console.log('Submitted data: ', formData);
 					try {
-						const token = typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
-						await updateDraftApi(editTable.id, formData, token);
+						const token =
+							typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+
+						if (editTable?.id) {
+							// Edit mode
+							await updateDraftApi(editTable.id, formData, token);
+						} else {
+							// Add mode
+							await createDraftTable(formData, token);
+						}
+
 						// Refresh data
 						const fetchFn = live ? fetchActiveApis : fetchDraftApis;
 						const result = await fetchFn(token, 0);
@@ -182,13 +198,13 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 						setEditDialogOpen(false);
 						setEditTable(null);
 					} catch (e) {
-						setError('Failed to update API.');
+						setError(editTable?.id ? 'Failed to update API.' : 'Failed to create API.');
 					} finally {
 						setLoading(false);
 					}
 				}}
 				initialData={editTable}
-				mode="edit"
+				mode={editTable?.id ? 'edit' : 'add'}
 			/>
 			<Dialog
 				open={deleteDialogOpen}

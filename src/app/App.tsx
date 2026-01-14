@@ -17,6 +17,8 @@ import { NavbarContextProvider } from '@/components/theme-layouts/components/nav
 import { QuickPanelProvider } from '@/components/theme-layouts/components/quickPanel/contexts/QuickPanelContext/QuickPanelContextProvider';
 import RootThemeProvider from '@/contexts/RootThemeProvider';
 import { NavigationContextProvider } from '@/components/theme-layouts/components/navigation/contexts/NavigationContextProvider';
+import { initSocket } from '@/services/socketService';
+import { useEffect } from 'react';
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -37,6 +39,19 @@ type AppProps = {
 function App(props: AppProps) {
 	const { children } = props;
 	const AppContextValue = {};
+
+	// Ensure socket connection is established on mount
+	useEffect(() => {
+		const socket = initSocket();
+
+		socket.onAny((event, ...args) => {
+			console.log(`Socket event received: ${event}`, args);
+		});
+
+		return () => {
+			socket.disconnect();
+		};
+	}, []);
 
 	return (
 		<ErrorBoundary>
