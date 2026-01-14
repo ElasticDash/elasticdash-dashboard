@@ -24,16 +24,17 @@ interface KeyRow {
 	name: string;
 	category: string;
 	type: string;
-	shortDesc: string;
+	description: string;
 }
 
 interface KnowledgeBaseTableDialogProps {
 	open: boolean;
 	onClose: () => void;
-	onSubmit: (data: { name: string; shortDesc: string; keys: KeyRow[] }) => void;
+	onSubmit: (data: { tableName: string; description: string; tags: string[]; keys: KeyRow[] }) => void;
 	initialData?: {
-		name: string;
-		shortDesc: string;
+		tableName: string;
+		description: string;
+		tags: string[];
 		keys: KeyRow[];
 		schemaJson?: { columns?: { name: string; type: string; nullable: boolean }[] };
 	};
@@ -47,17 +48,18 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 	initialData,
 	mode
 }) => {
-	const [name, setName] = React.useState(initialData?.name || '');
-	const [shortDesc, setShortDesc] = React.useState(initialData?.shortDesc || '');
+	const [tableName, setTableName] = React.useState(initialData?.tableName || '');
+	const [description, setDescription] = React.useState(initialData?.description || '');
+	const [tags, setTags] = React.useState<string[]>(initialData?.tags || []);
 	const [keys, setKeys] = React.useState<KeyRow[]>(initialData?.keys || []);
 	const [formTouched, setFormTouched] = React.useState(false);
 
-	const typeOptions = ['SERIAL', 'INT', 'BOOLEAN', 'FLOAT', 'DATE', 'TEXT', 'VARCHAR', 'CHAR', 'TIMESTAMP'];
 	const categoryOptions = ['Primary Key', 'Foreign Key', 'Others'];
 
 	React.useEffect(() => {
-		setName(initialData?.name || '');
-		setShortDesc(initialData?.shortDesc || '');
+		setTableName(initialData?.tableName || '');
+		setDescription(initialData?.description || '');
+		setTags(initialData?.tags || []);
 		setKeys(initialData?.keys || []);
 		setFormTouched(false);
 		console.log('initialData', initialData);
@@ -68,7 +70,7 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 	}, [keys]);
 
 	const handleAddKey = () => {
-		setKeys([...keys, { name: '', category: '', type: '', shortDesc: '' }]);
+		setKeys([...keys, { name: '', category: '', type: '', description: '' }]);
 	};
 	const handleDeleteKey = (idx: number) => {
 		setKeys(keys.filter((_, i) => i !== idx));
@@ -77,12 +79,14 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 		setKeys(keys.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
 	};
 	const hasPrimaryKey = keys.some((k) => k.category === 'Primary Key');
-	const allKeysValid = keys.length > 0 && keys.every((k) => k.name && k.category && k.type && k.shortDesc);
+	const allKeysValid = keys.length > 0 && keys.every((k) => k.name && k.category && k.type);
 	const handleSubmit = () => {
 		setFormTouched(true);
 
-		if (name.trim() && shortDesc.trim() && hasPrimaryKey && allKeysValid) {
-			onSubmit({ name, shortDesc, keys });
+		console.log('keys: ', keys);
+
+		if (tableName.trim() && description.trim() && hasPrimaryKey && allKeysValid) {
+			onSubmit({ tableName, description, tags, keys });
 		}
 	};
 
@@ -96,24 +100,31 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 			<DialogTitle>{mode === 'add' ? 'Add Table Manually' : 'Edit Table'}</DialogTitle>
 			<DialogContent>
 				<TextField
-					label="Name"
-					value={name}
-					onChange={(e) => setName(e.target.value)}
+					label="Table Name"
+					value={tableName}
+					onChange={(e) => setTableName(e.target.value)}
 					required
 					fullWidth
 					margin="normal"
-					error={formTouched && !name.trim()}
-					helperText={formTouched && !name.trim() ? 'Name is required' : ''}
+					error={formTouched && !tableName.trim()}
+					helperText={formTouched && !tableName.trim() ? 'Table Name is required' : ''}
 				/>
 				<TextField
-					label="Short Description"
-					value={shortDesc}
-					onChange={(e) => setShortDesc(e.target.value)}
+					label="Description"
+					value={description}
+					onChange={(e) => setDescription(e.target.value)}
 					required
 					fullWidth
 					margin="normal"
-					error={formTouched && !shortDesc.trim()}
-					helperText={formTouched && !shortDesc.trim() ? 'Short Description is required' : ''}
+					error={formTouched && !description.trim()}
+					helperText={formTouched && !description.trim() ? 'Description is required' : ''}
+				/>
+				<TextField
+					label="Tags (comma separated)"
+					value={tags.join(', ')}
+					onChange={(e) => setTags(e.target.value.split(',').map((t) => t.trim()))}
+					fullWidth
+					margin="normal"
 				/>
 				<Typography
 					variant="subtitle1"
@@ -160,6 +171,7 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 											<InputLabel>Category</InputLabel>
 											<Select
 												value={row.category}
+												defaultValue={'Others'}
 												label="Category"
 												onChange={(e) => handleKeyChange(idx, 'category', e.target.value)}
 											>
@@ -189,14 +201,11 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 									</TableCell>
 									<TableCell sx={{ width: '30%' }}>
 										<TextField
-											value={row.shortDesc}
-											onChange={(e) => handleKeyChange(idx, 'shortDesc', e.target.value)}
+											value={row.description}
+											onChange={(e) => handleKeyChange(idx, 'description', e.target.value)}
 											size="small"
-											required
 											fullWidth
 											inputProps={{ style: { minWidth: 0 } }}
-											error={formTouched && !row.shortDesc}
-											helperText={formTouched && !row.shortDesc ? 'Required' : ''}
 										/>
 									</TableCell>
 									<TableCell>

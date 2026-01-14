@@ -18,7 +18,7 @@ function DataTableKnowledgeBaseHeader({
 	editTable,
 	isChangesTab
 }: {
-	editTable?: { name: string; shortDesc: string; keys: any[] } | null;
+	editTable?: { tableName: string; description: string; tags: string[]; keys: any[] } | null;
 	onEditClose?: () => void;
 	isChangesTab?: boolean;
 }) {

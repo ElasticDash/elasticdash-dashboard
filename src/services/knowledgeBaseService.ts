@@ -1,4 +1,67 @@
 import axios from 'axios';
+
+// Update draft API
+export async function updateDraftApi(id: number, updates: any, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.put(`${baseUrl}/project/kb/apis/${id}`, updates, {
+			headers: {
+				'Content-Type': 'application/json',
+				...(token ? { Authorization: `Bearer ${token}` } : {})
+			}
+		});
+		return res.data;
+	} catch (err) {
+		console.error('updateDraftApi error:', err);
+		throw new Error('Failed to update draft API');
+	}
+}
+
+// Delete draft API
+export async function deleteDraftApi(id: number, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.delete(`${baseUrl}/project/kb/apis/${id}`, {
+			headers: token ? { Authorization: `Bearer ${token}` } : {}
+		});
+		return res.data;
+	} catch (err) {
+		console.error('deleteDraftApi error:', err);
+		throw new Error('Failed to delete draft API');
+	}
+}
+
+// Update draft table
+export async function updateDraftTable(id: number, updates: any, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.put(`${baseUrl}/project/kb/tables/${id}`, updates, {
+			headers: {
+				'Content-Type': 'application/json',
+				...(token ? { Authorization: `Bearer ${token}` } : {})
+			}
+		});
+		return res.data;
+	} catch (err) {
+		console.error('updateDraftTable error:', err);
+		throw new Error('Failed to update draft table');
+	}
+}
+
+// Delete draft table
+export async function deleteDraftTable(id: number, token?: string) {
+	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+	try {
+		const res = await axios.delete(`${baseUrl}/project/kb/tables/${id}`, {
+			headers: token ? { Authorization: `Bearer ${token}` } : {}
+		});
+		return res.data;
+	} catch (err) {
+		console.error('deleteDraftTable error:', err);
+		throw new Error('Failed to delete draft table');
+	}
+}
+
 // Fetch draft APIs for a project (projectId=0 allowed)
 export async function fetchDraftApis(token?: string, projectId = 0) {
 	const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;

@@ -1,5 +1,10 @@
 import { useMemo, useState, useEffect } from 'react';
-import { fetchActiveTables, fetchDraftTables } from '@/services/knowledgeBaseService';
+import {
+	fetchActiveTables,
+	fetchDraftTables,
+	updateDraftTable,
+	deleteDraftTable
+} from '@/services/knowledgeBaseService';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Chip, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
@@ -10,6 +15,7 @@ import KnowledgeBaseTableDialog from '../KnowledgeBaseTableDialog';
 interface Tables {
 	id: number;
 	tableName: string;
+	description: string;
 	tags: string[];
 }
 
@@ -72,8 +78,10 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 	// Handler to open edit dialog with row data
 	const handleEdit = (row) => {
 		setEditTable({
-			name: row.original.tableName,
-			shortDesc: row.original.shortDesc || '',
+			id: row.original.id,
+			tableName: row.original.tableName,
+			description: row.original.description || '',
+			tags: row.original.tags || [],
 			keys: row.original.schemaJson?.columns || []
 		});
 		setEditDialogOpen(true);
@@ -90,10 +98,25 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 		setDeleteDialogOpen(false);
 		setDeleteTable(null);
 	};
-	const handleDeleteConfirm = () => {
-		// TODO: handle actual delete logic
-		setDeleteDialogOpen(false);
-		setDeleteTable(null);
+	const handleDeleteConfirm = async () => {
+		if (!deleteTable?.id) return;
+
+		setLoading(true);
+		setError('');
+		try {
+			const token = typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+			await deleteDraftTable(deleteTable.id, token);
+			// Refresh data
+			const fetchFn = live ? fetchActiveTables : fetchDraftTables;
+			const result = await fetchFn(token, 0);
+			setData(Array.isArray(result.result) ? result.result : []);
+		} catch (e) {
+			setError('Failed to delete table.');
+		} finally {
+			setLoading(false);
+			setDeleteDialogOpen(false);
+			setDeleteTable(null);
+		}
 	};
 	return (
 		<Paper
@@ -138,8 +161,26 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 			<KnowledgeBaseTableDialog
 				open={editDialogOpen}
 				onClose={handleEditClose}
-				onSubmit={() => {
-					console.log('submit successful');
+				onSubmit={async (formData) => {
+					if (!editTable?.id) return;
+
+					setLoading(true);
+					setError('');
+					try {
+						const token =
+							typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+						await updateDraftTable(editTable.id, formData, token);
+						// Refresh data
+						const fetchFn = live ? fetchActiveTables : fetchDraftTables;
+						const result = await fetchFn(token, 0);
+						setData(Array.isArray(result.result) ? result.result : []);
+						setEditDialogOpen(false);
+						setEditTable(null);
+					} catch (e) {
+						setError('Failed to update table.');
+					} finally {
+						setLoading(false);
+					}
 				}}
 				initialData={editTable}
 				mode="edit"

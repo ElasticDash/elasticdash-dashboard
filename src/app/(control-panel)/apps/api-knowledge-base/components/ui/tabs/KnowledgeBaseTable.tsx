@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { fetchDraftApis, fetchActiveApis } from '@/services/knowledgeBaseService';
+import { fetchDraftApis, fetchActiveApis, updateDraftApi, deleteDraftApi } from '@/services/knowledgeBaseService';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Chip, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
@@ -10,6 +10,7 @@ import KnowledgeBaseApiDialog from '../KnowledgeBaseApiDialog';
 interface Tables {
 	id: number;
 	name: string;
+	description: string;
 	tags: string[];
 }
 
@@ -52,6 +53,11 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 				accessorKey: 'apiPath',
 				header: 'API Path',
 				Cell: ({ cell }) => <Typography fontWeight={600}>{String(cell.getValue())}</Typography>
+			},
+			{
+				accessorKey: 'description',
+				header: 'Description',
+				Cell: ({ cell }) => <Typography>{String(cell.getValue() || '')}</Typography>
 			}
 		],
 		[]
@@ -78,9 +84,13 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 	// Handler to open edit dialog with row data
 	const handleEdit = (row) => {
 		setEditTable({
-			name: row.original.name,
-			shortDesc: row.original.shortDesc || '',
-			keys: row.original.keys || []
+			id: row.original.id,
+			apiPath: row.original.apiPath,
+			apiMethod: row.original.apiMethod,
+			description: row.original.description || '',
+			tags: row.original.tags || [],
+			keys: row.original.keys || [],
+			openapiOperation: row.original.openapiOperation || undefined
 		});
 		setEditDialogOpen(true);
 	};
@@ -96,10 +106,24 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 		setDeleteDialogOpen(false);
 		setDeleteTable(null);
 	};
-	const handleDeleteConfirm = () => {
-		// TODO: handle actual delete logic
-		setDeleteDialogOpen(false);
-		setDeleteTable(null);
+	const handleDeleteConfirm = async () => {
+		if (!deleteTable?.id) return;
+		setLoading(true);
+		setError('');
+		try {
+			const token = typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+			await deleteDraftApi(deleteTable.id, token);
+			// Refresh data
+			const fetchFn = live ? fetchActiveApis : fetchDraftApis;
+			const result = await fetchFn(token, 0);
+			setData(Array.isArray(result.result) ? result.result : []);
+		} catch (e) {
+			setError('Failed to delete API.');
+		} finally {
+			setLoading(false);
+			setDeleteDialogOpen(false);
+			setDeleteTable(null);
+		}
 	};
 	return (
 		<Paper
@@ -144,8 +168,24 @@ function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 			<KnowledgeBaseApiDialog
 				open={editDialogOpen}
 				onClose={handleEditClose}
-				onSubmit={() => {
-					console.log('submit successful');
+				onSubmit={async (formData) => {
+					if (!editTable?.id) return;
+					setLoading(true);
+					setError('');
+					try {
+						const token = typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+						await updateDraftApi(editTable.id, formData, token);
+						// Refresh data
+						const fetchFn = live ? fetchActiveApis : fetchDraftApis;
+						const result = await fetchFn(token, 0);
+						setData(Array.isArray(result.result) ? result.result : []);
+						setEditDialogOpen(false);
+						setEditTable(null);
+					} catch (e) {
+						setError('Failed to update API.');
+					} finally {
+						setLoading(false);
+					}
 				}}
 				initialData={editTable}
 				mode="edit"

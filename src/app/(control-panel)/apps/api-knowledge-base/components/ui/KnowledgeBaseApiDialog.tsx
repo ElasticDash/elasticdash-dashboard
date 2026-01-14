@@ -24,18 +24,25 @@ interface KeyRow {
 	key: string;
 	category: string;
 	type: string;
-	shortDesc: string;
+	description: string;
 }
 
 interface KnowledgeBaseApiDialogProps {
 	open: boolean;
 	onClose: () => void;
-	onSubmit: (data: { apiPath: string; apiMethod: string; shortDesc: string; keys: KeyRow[] }) => void;
+	onSubmit: (data: {
+		apiPath: string;
+		apiMethod: string;
+		description: string;
+		tags: string[];
+		openapiOperation: any;
+	}) => void;
 	initialData?: {
 		apiPath: string;
 		apiMethod: string;
-		shortDesc: string;
-		keys: KeyRow[];
+		description: string;
+		tags: string[];
+		openapiOperation: any;
 	};
 	mode: 'add' | 'edit';
 }
@@ -49,8 +56,9 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 }) => {
 	const [path, setPath] = React.useState(initialData?.apiPath || '');
 	const [method, setMethod] = React.useState(initialData?.apiMethod || 'GET');
-	const [shortDesc, setShortDesc] = React.useState(initialData?.shortDesc || '');
-	const [keys, setKeys] = React.useState<KeyRow[]>(initialData?.keys || []);
+	const [description, setShortDesc] = React.useState(initialData?.description || '');
+	const [tags, setTags] = React.useState<string[]>(initialData?.tags || []);
+	const [keys, setKeys] = React.useState<KeyRow[]>([]);
 	const [formTouched, setFormTouched] = React.useState(false);
 
 	const typeOptions = ['integer', 'string', 'boolean', 'float', 'date', 'text'];
@@ -60,13 +68,57 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 	React.useEffect(() => {
 		setPath(initialData?.apiPath || '');
 		setMethod(initialData?.apiMethod || 'GET');
-		setShortDesc(initialData?.shortDesc || '');
-		setKeys(initialData?.keys || []);
+		setShortDesc(initialData?.description || '');
+		setTags(initialData?.tags || []);
+		let keysArr: KeyRow[] = [];
+
+		// If keys are missing/empty but openapiOperation exists, map parameters and requestBody
+		if ((!keysArr || keysArr.length === 0) && (initialData as any)?.openapiOperation) {
+			const op = (initialData as any).openapiOperation;
+
+			// Map parameters
+			if (Array.isArray(op.parameters)) {
+				keysArr = op.parameters.map((param: any) => ({
+					key: param.name || '',
+					category: param.in
+						? param.in === 'path'
+							? 'Param'
+							: param.in === 'query'
+								? 'Query'
+								: param.in
+						: '',
+					type: param.schema?.type || '',
+					description: param.description || ''
+				}));
+			}
+
+			// Map requestBody (assume JSON schema, only top-level properties)
+			if (
+				op.requestBody &&
+				op.requestBody.content &&
+				op.requestBody.content['application/json'] &&
+				op.requestBody.content['application/json'].schema &&
+				op.requestBody.content['application/json'].schema.properties
+			) {
+				const props = op.requestBody.content['application/json'].schema.properties;
+				for (const [key, val] of Object.entries(props)) {
+					keysArr.push({
+						key: key,
+						category: 'Body',
+						type: (val as any).type || '',
+						description: (val as any).description || ''
+					});
+				}
+			}
+		}
+
+		setKeys(keysArr);
 		setFormTouched(false);
+		console.log('initialData', initialData);
 	}, [initialData, open]);
 
 	const handleAddKey = () => {
-		setKeys([...keys, { key: '', category: '', type: '', shortDesc: '' }]);
+		setKeys([...keys, { key: '', category: '', type: '', description: '' }]);
 	};
 	const handleDeleteKey = (idx: number) => {
 		setKeys(keys.filter((_, i) => i !== idx));
@@ -74,14 +126,44 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 	const handleKeyChange = (idx: number, field: string, value: string) => {
 		setKeys(keys.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
 	};
-	const hasPrimaryKey = keys.some((k) => k.category === 'Primary Key');
-	const allKeysValid = keys.length > 0 && keys.every((k) => k.key && k.category && k.type && k.shortDesc);
+	const allKeysValid = keys.length > 0 && keys.every((k) => k.key && k.category && k.type && k.description);
 
 	const handleSubmit = () => {
 		setFormTouched(true);
 
-		if (path.trim() && method && shortDesc.trim() && hasPrimaryKey && allKeysValid) {
-			onSubmit({ apiPath: path, apiMethod: method, shortDesc, keys });
+		if (path.trim() && method && description.trim() && allKeysValid) {
+			// Convert keys back to openapiOperation
+			const parameters = keys
+				.filter((k) => k.category === 'Param' || k.category === 'Query')
+				.map((k) => ({
+					in: k.category === 'Param' ? 'path' : 'query',
+					name: k.key,
+					schema: { type: k.type },
+					required: true, // You may want to adjust this logic
+					description: k.description
+				}));
+			const bodyProps: Record<string, any> = {};
+			keys.filter((k) => k.category === 'Body').forEach((k) => {
+				bodyProps[k.key] = { type: k.type, description: k.description };
+			});
+			const openapiOperation: any = {
+				parameters
+			};
+
+			if (Object.keys(bodyProps).length > 0) {
+				openapiOperation.requestBody = {
+					content: {
+						'application/json': {
+							schema: {
+								type: 'object',
+								properties: bodyProps
+							}
+						}
+					}
+				};
+			}
+
+			onSubmit({ apiPath: path, apiMethod: method, description, tags, openapiOperation });
 		}
 	};
 
@@ -128,14 +210,21 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 					{formTouched && !method && <FormHelperText>Required</FormHelperText>}
 				</FormControl>
 				<TextField
+					label="Tags (comma separated)"
+					value={tags.join(', ')}
+					onChange={(e) => setTags(e.target.value.split(',').map((t) => t.trim()))}
+					fullWidth
+					margin="normal"
+				/>
+				<TextField
 					label="Short Description"
-					value={shortDesc}
+					value={description}
 					onChange={(e) => setShortDesc(e.target.value)}
 					required
 					fullWidth
 					margin="normal"
-					error={formTouched && !shortDesc.trim()}
-					helperText={formTouched && !shortDesc.trim() ? 'Short Description is required' : ''}
+					error={formTouched && !description.trim()}
+					helperText={formTouched && !description.trim() ? 'Short Description is required' : ''}
 				/>
 				<Typography
 					variant="subtitle1"
@@ -224,14 +313,14 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 									</TableCell>
 									<TableCell sx={{ width: '30%' }}>
 										<TextField
-											value={row.shortDesc}
-											onChange={(e) => handleKeyChange(idx, 'shortDesc', e.target.value)}
+											value={row.description}
+											onChange={(e) => handleKeyChange(idx, 'description', e.target.value)}
 											size="small"
 											required
 											fullWidth
 											inputProps={{ style: { minWidth: 0 } }}
-											error={formTouched && !row.shortDesc}
-											helperText={formTouched && !row.shortDesc ? 'Required' : ''}
+											error={formTouched && !row.description}
+											helperText={formTouched && !row.description ? 'Required' : ''}
 										/>
 									</TableCell>
 									<TableCell>
@@ -263,14 +352,6 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 						</TableBody>
 					</Table>
 				</TableContainer>
-				{formTouched && !hasPrimaryKey && (
-					<FormHelperText
-						error
-						sx={{ mt: 1 }}
-					>
-						At least one Primary Key is required.
-					</FormHelperText>
-				)}
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={onClose}>Cancel</Button>

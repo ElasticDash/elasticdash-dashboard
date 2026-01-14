@@ -18,7 +18,7 @@ function ApiKnowledgeBaseHeader({
 	editApi,
 	isChangesTab
 }: {
-	editApi?: { apiPath: string; apiMethod: string; shortDesc: string; keys: any[] } | null;
+	editApi?: { apiPath: string; apiMethod: string; description: string; tags: string[]; openapiOperation: any } | null;
 	onEditClose?: () => void;
 	isChangesTab?: boolean;
 }) {
