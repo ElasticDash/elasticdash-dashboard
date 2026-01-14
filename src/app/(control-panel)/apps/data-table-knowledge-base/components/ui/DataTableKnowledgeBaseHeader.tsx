@@ -1,21 +1,32 @@
+import { uploadSqlDdl } from '@/services/knowledgeBaseService';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import PageBreadcrumb from 'src/components/PageBreadcrumb';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import KnowledgeBaseTableDialog from './KnowledgeBaseTableDialog';
+import Alert from '@mui/material/Alert';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 /**
  * The DataTableKnowledgeBaseHeader component.
  */
 
-function DataTableKnowledgeBaseHeader({ editTable, isChangesTab }: { editTable?: { name: string; shortDesc: string; keys: any[] } | null, onEditClose?: () => void, isChangesTab?: boolean }) {
+function DataTableKnowledgeBaseHeader({
+	editTable,
+	isChangesTab
+}: {
+	editTable?: { name: string; shortDesc: string; keys: any[] } | null;
+	onEditClose?: () => void;
+	isChangesTab?: boolean;
+}) {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 	const [file, setFile] = useState<File | null>(null);
+	const [tableList, setTableList] = useState<string[]>([]);
+	const [uploadError, setUploadError] = useState('');
 	const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
 	const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -37,6 +48,7 @@ function DataTableKnowledgeBaseHeader({ editTable, isChangesTab }: { editTable?:
 	const handleUploadClose = () => {
 		setUploadDialogOpen(false);
 		setFile(null);
+		setTableList([]);
 	};
 	const handleDialogClose = () => {
 		setDialogOpen(false);
@@ -45,9 +57,51 @@ function DataTableKnowledgeBaseHeader({ editTable, isChangesTab }: { editTable?:
 		// TODO: handle submit logic
 		setDialogOpen(false);
 	};
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (e.target.files && e.target.files[0]) {
-			setFile(e.target.files[0]);
+	const dragRef = useRef<HTMLDivElement>(null);
+	const [dragActive, setDragActive] = useState(false);
+	const handleFile = (f: File | null) => {
+		setFile(f);
+		setTableList([]);
+		setUploadError('');
+
+		if (f) {
+			const reader = new FileReader();
+			reader.onload = (ev) => {
+				try {
+					const text = ev.target?.result as string;
+
+					// Find CREATE TABLE statements
+					const matches = [...text.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([`\w]+)/gi)];
+					const tables = matches.map((m) => m[1]);
+
+					if (tables.length === 0) throw new Error('No CREATE TABLE statements found.');
+
+					setTableList(tables);
+				} catch (_err: any) {
+					setUploadError('File does not contain any CREATE TABLE statement.');
+				}
+			};
+			reader.onerror = () => setUploadError('Failed to read file');
+			reader.readAsText(f);
+		}
+	};
+	const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (e.type === 'dragenter' || e.type === 'dragover') {
+			setDragActive(true);
+		} else if (e.type === 'dragleave') {
+			setDragActive(false);
+		}
+	};
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setDragActive(false);
+
+		if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+			handleFile(e.dataTransfer.files[0]);
 		}
 	};
 
@@ -72,39 +126,39 @@ function DataTableKnowledgeBaseHeader({ editTable, isChangesTab }: { editTable?:
 					</div>
 				</div>
 				{isChangesTab && (
-				  <div className="flex items-center gap-2">
-					  <Button
-						  className="whitespace-nowrap"
-						  variant="contained"
-						  color="primary"
-						  startIcon={<FuseSvgIcon>lucide:plus</FuseSvgIcon>}
-						  onClick={handleMenuOpen}
-					  >
-						  Add Table
-					  </Button>
-					  <Menu
-						  anchorEl={anchorEl}
-						  open={Boolean(anchorEl)}
-						  onClose={handleMenuClose}
-					  >
-						  <MenuItem onClick={handleUploadClick}>
-							  <FuseSvgIcon className="mr-2">lucide:upload</FuseSvgIcon>
-							  Upload File
-						  </MenuItem>
-						  <MenuItem onClick={handleManualClick}>
-							  <FuseSvgIcon className="mr-2">lucide:pencil</FuseSvgIcon>
-							  Add Manually
-						  </MenuItem>
-					  </Menu>
-					  <Button
-						  className="whitespace-nowrap"
-						  variant="contained"
-						  color="secondary"
-						  startIcon={<FuseSvgIcon>lucide:rocket</FuseSvgIcon>}
-					  >
-						  Apply To Live
-					  </Button>
-				  </div>
+					<div className="flex items-center gap-2">
+						<Button
+							className="whitespace-nowrap"
+							variant="contained"
+							color="primary"
+							startIcon={<FuseSvgIcon>lucide:plus</FuseSvgIcon>}
+							onClick={handleMenuOpen}
+						>
+							Add Table
+						</Button>
+						<Menu
+							anchorEl={anchorEl}
+							open={Boolean(anchorEl)}
+							onClose={handleMenuClose}
+						>
+							<MenuItem onClick={handleUploadClick}>
+								<FuseSvgIcon className="mr-2">lucide:upload</FuseSvgIcon>
+								Upload File
+							</MenuItem>
+							<MenuItem onClick={handleManualClick}>
+								<FuseSvgIcon className="mr-2">lucide:pencil</FuseSvgIcon>
+								Add Manually
+							</MenuItem>
+						</Menu>
+						<Button
+							className="whitespace-nowrap"
+							variant="contained"
+							color="secondary"
+							startIcon={<FuseSvgIcon>lucide:rocket</FuseSvgIcon>}
+						>
+							Apply To Live
+						</Button>
+					</div>
 				)}
 			</div>
 			{/* Upload File Dialog remains unchanged */}
@@ -116,20 +170,138 @@ function DataTableKnowledgeBaseHeader({ editTable, isChangesTab }: { editTable?:
 			>
 				<DialogTitle>Upload Table File</DialogTitle>
 				<DialogContent>
-					<input
-						type="file"
-						accept=".csv,.xlsx,.json"
-						onChange={handleFileChange}
-						style={{ marginTop: 16 }}
-					/>
+					{tableList.length === 0 ? (
+						<div
+							ref={dragRef}
+							onDragEnter={handleDrag}
+							onDragOver={handleDrag}
+							onDragLeave={handleDrag}
+							onDrop={handleDrop}
+							style={{
+								border: dragActive ? '2px dashed #1976d2' : '2px dashed #ccc',
+								borderRadius: 8,
+								padding: 32,
+								textAlign: 'center',
+								background: dragActive ? '#e3f2fd' : '#fafafa',
+								cursor: 'pointer',
+								marginTop: 16,
+								marginBottom: 8
+							}}
+							onClick={() => {
+								const input = document.createElement('input');
+								input.type = 'file';
+								input.accept = '.sql';
+								input.onchange = (e: any) => {
+									handleFile(e.target.files?.[0] || null);
+								};
+								input.click();
+							}}
+						>
+							{file ? (
+								<Typography variant="subtitle1">Selected file: {file.name}</Typography>
+							) : (
+								<Typography
+									variant="subtitle1"
+									color="text.secondary"
+								>
+									Drag & drop your file here, or click to select
+								</Typography>
+							)}
+						</div>
+					) : (
+						<>
+							<Alert
+								severity="success"
+								sx={{ mt: 2 }}
+							>
+								<Typography variant="subtitle2">{tableList.length} tables detected</Typography>
+							</Alert>
+							<div
+								style={{
+									maxHeight: 320,
+									overflowY: 'auto',
+									border: '1px solid #eee',
+									borderRadius: 6,
+									marginTop: 8
+								}}
+							>
+								<table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+									<thead style={{ position: 'sticky', top: 0, background: '#fafafa', zIndex: 1 }}>
+										<tr style={{ height: 48, borderBottom: '2px solid #e0e0e0' }}>
+											<th
+												align="left"
+												style={{
+													padding: '12px 16px',
+													borderBottom: '2px solid #e0e0e0',
+													fontWeight: 600
+												}}
+											>
+												Table Name
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{tableList.map((table, idx) => (
+											<tr
+												key={idx}
+												style={{ height: 44, borderBottom: '1px solid #eee' }}
+											>
+												<td style={{ padding: '10px 16px', borderBottom: '1px solid #eee' }}>
+													{table}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+							<Button
+								variant="outlined"
+								color="primary"
+								sx={{ mt: 2 }}
+								onClick={() => {
+									setFile(null);
+									setTableList([]);
+									setUploadError('');
+								}}
+							>
+								Replace File
+							</Button>
+						</>
+					)}
+					{uploadError && (
+						<Alert
+							severity="error"
+							sx={{ mt: 2 }}
+						>
+							{uploadError}
+						</Alert>
+					)}
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={handleUploadClose}>Cancel</Button>
 					<Button
 						variant="contained"
 						color="primary"
-						disabled={!file}
-						onClick={handleUploadClose}
+						disabled={!file || !!uploadError || tableList.length === 0}
+						onClick={async () => {
+							try {
+								const token =
+									typeof window !== 'undefined'
+										? localStorage.getItem('token') || undefined
+										: undefined;
+								await uploadSqlDdl({
+									projectId: 0,
+									databaseId: 1,
+									ddlText: await file!.text(),
+									token
+								});
+								setUploadDialogOpen(false);
+								setFile(null);
+								setTableList([]);
+							} catch (_err) {
+								setUploadError('Failed to upload SQL file.');
+							}
+						}}
 					>
 						Upload
 					</Button>

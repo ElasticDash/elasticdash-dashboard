@@ -30,10 +30,10 @@ interface KeyRow {
 interface KnowledgeBaseApiDialogProps {
 	open: boolean;
 	onClose: () => void;
-	onSubmit: (data: { path: string; method: string; shortDesc: string; keys: KeyRow[] }) => void;
+	onSubmit: (data: { apiPath: string; apiMethod: string; shortDesc: string; keys: KeyRow[] }) => void;
 	initialData?: {
-		path: string;
-		method: string;
+		apiPath: string;
+		apiMethod: string;
 		shortDesc: string;
 		keys: KeyRow[];
 	};
@@ -46,20 +46,20 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 	onSubmit,
 	initialData,
 	mode
-	}) => {
-		const [path, setPath] = React.useState(initialData?.path || '');
-		const [method, setMethod] = React.useState(initialData?.method || 'GET');
-		const [shortDesc, setShortDesc] = React.useState(initialData?.shortDesc || '');
-		const [keys, setKeys] = React.useState<KeyRow[]>(initialData?.keys || []);
-		const [formTouched, setFormTouched] = React.useState(false);
+}) => {
+	const [path, setPath] = React.useState(initialData?.apiPath || '');
+	const [method, setMethod] = React.useState(initialData?.apiMethod || 'GET');
+	const [shortDesc, setShortDesc] = React.useState(initialData?.shortDesc || '');
+	const [keys, setKeys] = React.useState<KeyRow[]>(initialData?.keys || []);
+	const [formTouched, setFormTouched] = React.useState(false);
 
 	const typeOptions = ['integer', 'string', 'boolean', 'float', 'date', 'text'];
 	const categoryOptions = ['Param', 'Query', 'Body'];
 	const methodOptions = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
 
 	React.useEffect(() => {
-		setPath(initialData?.path || '');
-		setMethod(initialData?.method || 'GET');
+		setPath(initialData?.apiPath || '');
+		setMethod(initialData?.apiMethod || 'GET');
 		setShortDesc(initialData?.shortDesc || '');
 		setKeys(initialData?.keys || []);
 		setFormTouched(false);
@@ -79,8 +79,9 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 
 	const handleSubmit = () => {
 		setFormTouched(true);
+
 		if (path.trim() && method && shortDesc.trim() && hasPrimaryKey && allKeysValid) {
-			onSubmit({ path, method, shortDesc, keys });
+			onSubmit({ apiPath: path, apiMethod: method, shortDesc, keys });
 		}
 	};
 
@@ -103,15 +104,25 @@ const KnowledgeBaseApiDialog: React.FC<KnowledgeBaseApiDialogProps> = ({
 					error={formTouched && !path.trim()}
 					helperText={formTouched && !path.trim() ? 'Path is required' : ''}
 				/>
-				<FormControl fullWidth required margin="normal" error={formTouched && !method}>
+				<FormControl
+					fullWidth
+					required
+					margin="normal"
+					error={formTouched && !method}
+				>
 					<InputLabel>Method</InputLabel>
 					<Select
 						value={method}
 						label="Method"
-						onChange={e => setMethod(e.target.value)}
+						onChange={(e) => setMethod(e.target.value)}
 					>
-						{methodOptions.map(opt => (
-							<MenuItem key={opt} value={opt}>{opt}</MenuItem>
+						{methodOptions.map((opt) => (
+							<MenuItem
+								key={opt}
+								value={opt}
+							>
+								{opt}
+							</MenuItem>
 						))}
 					</Select>
 					{formTouched && !method && <FormHelperText>Required</FormHelperText>}

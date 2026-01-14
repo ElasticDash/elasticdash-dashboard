@@ -37,8 +37,8 @@ function ApiKnowledgeBaseView() {
 							/>
 						</Tabs>
 					</div>
-					{tabValue === 'live' && <KnowledgeBaseTable />}
-					{tabValue === 'changes' && <KnowledgeBaseTable />}
+					{tabValue === 'live' && <KnowledgeBaseTable live={true} />}
+					{tabValue === 'changes' && <KnowledgeBaseTable live={false} />}
 				</div>
 			}
 		/>

@@ -17,11 +17,11 @@ function DataTableKnowledgeBaseView() {
 	}
 
 	return (
-		   <FusePageSimple
-			   header={<DataTableKnowledgeBaseHeader isChangesTab={tabValue === 'changes'} />}
-			   content={
+		<FusePageSimple
+			header={<DataTableKnowledgeBaseHeader isChangesTab={tabValue === 'changes'} />}
+			content={
 				<div className="w-full pt-4 sm:pt-6">
-					<div className="flex w-full flex-col justify-between gap-2 px-4 mb-4 sm:flex-row sm:items-center md:px-8">
+					<div className="mb-4 flex w-full flex-col justify-between gap-2 px-4 sm:flex-row sm:items-center md:px-8">
 						<Tabs
 							value={tabValue}
 							onChange={handleTabChange}
@@ -37,8 +37,8 @@ function DataTableKnowledgeBaseView() {
 							/>
 						</Tabs>
 					</div>
-					{tabValue === 'live' && <KnowledgeBaseTable />}
-					{tabValue === 'changes' && <KnowledgeBaseTable />}
+					{tabValue === 'live' && <KnowledgeBaseTable live={true} />}
+					{tabValue === 'changes' && <KnowledgeBaseTable live={false} />}
 				</div>
 			}
 		/>

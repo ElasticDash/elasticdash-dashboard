@@ -4,28 +4,30 @@ import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 import PageBreadcrumb from 'src/components/PageBreadcrumb';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import Alert from '@mui/material/Alert';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import KnowledgeBaseApiDialog from './KnowledgeBaseApiDialog';
+import { uploadOpenApi } from '@/services/knowledgeBaseService';
 
 /**
  * The ApiKnowledgeBaseHeader component.
  */
 
 function ApiKnowledgeBaseHeader({
-	editTable,
+	editApi,
 	isChangesTab
 }: {
-	editTable?: { name: string; shortDesc: string; keys: any[] } | null;
+	editApi?: { apiPath: string; apiMethod: string; shortDesc: string; keys: any[] } | null;
 	onEditClose?: () => void;
 	isChangesTab?: boolean;
 }) {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [deleteTable, setDeleteTable] = useState<any>(null);
-	const handleDelete = (row: any) => {
-		setDeleteTable(row.original);
-		setDeleteDialogOpen(true);
-	};
+	// const handleDelete = (row: any) => {
+	//     setDeleteTable(row.original);
+	//     setDeleteDialogOpen(true);
+	// };
 	const handleDeleteClose = () => {
 		setDeleteDialogOpen(false);
 		setDeleteTable(null);
@@ -38,6 +40,9 @@ function ApiKnowledgeBaseHeader({
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 	const [file, setFile] = useState<File | null>(null);
+	type ApiItem = { apiMethod: string; apiPath: string };
+	const [apiList, setApiList] = useState<ApiItem[]>([]);
+	const [uploadError, setUploadError] = useState('');
 	const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
 	const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -59,6 +64,7 @@ function ApiKnowledgeBaseHeader({
 	const handleUploadClose = () => {
 		setUploadDialogOpen(false);
 		setFile(null);
+		setApiList([]);
 	};
 	const handleDialogClose = () => {
 		setDialogOpen(false);
@@ -67,9 +73,62 @@ function ApiKnowledgeBaseHeader({
 		// TODO: handle submit logic
 		setDialogOpen(false);
 	};
-	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (e.target.files && e.target.files[0]) {
-			setFile(e.target.files[0]);
+	const dragRef = useRef<HTMLDivElement>(null);
+	const [dragActive, setDragActive] = useState(false);
+	const handleFile = (f: File | null) => {
+		setFile(f);
+		setApiList([]);
+		setUploadError('');
+
+		if (f) {
+			const reader = new FileReader();
+			reader.onload = (ev) => {
+				try {
+					const text = ev.target?.result as string;
+					const json = JSON.parse(text);
+
+					if (json.openapi && json.paths && typeof json.paths === 'object') {
+						// Extract method/path pairs
+						const apis: ApiItem[] = [];
+						Object.entries(json.paths).forEach(([path, methods]) => {
+							if (typeof methods === 'object') {
+								Object.keys(methods).forEach((method) => {
+									apis.push({ apiMethod: method.toUpperCase(), apiPath: path });
+								});
+							}
+						});
+
+						if (apis.length === 0) throw new Error('No API paths found in OpenAPI doc.');
+
+						setApiList(apis);
+					} else {
+						throw new Error('Not a valid OpenAPI document.');
+					}
+				} catch (_err: any) {
+					setUploadError('File is not a valid OpenAPI (swagger) JSON.');
+				}
+			};
+			reader.onerror = () => setUploadError('Failed to read file');
+			reader.readAsText(f);
+		}
+	};
+	const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+
+		if (e.type === 'dragenter' || e.type === 'dragover') {
+			setDragActive(true);
+		} else if (e.type === 'dragleave') {
+			setDragActive(false);
+		}
+	};
+	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setDragActive(false);
+
+		if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+			handleFile(e.dataTransfer.files[0]);
 		}
 	};
 
@@ -157,22 +216,150 @@ function ApiKnowledgeBaseHeader({
 				maxWidth="xs"
 				fullWidth
 			>
-				<DialogTitle>Upload Table File</DialogTitle>
+				<DialogTitle>Upload API File</DialogTitle>
 				<DialogContent>
-					<input
-						type="file"
-						accept=".csv,.xlsx,.json"
-						onChange={handleFileChange}
-						style={{ marginTop: 16 }}
-					/>
+					{apiList.length === 0 ? (
+						<div
+							ref={dragRef}
+							onDragEnter={handleDrag}
+							onDragOver={handleDrag}
+							onDragLeave={handleDrag}
+							onDrop={handleDrop}
+							style={{
+								border: dragActive ? '2px dashed #1976d2' : '2px dashed #ccc',
+								borderRadius: 8,
+								padding: 32,
+								textAlign: 'center',
+								background: dragActive ? '#e3f2fd' : '#fafafa',
+								cursor: 'pointer',
+								marginTop: 16,
+								marginBottom: 8
+							}}
+							onClick={() => {
+								const input = document.createElement('input');
+								input.type = 'file';
+								input.accept = '.json';
+								input.onchange = (e: any) => {
+									handleFile(e.target.files?.[0] || null);
+								};
+								input.click();
+							}}
+						>
+							{file ? (
+								<Typography variant="subtitle1">Selected file: {file.name}</Typography>
+							) : (
+								<Typography
+									variant="subtitle1"
+									color="text.secondary"
+								>
+									Drag & drop your file here, or click to select
+								</Typography>
+							)}
+						</div>
+					) : (
+						<>
+							<Alert
+								severity="success"
+								sx={{ mt: 2 }}
+							>
+								<Typography variant="subtitle2">{apiList.length} APIs detected</Typography>
+							</Alert>
+							<div
+								style={{
+									maxHeight: 320,
+									overflowY: 'auto',
+									border: '1px solid #eee',
+									borderRadius: 6,
+									marginTop: 8
+								}}
+							>
+								<table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+									<thead style={{ position: 'sticky', top: 0, background: '#fafafa', zIndex: 1 }}>
+										<tr style={{ height: 48, borderBottom: '2px solid #e0e0e0' }}>
+											<th
+												align="left"
+												style={{
+													padding: '12px 16px',
+													borderBottom: '2px solid #e0e0e0',
+													fontWeight: 600
+												}}
+											>
+												Method
+											</th>
+											<th
+												align="left"
+												style={{
+													padding: '12px 16px',
+													borderBottom: '2px solid #e0e0e0',
+													fontWeight: 600
+												}}
+											>
+												Path
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{apiList.map((api, idx) => (
+											<tr
+												key={idx}
+												style={{ height: 44, borderBottom: '1px solid #eee' }}
+											>
+												<td style={{ padding: '10px 16px', borderBottom: '1px solid #eee' }}>
+													<b>{api.apiMethod}</b>
+												</td>
+												<td style={{ padding: '10px 16px', borderBottom: '1px solid #eee' }}>
+													{api.apiPath}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+							<Button
+								variant="outlined"
+								color="primary"
+								sx={{ mt: 2 }}
+								onClick={() => {
+									setFile(null);
+									setApiList([]);
+									setUploadError('');
+								}}
+							>
+								Replace File
+							</Button>
+						</>
+					)}
+					{uploadError && (
+						<Alert
+							severity="error"
+							sx={{ mt: 2 }}
+						>
+							{uploadError}
+						</Alert>
+					)}
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={handleUploadClose}>Cancel</Button>
 					<Button
 						variant="contained"
 						color="primary"
-						disabled={!file}
-						onClick={handleUploadClose}
+						disabled={!file || !!uploadError || apiList.length === 0}
+						onClick={async () => {
+							try {
+								const token =
+									typeof window !== 'undefined'
+										? localStorage.getItem('token') || undefined
+										: undefined;
+								const fileContent = await file.text();
+								const fileJson = JSON.parse(fileContent);
+								await uploadOpenApi({ projectId: 0, file: fileJson, token });
+								setUploadDialogOpen(false);
+								setFile(null);
+								setApiList([]);
+							} catch (_err) {
+								setUploadError('Failed to upload OpenAPI file.');
+							}
+						}}
 					>
 						Upload
 					</Button>
@@ -183,7 +370,7 @@ function ApiKnowledgeBaseHeader({
 				open={dialogOpen}
 				onClose={handleDialogClose}
 				onSubmit={handleDialogSubmit}
-				initialData={dialogMode === 'edit' && editTable ? editTable : undefined}
+				initialData={dialogMode === 'edit' && editApi ? editApi : undefined}
 				mode={dialogMode}
 			/>
 		</div>

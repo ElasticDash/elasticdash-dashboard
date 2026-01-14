@@ -21,7 +21,7 @@ import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 
 interface KeyRow {
-	key: string;
+	name: string;
 	category: string;
 	type: string;
 	shortDesc: string;
@@ -35,6 +35,7 @@ interface KnowledgeBaseTableDialogProps {
 		name: string;
 		shortDesc: string;
 		keys: KeyRow[];
+		schemaJson?: { columns?: { name: string; type: string; nullable: boolean }[] };
 	};
 	mode: 'add' | 'edit';
 }
@@ -51,7 +52,7 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 	const [keys, setKeys] = React.useState<KeyRow[]>(initialData?.keys || []);
 	const [formTouched, setFormTouched] = React.useState(false);
 
-	const typeOptions = ['integer', 'string', 'boolean', 'float', 'date', 'text'];
+	const typeOptions = ['SERIAL', 'INT', 'BOOLEAN', 'FLOAT', 'DATE', 'TEXT', 'VARCHAR', 'CHAR', 'TIMESTAMP'];
 	const categoryOptions = ['Primary Key', 'Foreign Key', 'Others'];
 
 	React.useEffect(() => {
@@ -59,10 +60,15 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 		setShortDesc(initialData?.shortDesc || '');
 		setKeys(initialData?.keys || []);
 		setFormTouched(false);
+		console.log('initialData', initialData);
 	}, [initialData, open]);
 
+	React.useEffect(() => {
+		console.log('keys: ', keys);
+	}, [keys]);
+
 	const handleAddKey = () => {
-		setKeys([...keys, { key: '', category: '', type: '', shortDesc: '' }]);
+		setKeys([...keys, { name: '', category: '', type: '', shortDesc: '' }]);
 	};
 	const handleDeleteKey = (idx: number) => {
 		setKeys(keys.filter((_, i) => i !== idx));
@@ -71,10 +77,10 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 		setKeys(keys.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
 	};
 	const hasPrimaryKey = keys.some((k) => k.category === 'Primary Key');
-	const allKeysValid = keys.length > 0 && keys.every((k) => k.key && k.category && k.type && k.shortDesc);
-
+	const allKeysValid = keys.length > 0 && keys.every((k) => k.name && k.category && k.type && k.shortDesc);
 	const handleSubmit = () => {
 		setFormTouched(true);
+
 		if (name.trim() && shortDesc.trim() && hasPrimaryKey && allKeysValid) {
 			onSubmit({ name, shortDesc, keys });
 		}
@@ -134,14 +140,14 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 								<TableRow key={idx}>
 									<TableCell sx={{ width: '20%' }}>
 										<TextField
-											value={row.key}
+											value={row.name}
 											onChange={(e) => handleKeyChange(idx, 'key', e.target.value)}
 											size="small"
 											required
 											fullWidth
 											inputProps={{ style: { minWidth: 0 } }}
-											error={formTouched && !row.key}
-											helperText={formTouched && !row.key ? 'Required' : ''}
+											error={formTouched && !row.name}
+											helperText={formTouched && !row.name ? 'Required' : ''}
 										/>
 									</TableCell>
 									<TableCell sx={{ width: '20%' }}>
@@ -170,29 +176,16 @@ const KnowledgeBaseTableDialog: React.FC<KnowledgeBaseTableDialogProps> = ({
 										</FormControl>
 									</TableCell>
 									<TableCell sx={{ width: '20%' }}>
-										<FormControl
+										<TextField
+											value={row.type}
+											onChange={(e) => handleKeyChange(idx, 'type', e.target.value)}
 											size="small"
 											required
 											fullWidth
+											inputProps={{ style: { minWidth: 0 } }}
 											error={formTouched && !row.type}
-										>
-											<InputLabel>Type</InputLabel>
-											<Select
-												value={row.type}
-												label="Type"
-												onChange={(e) => handleKeyChange(idx, 'type', e.target.value)}
-											>
-												{typeOptions.map((opt) => (
-													<MenuItem
-														key={opt}
-														value={opt}
-													>
-														{opt}
-													</MenuItem>
-												))}
-											</Select>
-											{formTouched && !row.type && <FormHelperText>Required</FormHelperText>}
-										</FormControl>
+											helperText={formTouched && !row.type ? 'Required' : ''}
+										/>
 									</TableCell>
 									<TableCell sx={{ width: '30%' }}>
 										<TextField

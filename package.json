@@ -47,6 +47,7 @@
     "@vercel/kv": "3.0.0",
     "apexcharts": "4.5.0",
     "autosuggest-highlight": "3.3.4",
+    "axios": "^1.13.2",
     "chance": "1.1.12",
     "clsx": "2.1.1",
     "core-js": "3.41.0",

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { fetchDraftApis, fetchActiveApis } from '@/services/knowledgeBaseService';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Chip, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
@@ -12,45 +13,67 @@ interface Tables {
 	tags: string[];
 }
 
-// Mock data for demonstration
-const mockTables = [
-	{ id: 1, name: 'Users', tags: ['auth', 'core'] },
-	{ id: 2, name: 'Orders', tags: ['e-commerce'] },
-	{ id: 3, name: 'Products', tags: ['e-commerce', 'catalog'] },
-	{ id: 4, name: 'Sessions', tags: ['auth'] },
-	{ id: 5, name: 'Logs', tags: ['system'] }
-];
+interface KnowledgeBaseTableProps {
+	live?: boolean;
+}
 
-function KnowledgeBaseTable() {
+function KnowledgeBaseTable({ live = false }: KnowledgeBaseTableProps) {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [editTable, setEditTable] = useState(null);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [deleteTable, setDeleteTable] = useState(null);
-	const columns = useMemo<MRT_ColumnDef<Tables>[]>(
+	const [data, setData] = useState<Tables[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState('');
+	const columns = useMemo<MRT_ColumnDef<any>[]>(
 		() => [
-			{
-				accessorKey: 'name',
-				header: 'API Name',
-				Cell: ({ row }) => <Typography fontWeight={600}>{row.original.name}</Typography>
-			},
 			{
 				accessorKey: 'tags',
 				header: 'Tags',
-				Cell: ({ row }) => (
+				Cell: ({ cell }) => (
 					<div style={{ display: 'flex', gap: 4 }}>
-						{row.original.tags.map((tag: string) => (
-							<Chip
-								key={tag}
-								label={tag}
-								size="small"
-							/>
-						))}
+						{Array.isArray(cell.getValue()) &&
+							(cell.getValue() as string[])?.map((tag: string) => (
+								<Chip
+									key={tag}
+									label={tag}
+									size="small"
+								/>
+							))}
 					</div>
 				)
+			},
+			{
+				accessorKey: 'apiMethod',
+				header: 'API Method',
+				Cell: ({ cell }) => <Typography fontWeight={600}>{String(cell.getValue())}</Typography>
+			},
+			{
+				accessorKey: 'apiPath',
+				header: 'API Path',
+				Cell: ({ cell }) => <Typography fontWeight={600}>{String(cell.getValue())}</Typography>
 			}
 		],
 		[]
 	);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			setLoading(true);
+			setError('');
+			try {
+				const token = typeof window !== 'undefined' ? localStorage.getItem('token') || undefined : undefined;
+				const fetchFn = live ? fetchActiveApis : fetchDraftApis;
+				const result = await fetchFn(token, 0);
+				setData(Array.isArray(result.result) ? result.result : []);
+			} catch (e) {
+				setError('Failed to load API knowledge base.');
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetchData();
+	}, [live]);
 
 	// Handler to open edit dialog with row data
 	const handleEdit = (row) => {
@@ -83,8 +106,17 @@ function KnowledgeBaseTable() {
 			className="shadow-1 flex w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
 			elevation={0}
 		>
+			{error && (
+				<Typography
+					color="error"
+					sx={{ p: 2 }}
+				>
+					{error}
+				</Typography>
+			)}
+			{loading && <Typography sx={{ p: 2 }}>Loading...</Typography>}
 			<DataTable
-				data={mockTables}
+				data={data}
 				columns={columns}
 				renderRowActions={({ row }) => (
 					<div style={{ display: 'flex', gap: 8 }}>
@@ -118,14 +150,24 @@ function KnowledgeBaseTable() {
 				initialData={editTable}
 				mode="edit"
 			/>
-			<Dialog open={deleteDialogOpen} onClose={handleDeleteClose} maxWidth="xs">
+			<Dialog
+				open={deleteDialogOpen}
+				onClose={handleDeleteClose}
+				maxWidth="xs"
+			>
 				<DialogTitle>Confirm Delete</DialogTitle>
 				<DialogContent>
 					Are you sure you want to delete <b>{deleteTable?.name}</b>?
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={handleDeleteClose}>Cancel</Button>
-					<Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
+					<Button
+						onClick={handleDeleteConfirm}
+						color="error"
+						variant="contained"
+					>
+						Delete
+					</Button>
 				</DialogActions>
 			</Dialog>
 		</Paper>
