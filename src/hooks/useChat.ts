@@ -13,7 +13,10 @@ export function useChat() {
 	const [pendingPlan, setPendingPlan] = useState<any>(null);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [inputDisabled, setInputDisabled] = useState(false);
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+	// Callback to trigger history refetch in MessengerChatView
+	const historyRefetchCallback = useRef<(() => void) | null>(null);
 
 	// Initialize from localStorage
 	useEffect(() => {
@@ -45,12 +48,17 @@ export function useChat() {
 			if (resultSessionId !== sessionId) return;
 
 			setIsProcessing(false);
+			setInputDisabled(false);
 
 			if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
 			if (resultError) {
 				setError(resultError);
 				setPendingPlan(null);
+
+				// Always trigger history refetch
+				if (historyRefetchCallback.current) historyRefetchCallback.current();
+
 				return;
 			}
 
@@ -59,6 +67,9 @@ export function useChat() {
 			}
 
 			setPendingPlan(null);
+
+			// Always trigger history refetch
+			if (historyRefetchCallback.current) historyRefetchCallback.current();
 		};
 		socket.on(SOCKET_EVENT, handlePlanResult);
 		return () => {
@@ -68,23 +79,33 @@ export function useChat() {
 
 	// Send user message and get plan
 	const sendMessage = useCallback(
-		async (userContent: string) => {
+		async (userContent: string, onInputClear?: () => void, onInputDisable?: (disabled: boolean) => void) => {
 			if (!userContent.trim()) return;
 
 			setError(null);
-			setIsProcessing(false);
+			setIsProcessing(true);
 			setPendingPlan(null);
+			setInputDisabled(true);
+
+			if (onInputDisable) onInputDisable(true);
+
+			if (onInputClear) onInputClear();
+
 			const token = localStorage.getItem('token');
 
 			if (!token) {
 				setError('User not authenticated.');
+				setIsProcessing(false);
+				setInputDisabled(false);
+
+				if (onInputDisable) onInputDisable(false);
+
 				return;
 			}
 
 			// Always sync conversationId from localStorage before sending
 			const latestSession = getSession();
 			const currentConversationId = latestSession.conversationId || conversationId;
-
 			const userMessage = {
 				role: 'user',
 				content: userContent,
@@ -94,7 +115,7 @@ export function useChat() {
 			const userMessageBody = {
 				messages: [{ type: 'user', content: userContent }],
 				conversationId: currentConversationId || undefined,
-				isApproval: false
+				isApproval: userContent === 'approve' ? true : false
 			};
 			try {
 				// Use chatService for API call
@@ -117,6 +138,11 @@ export function useChat() {
 			} catch (err) {
 				console.error('Error sending message:', err);
 				setError('Failed to send message.');
+			} finally {
+				setIsProcessing(false);
+				setInputDisabled(false);
+
+				if (onInputDisable) onInputDisable(false);
 			}
 		},
 		[conversationId]
@@ -129,17 +155,21 @@ export function useChat() {
 		setError(null);
 		setIsProcessing(true);
 		try {
-			const response = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/chat/completion', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
+			const token = localStorage.getItem('token');
+
+			if (!token) {
+				setError('User not authenticated.');
+				setIsProcessing(false);
+				return;
+			}
+
+			const data = await sendChatCompletion(
+				{
 					isApproval: true,
 					sessionId: pendingPlan.sessionId
-				})
-			});
-			const data = await response.json();
+				},
+				token!
+			);
 
 			if (data.status === 'processing') {
 				// Start timeout fallback
@@ -179,6 +209,11 @@ export function useChat() {
 		[pendingPlan]
 	);
 
+	// Allow MessengerChatView to register a callback for history refetch
+	const registerHistoryRefetch = (cb: () => void) => {
+		historyRefetchCallback.current = cb;
+	};
+
 	return {
 		chatHistory,
 		sessionId,
@@ -188,6 +223,8 @@ export function useChat() {
 		error,
 		sendMessage,
 		approvePlan,
-		rejectPlan
+		rejectPlan,
+		inputDisabled,
+		registerHistoryRefetch
 	};
 }

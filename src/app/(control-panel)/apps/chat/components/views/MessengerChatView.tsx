@@ -2,7 +2,7 @@
 import { lighten, styled } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import clsx from 'clsx';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -22,6 +22,7 @@ import remarkGfm from 'remark-gfm';
 import { saveSession } from '@/utils/storageUtils';
 import { postFeedback } from '@/app/(control-panel)/apps/tickets/api';
 import '@/styles/chat-widget.css';
+import { getSocket } from '@/services/socketService';
 
 export type ChatMessage = {
 	id: number;
@@ -82,7 +83,7 @@ type MessengerChatViewProps = {
 function MessengerChatView(props: MessengerChatViewProps) {
 	const { className } = props;
 	// Plan approval chat hook
-	const { pendingPlan, isProcessing, approvePlan, rejectPlan, sendMessage } = useChat();
+	const { pendingPlan, isProcessing, sendMessage, inputDisabled, registerHistoryRefetch } = useChat();
 	const chatRef = useRef<HTMLDivElement>(null);
 	const [message, setMessage] = useState('');
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -92,58 +93,82 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const [loading, setLoading] = useState(true);
 	const [conversationId, setConversationId] = useState<number | null>(null);
 	const [hasMore, setHasMore] = useState(true);
-	// Add state for selectedFeedbackMsgId
+	const [formDisabled, setFormDisabled] = useState(false);
 	const [selectedFeedbackMsgId, setSelectedFeedbackMsgId] = useState<number | null>(null);
 
-	// On mount, fetch conversations and latest messages
-	useEffect(() => {
-		async function loadChat() {
-			setLoading(true);
-			try {
-				const convRes = await fetchConversations();
-				const conversations = convRes.conversations || [];
+	// Chat history fetcher, supports incremental loading and deduplication
+	const fetchAndSetMessages = useCallback(async (earliestId = 0, shouldScrollToBottom = true) => {
+		setLoading(true);
+		try {
+			const convRes = await fetchConversations();
+			const conversations = convRes.conversations || [];
 
-				console.log('conversations: ', conversations);
-
-				if (!Array.isArray(conversations) || conversations.length === 0) {
-					setMessages([]);
-					setConversationId(null);
-					setLoading(false);
-					return;
-				}
-
-				// Use the latest conversation (ordered by updated_at desc)
-				const latestConv = conversations[0];
-				setConversationId(latestConv.id);
-				saveSession('', String(latestConv.id));
-				const msgRes = await fetchConversationMessages(latestConv.id, 0);
-				const msgs = msgRes.messages || [];
-				console.log('messages: ', msgs);
-				setMessages(msgs);
-
-				if (!Array.isArray(conversations) || conversations.length === 0) {
-					setMessages([]);
-					setConversationId(null);
-					setLoading(false);
-					return;
-				}
-
-				setLoading(false);
-			} catch (error) {
-				setLoading(false);
+			if (!Array.isArray(conversations) || conversations.length === 0) {
 				setMessages([]);
 				setConversationId(null);
-				console.error('Failed to load chat:', error);
+				setLoading(false);
+				return;
 			}
-		}
 
-		loadChat().catch((error) => {
+			// Use the latest conversation (ordered by updated_at desc)
+			const latestConv = conversations[0];
+			setConversationId(latestConv.id);
+			saveSession('', String(latestConv.id));
+			const msgRes = await fetchConversationMessages(latestConv.id, earliestId);
+			const newMsgs = msgRes.messages || [];
+			setMessages((prevMsgs) => {
+				let combined;
+
+				if (!prevMsgs || earliestId === 0) {
+					// Initial load or socket event: replace all
+					combined = newMsgs;
+				} else {
+					// Add only non-overlapping messages to the top
+					const prevIds = new Set(prevMsgs.map((m) => m.id));
+					const uniqueNew = newMsgs.filter((m) => !prevIds.has(m.id));
+					combined = [...uniqueNew, ...prevMsgs];
+				}
+
+				// Always order by id desc
+				return [...combined].sort((a, b) => a.id - b.id);
+			});
+			setLoading(false);
+
+			// Only scroll to bottom if earliestId is 0 (initial load or socket event)
+			if (shouldScrollToBottom && earliestId === 0) {
+				setTimeout(() => scrollToBottom(), 0);
+			}
+		} catch (error) {
 			setLoading(false);
 			setMessages([]);
 			setConversationId(null);
 			console.error('Failed to load chat:', error);
-		});
+		}
 	}, []);
+
+	// On mount, fetch conversations and latest messages
+	useEffect(() => {
+		fetchAndSetMessages(0, true);
+	}, [fetchAndSetMessages]);
+
+	// Register history refetch callback with useChat
+	useEffect(() => {
+		if (registerHistoryRefetch) {
+			registerHistoryRefetch(() => fetchAndSetMessages(0, true));
+		}
+
+		const socket = getSocket();
+
+		if (!socket) return;
+
+		const socketHandler = () => fetchAndSetMessages(0, true);
+		socket.on('chat:plan:result', socketHandler);
+		socket.on('chat_update', socketHandler);
+		return () => {
+			socket.off('chat:plan:result', socketHandler);
+			socket.off('chat_update', socketHandler);
+		};
+	}, [registerHistoryRefetch, fetchAndSetMessages]);
 
 	useEffect(() => {
 		if (messages) {
@@ -162,14 +187,6 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		});
 	}
 
-	function isFirstMessageOfGroup(item: ChatMessage, i: number) {
-		return i === 0 || (messages[i - 1] && messages[i - 1].role !== item.role);
-	}
-
-	function isLastMessageOfGroup(item: ChatMessage, i: number) {
-		return i === messages.length - 1 || (messages[i + 1] && messages[i + 1].role !== item.role);
-	}
-
 	function onInputChange(ev: React.ChangeEvent<HTMLInputElement>) {
 		setMessage(ev.target.value);
 	}
@@ -177,37 +194,39 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	async function onMessageSubmit(ev: React.FormEvent<HTMLFormElement>) {
 		ev.preventDefault();
 
-		if (message === '') {
+		if (message === '' || formDisabled || inputDisabled) {
 			return;
 		}
 
+		setFormDisabled(true);
+		// Clear input immediately
 		setMessages((prev) => [
 			...(prev || []),
 			{
-				id: Date.now(),
+				id: Date.now(), // temporary id
 				role: 'user',
 				content: message,
 				time: new Date().toISOString(),
 				messageType: 'text'
 			}
 		]);
+		setMessage('');
 
 		if (typeof sendMessage === 'function') {
 			try {
-				await sendMessage(message);
+				await sendMessage(
+					message,
+					() => setMessage(''), // clear input
+					(disabled) => setFormDisabled(disabled)
+				);
 
-				// After sending, fetch latest messages
-				if (conversationId) {
-					const msgRes = await fetchConversationMessages(conversationId, 0);
-					const msgs = msgRes.messages || [];
-					setMessages(msgs);
-				}
+				fetchAndSetMessages(0, true);
 			} catch (err) {
-				// Optionally handle error
+				setFormDisabled(false);
 			}
+		} else {
+			setFormDisabled(false);
 		}
-
-		setMessage('');
 	}
 
 	// Feedback submission logic
@@ -250,7 +269,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 				</Toolbar>
 			</Box>
 			<div className="flex h-full min-h-0 w-full flex-auto">
-				<div className={clsx('relative z-10 flex flex-1 flex-col', className)}>
+				<div className={clsx('relative z-10 flex w-full flex-1 flex-col', className)}>
 					<div
 						ref={chatRef}
 						className="chat-container flex flex-1 flex-col overflow-y-auto"
@@ -258,21 +277,9 @@ function MessengerChatView(props: MessengerChatViewProps) {
 							const el = e.currentTarget;
 
 							if (el.scrollTop === 0 && hasMore && messages && messages.length > 0 && conversationId) {
-								// Fetch previous messages using earliest message id
 								const earliestId = messages[0].id;
-								try {
-									const msgRes = await fetchConversationMessages(conversationId, earliestId);
-									const prevMsgs = msgRes.messages || [];
-
-									if (prevMsgs.length > 0) {
-										setMessages([...prevMsgs, ...messages]);
-										setHasMore(prevMsgs.length === 20);
-									} else {
-										setHasMore(false);
-									}
-								} catch {
-									setHasMore(false);
-								}
+								await fetchAndSetMessages(earliestId, false);
+								// Optionally update hasMore if needed (not shown here)
 							}
 						}}
 					>
@@ -285,47 +292,102 @@ function MessengerChatView(props: MessengerChatViewProps) {
 									>
 										<div className="message-content-wrapper">
 											<div className="message-content">
-												<ReactMarkdown remarkPlugins={[remarkGfm]}>
-													{typeof msg.content === 'string'
-														? msg.content
-														: JSON.stringify(msg.content)}
-												</ReactMarkdown>
-
-												{/* Planning metrics */}
-												{msg.role === 'assistant' &&
-													(msg.planningDurationMs !== undefined || msg.usedReferencePlan) && (
-														<div className="mt-2 border-t border-gray-700 pt-2 text-xs text-gray-400">
-															{msg.usedReferencePlan && <div>🪄 Used reference plan</div>}
-															{msg.planningDurationMs !== undefined && (
-																<div>⏱️ Planning: {msg.planningDurationMs}ms</div>
-															)}
+												{/* If planJson exists, render plan steps and deliverable */}
+												{msg.planJson ? (
+													<>
+														<div style={{ fontWeight: 600, marginBottom: 8 }}>
+															Plan Steps
 														</div>
-													)}
-
-												{/* Save Task button */}
-												{/* {msg.role === 'assistant' && msg.planSummary && msg.planSummary.steps && msg.planSummary.steps.length > 0 && (
-													<div className="mt-3 flex flex-col gap-2">
-														<button
-															onClick={() => handleSaveTask(msg)}
-															disabled={isSavingTask}
-															className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-700 disabled:opacity-50"
-														>
-															Save this task
-														</button>
-													</div>
-												)} */}
+														<div style={{ paddingLeft: 20, margin: 0 }}>
+															{Array.isArray(msg.planJson.execution_plan) &&
+																msg.planJson.execution_plan.map(
+																	(step: any, idx: number) => (
+																		<div
+																			key={idx}
+																			style={{ marginBottom: 4 }}
+																		>
+																			<span style={{ fontWeight: 500 }}>
+																				Step {step.step_number}:
+																			</span>
+																			{step.api && (
+																				<>
+																					<pre
+																						style={{
+																							marginLeft: 6,
+																							background: '#f0f4f8',
+																							padding: '2px 6px',
+																							borderRadius: 6
+																						}}
+																					>
+																						{`Call ${step.api.path} [${step.api.method?.toUpperCase?.() || ''}]`}
+																					</pre>
+																					<pre>
+																						{JSON.stringify(
+																							step.api.requestBody,
+																							null,
+																							2
+																						)}
+																					</pre>
+																				</>
+																			)}
+																		</div>
+																	)
+																)}
+														</div>
+														{msg.planJson.final_deliverable && (
+															<div style={{ marginTop: 10 }}>
+																<span style={{ fontWeight: 600 }}>
+																	Final Deliverable:
+																</span>{' '}
+																{msg.planJson.final_deliverable}
+															</div>
+														)}
+													</>
+												) : (
+													<ReactMarkdown remarkPlugins={[remarkGfm]}>
+														{typeof msg.content === 'string'
+															? msg.content
+															: JSON.stringify(msg.content)}
+													</ReactMarkdown>
+												)}
 
 												{/* Approve/Reject buttons */}
-												{msg.awaitingApproval && index === messages.length - 1 && (
+												{msg.planNeedsApproval && index === messages.length - 1 && (
 													<div className="mt-3 flex gap-2">
 														<button
-															onClick={() => approvePlan()}
+															onClick={async () => {
+																setMessages((prev) => [
+																	...(prev || []),
+																	{
+																		id: Date.now(), // temporary id
+																		role: 'user',
+																		content: 'Approved',
+																		time: new Date().toISOString(),
+																		messageType: 'text'
+																	}
+																]);
+																await sendMessage('approve');
+															}}
+															disabled={isProcessing}
 															className="flex-1 rounded-lg bg-green-100 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-200 disabled:opacity-50"
 														>
-															✓ Approve
+															{isProcessing ? 'Processing...' : '✓ Approve'}
 														</button>
 														<button
-															onClick={() => rejectPlan()}
+															onClick={async () => {
+																setMessages((prev) => [
+																	...(prev || []),
+																	{
+																		id: Date.now(), // temporary id
+																		role: 'user',
+																		content: 'Rejected',
+																		time: new Date().toISOString(),
+																		messageType: 'text'
+																	}
+																]);
+																await sendMessage('reject');
+															}}
+															disabled={isProcessing}
 															className="flex-1 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-all hover:bg-red-200 disabled:opacity-50"
 														>
 															✗ Reject
@@ -370,95 +432,55 @@ function MessengerChatView(props: MessengerChatViewProps) {
 						)}
 					</div>
 
-					{/* Render pending plan as a chat message with approve/reject buttons */}
-					{pendingPlan && (
-						<div className="message assistant">
-							<div className="message-content-wrapper">
-								<div className="message-content">
-									<strong>Plan Approval Required</strong>
-									<div style={{ margin: '8px 0' }}>
-										<pre
-											style={{
-												whiteSpace: 'pre-wrap',
-												wordBreak: 'break-word',
-												background: 'none',
-												padding: 0,
-												margin: 0,
-												fontFamily: 'inherit',
-												fontSize: 'inherit'
-											}}
-										>
-											{pendingPlan.description || JSON.stringify(pendingPlan, null, 2)}
-										</pre>
-									</div>
-									<div className="mt-3 flex gap-2">
-										<Button
-											onClick={approvePlan}
-											disabled={isProcessing}
-											className="flex-1 rounded-lg bg-green-100 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-200 disabled:opacity-50"
-										>
-											{isProcessing ? 'Processing...' : '✓ Approve'}
-										</Button>
-										<Button
-											onClick={rejectPlan}
-											disabled={isProcessing}
-											className="flex-1 rounded-lg bg-red-100 px-4 py-2 text-sm font-medium text-red-700 transition-all hover:bg-red-200 disabled:opacity-50"
-										>
-											✗ Reject
-										</Button>
-									</div>
-								</div>
-							</div>
+					<Paper
+						square
+						component="form"
+						onSubmit={onMessageSubmit}
+						className="left-0 border-t-1 px-4 py-4"
+						sx={(theme) => ({
+							backgroundColor: lighten(theme.palette.background.default, 0.02),
+							...theme.applyStyles('light', {
+								backgroundColor: lighten(theme.palette.background.default, 0.4)
+							})
+						})}
+					>
+						<div className="relative flex items-center">
+							<IconButton type="submit">
+								<FuseSvgIcon
+									className="text-3xl"
+									color="action"
+								>
+									lucide:smile
+								</FuseSvgIcon>
+							</IconButton>
+
+							<IconButton type="submit">
+								<FuseSvgIcon
+									className="text-3xl"
+									color="action"
+								>
+									lucide:paperclip
+								</FuseSvgIcon>
+							</IconButton>
+
+							<InputBase
+								autoFocus={false}
+								id="message-input"
+								className="mx-2 flex flex-1 shrink-0 grow rounded-lg border-1 px-2"
+								placeholder="Type your message"
+								onChange={onInputChange}
+								value={message}
+								sx={{ backgroundColor: 'background.paper' }}
+								disabled={formDisabled || inputDisabled}
+							/>
+							<IconButton
+								type="submit"
+								disabled={formDisabled || inputDisabled}
+							>
+								<FuseSvgIcon color="action">lucide:send</FuseSvgIcon>
+							</IconButton>
 						</div>
-					)}
-
-					{messages && (
-						<Paper
-							square
-							component="form"
-							onSubmit={onMessageSubmit}
-							className="absolute right-0 bottom-0 left-0 border-t-1 px-4 py-4"
-							sx={(theme) => ({
-								backgroundColor: lighten(theme.palette.background.default, 0.02),
-								...theme.applyStyles('light', {
-									backgroundColor: lighten(theme.palette.background.default, 0.4)
-								})
-							})}
-						>
-							<div className="relative flex items-center">
-								<IconButton type="submit">
-									<FuseSvgIcon
-										className="text-3xl"
-										color="action"
-									>
-										lucide:smile
-									</FuseSvgIcon>
-								</IconButton>
-
-								<IconButton type="submit">
-									<FuseSvgIcon
-										className="text-3xl"
-										color="action"
-									>
-										lucide:paperclip
-									</FuseSvgIcon>
-								</IconButton>
-
-								<InputBase
-									autoFocus={false}
-									id="message-input"
-									className="mx-2 flex flex-1 shrink-0 grow rounded-lg border-1 px-2"
-									placeholder="Type your message"
-									onChange={onInputChange}
-									value={message}
-									sx={{ backgroundColor: 'background.paper' }}
-								/>
-								<IconButton type="submit">
-									<FuseSvgIcon color="action">lucide:send</FuseSvgIcon>
-								</IconButton>
-							</div>
-						</Paper>
-					)}
+					</Paper>
 
 					{/* Feedback Dialog State */}
 					{/** Track which message is being given feedback */}
