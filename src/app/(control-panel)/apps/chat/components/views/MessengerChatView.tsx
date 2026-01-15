@@ -1,5 +1,5 @@
 'use client';
-import { lighten, styled } from '@mui/material/styles';
+import { lighten } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import clsx from 'clsx';
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -32,47 +32,6 @@ export type ChatMessage = {
 	messageType: string;
 };
 
-const StyledMessageRow = styled('div')(({ theme }) => ({
-	'&.contact': {
-		'& .bubble': {
-			backgroundColor: lighten(theme.palette.secondary.main, 0.1),
-			color: theme.vars.palette.secondary.contrastText,
-			borderRadius: 8,
-			'& .time': {
-				paddingLeft: 12
-			}
-		},
-		'&.last-of-group': {
-			'& .bubble': {
-				borderBottomLeftRadius: 3
-			}
-		}
-	},
-	'&.me': {
-		paddingLeft: 36,
-		'& .bubble': {
-			marginLeft: 'auto',
-			backgroundColor: lighten(theme.palette.primary.main, 0.1),
-			color: theme.vars.palette.primary.contrastText,
-			borderRadius: 8,
-			'& .time': {
-				justifyContent: 'flex-end',
-				right: 0,
-				paddingRight: 12
-			}
-		},
-		'&.last-of-group': {
-			'& .bubble': {
-				borderBottomRightRadius: 3
-			}
-		}
-	},
-	'&.contact + .me, &.me + .contact': {
-		paddingTop: 8,
-		marginTop: 8
-	}
-}));
-
 type MessengerChatViewProps = {
 	className?: string;
 };
@@ -95,6 +54,14 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const [hasMore, setHasMore] = useState(true);
 	const [formDisabled, setFormDisabled] = useState(false);
 	const [selectedFeedbackMsgId, setSelectedFeedbackMsgId] = useState<number | null>(null);
+	const [fetchLatest, setFetchLatest] = useState(false);
+
+	useEffect(() => {
+		console.log('new messages: ', messages);
+		if (fetchLatest && messages && messages.length > 0) {
+			scrollToBottom();
+		}
+	}, [messages, fetchLatest]);
 
 	// Chat history fetcher, supports incremental loading and deduplication
 	const fetchAndSetMessages = useCallback(async (earliestId = 0, shouldScrollToBottom = true) => {
@@ -116,21 +83,16 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			saveSession('', String(latestConv.id));
 			const msgRes = await fetchConversationMessages(latestConv.id, earliestId);
 			const newMsgs = msgRes.messages || [];
+			setFetchLatest(earliestId === 0);
 			setMessages((prevMsgs) => {
-				let combined;
+				const array = prevMsgs && Array.isArray(prevMsgs) ? prevMsgs.filter((msg) => msg.id > 0) : []; // Remove temporary messages
 
-				if (!prevMsgs || earliestId === 0) {
-					// Initial load or socket event: replace all
-					combined = newMsgs;
-				} else {
-					// Add only non-overlapping messages to the top
-					const prevIds = new Set(prevMsgs.map((m) => m.id));
-					const uniqueNew = newMsgs.filter((m) => !prevIds.has(m.id));
-					combined = [...uniqueNew, ...prevMsgs];
+				for (const newMsg of newMsgs) {
+					if (!array.find((m) => m.id === newMsg.id)) {
+						array.push(newMsg);
+					}
 				}
-
-				// Always order by id desc
-				return [...combined].sort((a, b) => a.id - b.id);
+				return array;
 			});
 			setLoading(false);
 
@@ -170,11 +132,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		};
 	}, [registerHistoryRefetch, fetchAndSetMessages]);
 
-	useEffect(() => {
-		if (messages) {
-			setTimeout(scrollToBottom);
-		}
-	}, [messages]);
+	// Remove automatic scroll on every messages update to prevent scroll jumps
 
 	function scrollToBottom() {
 		if (!chatRef.current) {
@@ -182,8 +140,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		}
 
 		chatRef.current.scrollTo({
-			top: chatRef.current.scrollHeight,
-			behavior: 'smooth'
+			top: chatRef.current.scrollHeight
 		});
 	}
 
@@ -203,7 +160,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 		setMessages((prev) => [
 			...(prev || []),
 			{
-				id: Date.now(), // temporary id
+				id: -Date.now(), // temporary id
 				role: 'user',
 				content: message,
 				time: new Date().toISOString(),
@@ -359,7 +316,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 																setMessages((prev) => [
 																	...(prev || []),
 																	{
-																		id: Date.now(), // temporary id
+																		id: -Date.now(), // temporary id
 																		role: 'user',
 																		content: 'Approved',
 																		time: new Date().toISOString(),
@@ -378,7 +335,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 																setMessages((prev) => [
 																	...(prev || []),
 																	{
-																		id: Date.now(), // temporary id
+																		id: -Date.now(), // temporary id
 																		role: 'user',
 																		content: 'Rejected',
 																		time: new Date().toISOString(),
