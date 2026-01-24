@@ -1,4 +1,25 @@
 import { api } from '@/utils/api';
+export interface CreateTestCaseFromTraceParams {
+	traceId: string;
+	[key: string]: any;
+}
+
+export interface CreateTestCaseFromTraceResponse {
+	success: boolean;
+	error?: string;
+	result?: any;
+}
+
+export async function createTestCaseFromTrace(
+	params: CreateTestCaseFromTraceParams
+): Promise<CreateTestCaseFromTraceResponse> {
+	const res = await api
+		.post('test_case/from_trace', {
+			json: params
+		})
+		.json();
+	return res;
+}
 
 export interface TraceDetailParams {
 	id: string;

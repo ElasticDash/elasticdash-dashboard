@@ -112,6 +112,49 @@ When you are about to call an internal API:
 
 Always add `process.env.NEXT_PUBLIC_BASE_URL` as the base url.
 
+Sample code:
+
+```
+export async function postFeedback({
+	messageId,
+	conversationId,
+	isHelpful,
+	description,
+	expectedResponse,
+	feedbackType
+}: {
+	messageId: number;
+	conversationId?: number | string | null;
+	isHelpful: boolean;
+	description?: string | null;
+	expectedResponse?: string | null;
+	feedbackType?: string;
+}) {
+	const res = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/user/feedbacks/post', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+		},
+		body: JSON.stringify({
+			messageId,
+			conversationId: conversationId ?? null,
+			isHelpful,
+			description: description ?? null,
+			expectedResponse: expectedResponse ?? null,
+			feedbackType: feedbackType || 'general'
+		})
+	});
+
+	if (!res.ok) {
+		const error = await res.json().catch(() => ({}));
+		throw new Error(error?.message || 'Failed to post feedback');
+	}
+
+	return res.json();
+}
+```
+
 ---
 
 ## FINAL GUARANTEE

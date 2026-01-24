@@ -56,13 +56,20 @@ const navigationConfig: FuseNavItemType[] = [
 				icon: 'lucide:ticket',
 				url: '/apps/tickets'
 			},
-            {
-                id: 'apps.sessions',
-                title: 'Sessions',
-                type: 'item',
-                icon: 'lucide:list',
-                url: '/sessions'
-            },
+			{
+				id: 'apps.sessions',
+				title: 'Sessions',
+				type: 'item',
+				icon: 'lucide:list',
+				url: '/sessions'
+			},
+			{
+				id: 'apps.test-cases',
+				title: 'Test Cases',
+				type: 'item',
+				icon: 'lucide:check-square',
+				url: '/test-cases'
+			},
 			// {
 			// 	id: 'apps.ai-image-generator',
 			// 	title: 'AI Image Generator',

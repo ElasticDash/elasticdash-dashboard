@@ -3,7 +3,7 @@ import React from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 
 import { useState } from 'react';
-import { fetchTraceDetail } from '@/services/traceDetailService';
+import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceDetailService';
 
 interface SessionDetailDialogProps {
 	open: boolean;
@@ -25,6 +25,9 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 	const [traceDetail, setTraceDetail] = useState<any | null>(null);
 	const [traceLoading, setTraceLoading] = useState(false);
 	const [traceError, setTraceError] = useState<string | null>(null);
+	const [testCaseLoading, setTestCaseLoading] = useState<string | null>(null);
+	const [testCaseError, setTestCaseError] = useState<string | null>(null);
+	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 
 	const handleTraceDetail = async (traceId: string) => {
 		setTraceLoading(true);
@@ -44,6 +47,24 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 		setTraceDetail(null);
 		setTraceError(null);
 		setTraceLoading(false);
+	};
+
+	const handleCreateTestCaseFromTrace = async (traceId: string) => {
+		setTestCaseLoading(traceId);
+		setTestCaseError(null);
+		setTestCaseSuccess(null);
+		try {
+			const res = await createTestCaseFromTrace({ traceId });
+			if (!res.success) {
+				setTestCaseError(res.error || 'Failed to create test case from trace');
+			} else {
+				setTestCaseSuccess('Test case created successfully!');
+			}
+		} catch (err: any) {
+			setTestCaseError(err.message || 'Failed to create test case from trace');
+		} finally {
+			setTestCaseLoading(null);
+		}
 	};
 
 	if (!open) return null;
@@ -149,13 +170,22 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 															: String(row[col.name])}
 													</td>
 												))}
-												<td className="border px-2 py-1">
+												<td className="border px-2 py-1 flex gap-2">
 													<Button
 														size="small"
 														variant="contained"
 														onClick={() => handleTraceDetail(row.id)}
 													>
 														Detail
+													</Button>
+													<Button
+														size="small"
+														variant="outlined"
+														color="secondary"
+														disabled={testCaseLoading === row.id}
+														onClick={() => handleCreateTestCaseFromTrace(row.id)}
+													>
+														{testCaseLoading === row.id ? 'Creating...' : 'Create Test Case'}
 													</Button>
 												</td>
 											</tr>
@@ -165,6 +195,8 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 							</table>
 						)}
 						{detail && <div className="text-xs text-gray-500">Rows: {detail.rows}</div>}
+						{testCaseError && <div className="text-red-500 text-xs mt-2">{testCaseError}</div>}
+						{testCaseSuccess && <div className="text-green-600 text-xs mt-2">{testCaseSuccess}</div>}
 					</>
 				)}
 				<Button
