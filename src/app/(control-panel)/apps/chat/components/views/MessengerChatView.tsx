@@ -52,14 +52,18 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	const [loading, setLoading] = useState(true);
 	const [conversationId, setConversationId] = useState<number | null>(null);
 	const [hasMore, setHasMore] = useState(true);
+	const [earliestMsgId, setEarliestMsgId] = useState<number>(0);
 	const [formDisabled, setFormDisabled] = useState(false);
 	const [selectedFeedbackMsgId, setSelectedFeedbackMsgId] = useState<number | null>(null);
 	const [fetchLatest, setFetchLatest] = useState(false);
 
 	useEffect(() => {
 		console.log('new messages: ', messages);
+
 		if (fetchLatest && messages && messages.length > 0) {
 			scrollToBottom();
+		} else if (messages && messages.length > 0 && earliestMsgId > 0) {
+			scrollToMessage();
 		}
 	}, [messages, fetchLatest]);
 
@@ -81,6 +85,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 			const latestConv = conversations[0];
 			setConversationId(latestConv.id);
 			saveSession('', String(latestConv.id));
+			setEarliestMsgId(earliestId);
 			const msgRes = await fetchConversationMessages(latestConv.id, earliestId);
 			const newMsgs = msgRes.messages || [];
 			setFetchLatest(earliestId === 0);
@@ -92,6 +97,9 @@ function MessengerChatView(props: MessengerChatViewProps) {
 						array.push(newMsg);
 					}
 				}
+
+				array.sort((a, b) => a.id - b.id);
+
 				return array;
 			});
 			setLoading(false);
@@ -133,6 +141,29 @@ function MessengerChatView(props: MessengerChatViewProps) {
 	}, [registerHistoryRefetch, fetchAndSetMessages]);
 
 	// Remove automatic scroll on every messages update to prevent scroll jumps
+
+	function scrollToMessage() {
+		console.log('earlistMsgId', earliestMsgId);
+
+		if (!chatRef.current) {
+			return;
+		}
+
+		if (earliestMsgId === 0) {
+			return;
+		}
+
+		const messageElement = document.getElementById('message-' + earliestMsgId);
+
+		if (messageElement) {
+			// Calculate the offset of the message element relative to the container
+			const containerRect = chatRef.current.getBoundingClientRect();
+			const elementRect = messageElement.getBoundingClientRect();
+			// Calculate how much to scroll to keep the message at top of view
+			const scrollOffset = elementRect.top - containerRect.top;
+			chatRef.current.scrollTop += scrollOffset;
+		}
+	}
 
 	function scrollToBottom() {
 		if (!chatRef.current) {
@@ -245,6 +276,7 @@ function MessengerChatView(props: MessengerChatViewProps) {
 								{messages.map((msg: any, index) => (
 									<div
 										key={index}
+										id={'message-' + msg.id}
 										className={`message ${msg.role === 'user' ? 'user' : 'assistant'}`}
 									>
 										<div className="message-content-wrapper">
@@ -278,13 +310,15 @@ function MessengerChatView(props: MessengerChatViewProps) {
 																					>
 																						{`Call ${step.api.path} [${step.api.method?.toUpperCase?.() || ''}]`}
 																					</pre>
-																					<pre>
-																						{JSON.stringify(
-																							step.api.requestBody,
-																							null,
-																							2
-																						)}
-																					</pre>
+																					{step.api.requestBody && (
+																						<pre>
+																							{JSON.stringify(
+																								step.api.requestBody,
+																								null,
+																								2
+																							)}
+																						</pre>
+																					)}
 																				</>
 																			)}
 																		</div>

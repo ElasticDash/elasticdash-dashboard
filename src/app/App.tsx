@@ -8,7 +8,6 @@ import ErrorBoundary from '@fuse/utils/ErrorBoundary';
 import { FuseSettingsProvider } from '@fuse/core/FuseSettings/FuseSettingsProvider';
 import { I18nProvider } from '@i18n/I18nProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import MainThemeProvider from '../contexts/MainThemeProvider';
 import AppContext from '@/contexts/AppContext';
 import { NotificationPanelContextProvider } from '@/app/(control-panel)/apps/notifications/contexts/NotificationPanelContext/NotificationPanelContextProvider';
@@ -93,7 +92,6 @@ function App(props: AppProps) {
 								</RootThemeProvider>
 							</I18nProvider>
 						</FuseSettingsProvider>
-						<ReactQueryDevtools initialIsOpen={false} />
 					</QueryClientProvider>
 				</LocalizationProvider>
 			</AppContext>

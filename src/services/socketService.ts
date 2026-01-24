@@ -27,7 +27,7 @@ export function initSocket() {
 			socket!.emit('join', sessionId);
 		}
 
-		const userId = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('hb-user') || 'null')?.id : null;
+		const userId = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('currentUser') || 'null')?.id : null;
 		console.log('[Socket] Joining user room:', userId);
 
 		if (userId) {

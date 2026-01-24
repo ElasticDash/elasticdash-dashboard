@@ -1,14 +1,11 @@
 import ky, { KyInstance } from 'ky';
 
-export const API_BASE_URL =
-	process.env.NODE_ENV === 'development'
-		? `http://localhost:${process.env.NEXT_PUBLIC_PORT || 3000}`
-		: process.env.NEXT_PUBLIC_BASE_URL || '/';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || '/';
 
 let globalHeaders: Record<string, string> = {};
 
 export const api: KyInstance = ky.create({
-	prefixUrl: `${API_BASE_URL}/api`,
+	prefixUrl: `${API_BASE_URL}`,
 	hooks: {
 		beforeRequest: [
 			(request) => {
