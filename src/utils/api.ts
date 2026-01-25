@@ -9,9 +9,19 @@ export const api: KyInstance = ky.create({
 	hooks: {
 		beforeRequest: [
 			(request) => {
+				// Apply global headers
 				Object.entries(globalHeaders).forEach(([key, value]) => {
 					request.headers.set(key, value);
 				});
+
+				// Automatically add Authorization header if token exists in localStorage
+				if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+					const token = localStorage.getItem('token');
+
+					if (token) {
+						request.headers.set('Authorization', `Bearer ${token}`);
+					}
+				}
 			}
 		]
 	},
