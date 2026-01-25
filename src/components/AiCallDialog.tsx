@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 
 interface AiCallDialogProps {
@@ -10,6 +10,8 @@ interface AiCallDialogProps {
 
 const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) => {
 	const [selectedStep, setSelectedStep] = React.useState<any | null>(null);
+	// For message viewer collapse state
+	const [expanded, setExpanded] = React.useState<boolean[]>([]);
 
 	useEffect(() => {
 		if (!open) setSelectedStep(null);
@@ -84,7 +86,15 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 	};
 
 	// Message viewer for input with collapsible blocks
-	const MessageViewer = ({ input }: { input: any }) => {
+	const MessageViewer = ({
+		input,
+		expanded,
+		onToggle
+	}: {
+		input: any;
+		expanded: boolean[];
+		onToggle: (idx: number) => void;
+	}) => {
 		let obj = input;
 
 		if (typeof input === 'string') {
@@ -96,12 +106,6 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 		}
 
 		if (!obj || !Array.isArray(obj.messages)) return renderJsonOrString(input);
-
-		const [expanded, setExpanded] = useState(() => obj.messages.map(() => false));
-
-		const toggle = (idx: number) => {
-			setExpanded((prev) => prev.map((v, i) => (i === idx ? !v : v)));
-		};
 
 		return (
 			<div
@@ -135,7 +139,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 								alignItems: 'center',
 								userSelect: 'none'
 							}}
-							onClick={() => toggle(idx)}
+							onClick={() => onToggle(idx)}
 						>
 							<span style={{ marginRight: 8 }}>{expanded[idx] ? '▼' : '▶'}</span>
 							{msg.role}
@@ -159,6 +163,25 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 	};
 
 	const [showMessageView, setShowMessageView] = React.useState(true);
+
+	// Reset expanded state when selectedStep/input changes
+	useEffect(() => {
+		if (selectedStep && isMessageArray(selectedStep.input)) {
+			let obj = selectedStep.input;
+
+			if (typeof obj === 'string') {
+				try {
+					obj = JSON.parse(obj);
+				} catch {
+					obj = null;
+				}
+			}
+
+			if (obj && Array.isArray(obj.messages)) {
+				setExpanded(obj.messages.map(() => false));
+			}
+		}
+	}, [selectedStep]);
 
 	return (
 		<Dialog
@@ -206,7 +229,13 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 								}}
 							>
 								{isMessageArray(selectedStep.input) && showMessageView ? (
-									<MessageViewer input={selectedStep.input} />
+									<MessageViewer
+										input={selectedStep.input}
+										expanded={expanded}
+										onToggle={(idx) =>
+											setExpanded((prev) => prev.map((v, i) => (i === idx ? !v : v)))
+										}
+									/>
 								) : (
 									renderJsonOrString(selectedStep.input)
 								)}
