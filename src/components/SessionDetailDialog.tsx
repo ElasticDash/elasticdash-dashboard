@@ -4,6 +4,7 @@ import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 
 import { useState } from 'react';
 import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceDetailService';
+import TraceObservationStepper from './TraceObservationStepper';
 
 interface SessionDetailDialogProps {
 	open: boolean;
@@ -29,12 +30,21 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 	const [testCaseError, setTestCaseError] = useState<string | null>(null);
 	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 
+	// Reset trace detail state when dialog is closed
+	React.useEffect(() => {
+		if (!open) {
+			setTraceDetail(null);
+			setTraceError(null);
+			setTraceLoading(false);
+		}
+	}, [open]);
+
 	const handleTraceDetail = async (traceId: string) => {
 		setTraceLoading(true);
 		setTraceError(null);
 		try {
 			const res = await fetchTraceDetail({ id: traceId });
-            console.log('Fetched trace detail:', res);
+			console.log('Fetched trace detail:', res);
 			setTraceDetail(res);
 		} catch (err: any) {
 			setTraceError(err.message || 'Failed to fetch trace detail');
@@ -55,6 +65,7 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 		setTestCaseSuccess(null);
 		try {
 			const res = await createTestCaseFromTrace({ traceId });
+
 			if (!res.success) {
 				setTestCaseError(res.error || 'Failed to create test case from trace');
 			} else {
@@ -113,19 +124,8 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 					<>
 						{traceLoading && <div>Loading trace detail...</div>}
 						{traceError && <div className="text-red-500">{traceError}</div>}
-						{!traceLoading && !traceError && traceDetail && (
-							<table className="mb-6 min-w-full border text-sm">
-								<tbody>
-									{Object.entries(traceDetail).map(([key, value]) => (
-										<tr key={key}>
-											<td className="border px-2 py-1 font-bold">{key}</td>
-											<td className="border px-2 py-1 font-mono">
-												{typeof value === 'object' ? JSON.stringify(value) : String(value)}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
+						{!traceLoading && !traceError && traceDetail && Array.isArray(traceDetail.observations) && (
+							<TraceObservationStepper observations={traceDetail.observations} />
 						)}
 					</>
 				) : (
@@ -136,14 +136,8 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 							<table className="mb-6 min-w-full border text-sm">
 								<thead>
 									<tr className="bg-gray-100">
-										{detail.meta.map((col: any) => (
-											<th
-												key={col.name}
-												className="border px-2 py-1"
-											>
-												{col.name}
-											</th>
-										))}
+										<th className="border px-2 py-1">Timestamp</th>
+										<th className="border px-2 py-1">Name</th>
 										<th className="border px-2 py-1">Actions</th>
 									</tr>
 								</thead>
@@ -151,7 +145,7 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 									{detail.data.length === 0 ? (
 										<tr>
 											<td
-												colSpan={detail.meta.length + 1}
+												colSpan={3}
 												className="py-4 text-center"
 											>
 												No traces found.
@@ -160,17 +154,11 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 									) : (
 										detail.data.map((row: any) => (
 											<tr key={row.id}>
-												{detail.meta.map((col: any) => (
-													<td
-														key={col.name}
-														className="border px-2 py-1 font-mono"
-													>
-														{typeof row[col.name] === 'object'
-															? JSON.stringify(row[col.name])
-															: String(row[col.name])}
-													</td>
-												))}
-												<td className="border px-2 py-1 flex gap-2">
+												<td className="border px-2 py-1 font-mono">
+													{row.timestamp ? new Date(row.timestamp).toLocaleString() : ''}
+												</td>
+												<td className="border px-2 py-1 font-mono">{row.name ?? ''}</td>
+												<td className="flex gap-2 border px-2 py-1">
 													<Button
 														size="small"
 														variant="contained"
@@ -185,7 +173,9 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 														disabled={testCaseLoading === row.id}
 														onClick={() => handleCreateTestCaseFromTrace(row.id)}
 													>
-														{testCaseLoading === row.id ? 'Creating...' : 'Create Test Case'}
+														{testCaseLoading === row.id
+															? 'Creating...'
+															: 'Create Test Case'}
 													</Button>
 												</td>
 											</tr>
@@ -195,8 +185,8 @@ const SessionDetailDialog: React.FC<SessionDetailDialogProps> = ({
 							</table>
 						)}
 						{detail && <div className="text-xs text-gray-500">Rows: {detail.rows}</div>}
-						{testCaseError && <div className="text-red-500 text-xs mt-2">{testCaseError}</div>}
-						{testCaseSuccess && <div className="text-green-600 text-xs mt-2">{testCaseSuccess}</div>}
+						{testCaseError && <div className="mt-2 text-xs text-red-500">{testCaseError}</div>}
+						{testCaseSuccess && <div className="mt-2 text-xs text-green-600">{testCaseSuccess}</div>}
 					</>
 				)}
 				<Button
