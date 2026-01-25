@@ -1,20 +1,11 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+
+import React, { useMemo, useEffect, useState } from 'react';
+import { type MRT_ColumnDef } from 'material-react-table';
+import DataTable from 'src/components/data-table/DataTable';
 import { fetchTestCases, TestCase } from '@/services/testCaseService';
 import { fetchTestCaseDetail } from '@/services/testCaseDetailService';
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableContainer,
-	TableHead,
-	TableRow,
-	Paper,
-	Typography,
-	CircularProgress,
-	Button,
-	Dialog
-} from '@mui/material';
+import { Paper, Typography, CircularProgress, Button } from '@mui/material';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
 import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
@@ -62,9 +53,9 @@ const TestCaseTable: React.FC = () => {
 	const handleOpenAiDialog = async (tc: TestCase) => {
 		try {
 			const res = await fetchTestCaseDetail(tc.id);
-            console.log('Fetched test case detail:', res);
+			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
-            setAiDialogOpen(true);
+			setAiDialogOpen(true);
 		} catch (err: any) {
 			setDetailError(err.message || 'Failed to fetch test case detail');
 		} finally {
@@ -82,7 +73,7 @@ const TestCaseTable: React.FC = () => {
 		setDetailError(null);
 		try {
 			const res = await fetchTestCaseDetail(tc.id);
-            console.log('Fetched test case detail:', res);
+			console.log('Fetched test case detail:', res);
 			setSelected(res.testCase);
 			setSelectedDetail(res);
 			setViewDialogOpen(true);
@@ -122,119 +113,88 @@ const TestCaseTable: React.FC = () => {
 		}
 	};
 
+	const columns = useMemo<MRT_ColumnDef<TestCase>[]>(
+		() => [
+			{
+				accessorKey: 'id',
+				header: 'ID',
+				Cell: ({ row }) => (
+					<Typography
+						fontWeight={600}
+						className="font-mono"
+					>
+						{row.original.id}
+					</Typography>
+				)
+			},
+			{
+				accessorKey: 'name',
+				header: 'Name',
+				Cell: ({ row }) => <Typography>{row.original.name}</Typography>
+			},
+			{
+				accessorKey: 'description',
+				header: 'Description',
+				Cell: ({ row }) => <Typography>{row.original.description}</Typography>
+			}
+		],
+		[]
+	);
+
+	if (loading) return <CircularProgress />;
+	if (error) return <Typography color="error">{error}</Typography>;
+
 	return (
-		<Paper sx={{ p: 2 }}>
-			<Typography
-				variant="h6"
-				gutterBottom
+		<>
+			<Paper
+				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+				elevation={0}
 			>
-				Test Cases
-			</Typography>
-			{loading ? (
-				<CircularProgress />
-			) : error ? (
-				<Typography color="error">{error}</Typography>
-			) : (
-				<>
-					<TableContainer>
-						<Table size="small">
-							<TableHead>
-								<TableRow>
-									<TableCell>ID</TableCell>
-									<TableCell>Name</TableCell>
-									<TableCell>Description</TableCell>
-									<TableCell>Actions</TableCell>
-								</TableRow>
-							</TableHead>
-							<TableBody>
-								{testCases.map((tc) => (
-									<TableRow key={tc.id}>
-										<TableCell>{tc.id}</TableCell>
-										<TableCell>{tc.name}</TableCell>
-										<TableCell>{tc.description}</TableCell>
-										<TableCell>
-											<Button
-												size="small"
-												variant="contained"
-												color="primary"
-												onClick={() => {
-													setSelected(tc);
-													setEditDialogOpen(true);
-												}}
-												sx={{ mr: 1 }}
-											>
-												Edit
-											</Button>
-											<Button
-												size="small"
-												variant="outlined"
-												color="secondary"
-												onClick={() => {
-													handleOpenAiDialog(tc);
-												}}
-											>
-												AI Calls
-											</Button>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</TableContainer>
-					{/* View Dialog */}
-					{selected && (
-						<Dialog
-							open={viewDialogOpen}
-							onClose={handleCloseView}
-							maxWidth="sm"
-							fullWidth
-						>
-							<div style={{ padding: 24 }}>
-								<h2>Test Case Detail</h2>
-								<div>
-									<b>ID:</b> {selected.id}
-								</div>
-								<div>
-									<b>Name:</b> {selected.name}
-								</div>
-								<div>
-									<b>Description:</b> {selected.description}
-								</div>
-								<div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-									<Button
-										variant="contained"
-										onClick={handleOpenEdit}
-									>
-										Edit
-									</Button>
-									<Button
-										variant="outlined"
-										onClick={() => handleOpenAiDialog(selected)}
-									>
-										AI Calls
-									</Button>
-									<Button onClick={handleCloseView}>Close</Button>
-								</div>
-							</div>
-						</Dialog>
+				<DataTable
+					data={testCases}
+					columns={columns}
+					renderRowActions={({ row }) => (
+						<div style={{ display: 'flex', gap: 8 }}>
+							<Button
+								size="small"
+								variant="contained"
+								color="primary"
+								onClick={() => {
+									setSelected(row.original);
+									setEditDialogOpen(true);
+								}}
+							>
+								Edit
+							</Button>
+							<Button
+								size="small"
+								variant="outlined"
+								color="secondary"
+								onClick={() => {
+									handleOpenAiDialog(row.original);
+								}}
+							>
+								AI Calls
+							</Button>
+						</div>
 					)}
-					{/* Edit Dialog */}
-					<TestCaseDetailDialog
-						open={editDialogOpen}
-						onClose={handleCloseEdit}
-						testCase={selected}
-						onSave={handleSave}
-						onDelete={handleDelete}
-					/>
-					{/* AI Calls Dialog */}
-					<AiCallDialog
-						open={aiDialogOpen}
-						onClose={handleCloseAiDialog}
-						aiCalls={aiCalls}
-					/>
-				</>
-			)}
-		</Paper>
+				/>
+			</Paper>
+			{/* Edit Dialog */}
+			<TestCaseDetailDialog
+				open={editDialogOpen}
+				onClose={handleCloseEdit}
+				testCase={selected}
+				onSave={handleSave}
+				onDelete={handleDelete}
+			/>
+			{/* AI Calls Dialog */}
+			<AiCallDialog
+				open={aiDialogOpen}
+				onClose={handleCloseAiDialog}
+				aiCalls={aiCalls}
+			/>
+		</>
 	);
 };
 

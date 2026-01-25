@@ -21,20 +21,31 @@ export interface SessionListResponse {
 export async function fetchSessions(params: SessionListParams): Promise<SessionListResponse> {
 	// Always use { limit, offset, filter } as input
 	const { limit, offset, filter } = params;
-	const res = await api.post('traces/sessions/list', { json: { limit, offset, filter } }).json();
+	const res = (await api.post('traces/sessions/list', { json: { limit, offset, filter } }).json()) as {
+		success: boolean;
+		error?: string;
+		result: {
+			data?: {
+				data?: any[];
+			};
+			total?: number;
+			limit?: number;
+			offset?: number;
+		};
+	};
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch sessions');
 
-    console.log('fetchSessions response:', res);
+	console.log('fetchSessions response:', res);
 
-	const result = res.result?.data?.data || {};
+	const dataArray = res.result?.data?.data || [];
 	return {
-		data: (result || []).map((row: any) => ({
+		data: (dataArray || []).map((row: any) => ({
 			session_id: row.session_id,
 			count: row.count ? Number(row.count) : 0
 		})),
-		total: result.total || 0,
-		limit: result.limit || limit,
-		offset: result.offset || offset
+		total: res.result?.total || 0,
+		limit: res.result?.limit || limit,
+		offset: res.result?.offset || offset
 	};
 }

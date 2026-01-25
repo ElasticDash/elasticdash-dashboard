@@ -64,6 +64,13 @@ const navigationConfig: FuseNavItemType[] = [
 				url: '/sessions'
 			},
 			{
+				id: 'apps.traces',
+				title: 'Traces',
+				type: 'item',
+				icon: 'lucide:activity',
+				url: '/traces'
+			},
+			{
 				id: 'apps.test-cases',
 				title: 'Test Cases',
 				type: 'item',

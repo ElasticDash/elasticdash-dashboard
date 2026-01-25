@@ -1,23 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
+import { type MRT_ColumnDef } from 'material-react-table';
+import DataTable from 'src/components/data-table/DataTable';
 import { fetchSessions, SessionListItem } from '@/services/sessionService';
 import { fetchSessionDetail } from '@/services/sessionDetailService';
 import SessionDetailDialog from './SessionDetailDialog';
+import { Paper, Typography, Button, CircularProgress } from '@mui/material';
 
-interface SessionTableProps {
-	limit?: number;
-	offset?: number;
-}
-
-
-
-
-const SessionTable: React.FC<SessionTableProps> = ({ limit = 10, offset = 0 }) => {
+const SessionTable: React.FC = () => {
 	const [sessions, setSessions] = useState<SessionListItem[]>([]);
-	const [total, setTotal] = useState(0);
+	const [count, setCount] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+	// Pagination state
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: 10
+	});
 
 	// Dialog state
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -28,17 +29,18 @@ const SessionTable: React.FC<SessionTableProps> = ({ limit = 10, offset = 0 }) =
 
 	useEffect(() => {
 		setLoading(true);
-		fetchSessions({ limit, offset, filter: null })
+		const offset = pagination.pageIndex * pagination.pageSize;
+		fetchSessions({ limit: pagination.pageSize, offset, filter: null })
 			.then((res) => {
 				setSessions(res.data);
-				setTotal(res.total);
+				setCount(res.total);
 				setError(null);
 			})
 			.catch((err) => {
 				setError(err.message || 'Failed to fetch sessions');
 			})
 			.finally(() => setLoading(false));
-	}, [limit, offset]);
+	}, [pagination.pageIndex, pagination.pageSize]);
 
 	const handleOpenDialog = async (sessionId: string) => {
 		setSelectedSessionId(sessionId);
@@ -64,43 +66,67 @@ const SessionTable: React.FC<SessionTableProps> = ({ limit = 10, offset = 0 }) =
 		setDetailLoading(false);
 	};
 
-	if (loading) return <div>Loading sessions...</div>;
-	if (error) return <div className="text-red-500">{error}</div>;
+	const columns = useMemo<MRT_ColumnDef<SessionListItem>[]>(
+		() => [
+			{
+				accessorKey: 'session_id',
+				header: 'Session ID',
+				Cell: ({ row }) => (
+					<Typography
+						fontWeight={600}
+						className="font-mono"
+					>
+						{row.original.session_id}
+					</Typography>
+				)
+			},
+			{
+				accessorKey: 'count',
+				header: 'Count',
+				Cell: ({ row }) => <Typography>{row.original.count}</Typography>
+			}
+		],
+		[]
+	);
 
 	return (
-		<div>
-			<table className="min-w-full border text-sm">
-				<thead>
-					<tr className="bg-gray-100">
-						<th className="border px-4 py-2">Session ID</th>
-						<th className="border px-4 py-2">Count</th>
-						<th className="border px-4 py-2">Actions</th>
-					</tr>
-				</thead>
-				<tbody>
-					{sessions.length === 0 ? (
-						<tr>
-							<td colSpan={3} className="py-4 text-center">No sessions found.</td>
-						</tr>
-					) : (
-						sessions.map((session) => (
-							<tr key={session.session_id}>
-								<td className="border px-4 py-2 font-mono">{session.session_id}</td>
-								<td className="border px-4 py-2">{session.count}</td>
-								<td className="border px-4 py-2">
-									<button
-										className="text-blue-600 hover:underline px-2 py-1"
-										onClick={() => handleOpenDialog(session.session_id)}
-									>
-										View Detail
-									</button>
-								</td>
-							</tr>
-						))
+		<>
+			<Paper
+				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+				elevation={0}
+			>
+				<DataTable
+					data={sessions}
+					columns={columns}
+					manualPagination
+					rowCount={count}
+					state={{
+						isLoading: loading,
+						pagination
+					}}
+					onPaginationChange={setPagination}
+					renderRowActions={({ row }) => (
+						<div style={{ display: 'flex', gap: 8 }}>
+							<Button
+								size="small"
+								variant="outlined"
+								color="primary"
+								onClick={() => handleOpenDialog(row.original.session_id)}
+							>
+								View Detail
+							</Button>
+						</div>
 					)}
-				</tbody>
-			</table>
-			<div className="mt-2 text-xs text-gray-500">Total: {total}</div>
+				/>
+				{error && (
+					<Typography
+						color="error"
+						className="p-4"
+					>
+						{error}
+					</Typography>
+				)}
+			</Paper>
 			<SessionDetailDialog
 				open={dialogOpen}
 				onClose={handleCloseDialog}
@@ -109,7 +135,7 @@ const SessionTable: React.FC<SessionTableProps> = ({ limit = 10, offset = 0 }) =
 				loading={detailLoading}
 				error={detailError}
 			/>
-		</div>
+		</>
 	);
 };
 

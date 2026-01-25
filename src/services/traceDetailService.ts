@@ -13,11 +13,11 @@ export interface CreateTestCaseFromTraceResponse {
 export async function createTestCaseFromTrace(
 	params: CreateTestCaseFromTraceParams
 ): Promise<CreateTestCaseFromTraceResponse> {
-	const res = await api
+	const res = (await api
 		.post('test_case/from_trace', {
 			json: params
 		})
-		.json();
+		.json()) as CreateTestCaseFromTraceResponse;
 	return res;
 }
 
@@ -48,7 +48,11 @@ export interface TraceDetailResponse {
 }
 
 export async function fetchTraceDetail({ id }: TraceDetailParams): Promise<TraceDetailResponse> {
-	const res = await api.get(`traces/detail/${id}`).json();
+	const res = (await api.get(`traces/detail/${id}`).json()) as {
+		success: boolean;
+		error?: string;
+		result: TraceDetailResponse;
+	};
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch trace detail');
 

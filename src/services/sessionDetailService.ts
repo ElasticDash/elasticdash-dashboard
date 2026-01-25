@@ -34,7 +34,11 @@ export interface SessionDetailResponse {
 }
 
 export async function fetchSessionDetail({ sessionId }: SessionDetailParams): Promise<SessionDetailResponse> {
-	const res = await api.get(`traces/sessions/${sessionId}`).json();
+	const res = (await api.get(`traces/sessions/${sessionId}`).json()) as {
+		success: boolean;
+		error?: string;
+		result: SessionDetailResponse;
+	};
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch session detail');
 
