@@ -13,7 +13,7 @@ export interface TestCaseDetailData {
 }
 
 export async function fetchTestCaseDetail(id: number): Promise<TestCaseDetailData> {
-	const res: TestCaseDetailResponse = await api.get(`test_case/${id}`).json();
+	const res: TestCaseDetailResponse = await api.get(`testcases/${id}`).json();
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch test case detail');
 

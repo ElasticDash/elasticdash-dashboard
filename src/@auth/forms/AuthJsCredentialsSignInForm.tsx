@@ -63,7 +63,7 @@ function AuthJsCredentialsSignInForm() {
 			return false;
 		}
 
-		redirect(`/apps/chat`);
+		redirect(`/sessions`);
 		return true;
 	}
 

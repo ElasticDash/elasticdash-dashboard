@@ -21,41 +21,34 @@ const navigationConfig: FuseNavItemType[] = [
 		icon: 'lucide:box',
 		translate: 'APPLICATIONS',
 		children: [
-			{
-				id: 'apps.chat',
-				title: 'Chat',
-				type: 'item',
-				icon: 'lucide:message-square',
-				url: '/apps/chat',
-			},
-			{
-				id: 'apps.data-table-knowledge-base',
-				title: 'Data Table Knowledge Base',
-				type: 'item',
-				icon: 'lucide:message-square',
-				url: '/apps/data-table-knowledge-base',
-			},
-			{
-				id: 'apps.api-knowledge-base',
-				title: 'API Knowledge Base',
-				type: 'item',
-				icon: 'lucide:message-square',
-				url: '/apps/api-knowledge-base',
-			},
-			{
-				id: 'apps.account-settings',
-				title: 'Account Settings',
-				type: 'item',
-				icon: 'lucide:settings',
-				url: '/apps/account-settings'
-			},
-			{
-				id: 'apps.tickets',
-				title: 'Tickets',
-				type: 'item',
-				icon: 'lucide:ticket',
-				url: '/apps/tickets'
-			},
+			// {
+			// 	id: 'apps.chat',
+			// 	title: 'Chat',
+			// 	type: 'item',
+			// 	icon: 'lucide:message-square',
+			// 	url: '/apps/chat',
+			// },
+			// {
+			// 	id: 'apps.data-table-knowledge-base',
+			// 	title: 'Data Table Knowledge Base',
+			// 	type: 'item',
+			// 	icon: 'lucide:message-square',
+			// 	url: '/apps/data-table-knowledge-base',
+			// },
+			// {
+			// 	id: 'apps.api-knowledge-base',
+			// 	title: 'API Knowledge Base',
+			// 	type: 'item',
+			// 	icon: 'lucide:message-square',
+			// 	url: '/apps/api-knowledge-base',
+			// },
+			// {
+			// 	id: 'apps.tickets',
+			// 	title: 'Tickets',
+			// 	type: 'item',
+			// 	icon: 'lucide:ticket',
+			// 	url: '/apps/tickets'
+			// },
 			{
 				id: 'apps.sessions',
 				title: 'Sessions',
@@ -76,6 +69,20 @@ const navigationConfig: FuseNavItemType[] = [
 				type: 'item',
 				icon: 'lucide:check-square',
 				url: '/test-cases'
+			},
+			{
+				id: 'apps.test-case-runs',
+				title: 'Test Case Runs',
+				type: 'item',
+				icon: 'lucide:play-circle',
+				url: '/test-case-runs'
+			},
+			{
+				id: 'apps.account-settings',
+				title: 'Account Settings',
+				type: 'item',
+				icon: 'lucide:settings',
+				url: '/apps/account-settings'
 			},
 			// {
 			// 	id: 'apps.ai-image-generator',

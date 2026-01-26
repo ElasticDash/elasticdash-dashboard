@@ -14,7 +14,7 @@ export async function createTestCaseFromTrace(
 	params: CreateTestCaseFromTraceParams
 ): Promise<CreateTestCaseFromTraceResponse> {
 	const res = (await api
-		.post('test_case/from_trace', {
+		.post('testcases/fromtrace', {
 			json: params
 		})
 		.json()) as CreateTestCaseFromTraceResponse;

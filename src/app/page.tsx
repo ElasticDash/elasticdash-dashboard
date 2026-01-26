@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 function MainPage() {
-	redirect(`/apps/chat`);
+	redirect(`/sessions`);
 	return null;
 }
 

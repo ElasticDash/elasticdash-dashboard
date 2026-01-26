@@ -2,7 +2,7 @@ import { api } from '@/utils/api';
 import { TestCase } from './testCaseService';
 
 export async function updateTestCase(id: number, data: Partial<TestCase>) {
-  const res = (await api.put(`test_case/${id}`, { json: data }).json()) as {
+  const res = (await api.put(`testcases/edit/${id}`, { json: data }).json()) as {
     success: boolean;
     error?: string;
     result: any;
@@ -12,7 +12,7 @@ export async function updateTestCase(id: number, data: Partial<TestCase>) {
 }
 
 export async function deleteTestCase(id: number) {
-  const res = (await api.delete(`test_case/${id}`).json()) as {
+  const res = (await api.delete(`testcases/delete/${id}`).json()) as {
     success: boolean;
     error?: string;
     result: any;

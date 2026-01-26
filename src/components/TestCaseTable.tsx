@@ -3,7 +3,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { fetchTestCases, TestCase } from '@/services/testCaseService';
+import { fetchTestCaseDetailWithAiCalls, fetchTestCases, TestCase } from '@/services/testCaseService';
 import { fetchTestCaseDetail } from '@/services/testCaseDetailService';
 import { Paper, Typography, CircularProgress, Button } from '@mui/material';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
@@ -50,9 +50,9 @@ const TestCaseTable: React.FC = () => {
 		setSelected(null);
 	};
 
-	const handleOpenAiDialog = async (tc: TestCase) => {
+	const handleAiCallDialog = async (tc: TestCase) => {
 		try {
-			const res = await fetchTestCaseDetail(tc.id);
+			const res = await fetchTestCaseDetailWithAiCalls(tc.id);
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
 			setAiDialogOpen(true);
@@ -65,26 +65,6 @@ const TestCaseTable: React.FC = () => {
 
 	const handleCloseAiDialog = () => {
 		setAiDialogOpen(false);
-		setSelected(null);
-	};
-
-	const handleOpenDetail = async (tc: TestCase) => {
-		setDetailLoading(true);
-		setDetailError(null);
-		try {
-			const res = await fetchTestCaseDetail(tc.id);
-			console.log('Fetched test case detail:', res);
-			setSelected(res.testCase);
-			setSelectedDetail(res);
-			setViewDialogOpen(true);
-		} catch (err: any) {
-			setDetailError(err.message || 'Failed to fetch test case detail');
-		} finally {
-			setDetailLoading(false);
-		}
-	};
-
-	const handleCloseDialog = () => {
 		setSelected(null);
 	};
 
@@ -171,7 +151,7 @@ const TestCaseTable: React.FC = () => {
 								variant="outlined"
 								color="secondary"
 								onClick={() => {
-									handleOpenAiDialog(row.original);
+									handleAiCallDialog(row.original);
 								}}
 							>
 								AI Calls

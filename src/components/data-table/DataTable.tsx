@@ -28,7 +28,7 @@ const tableIcons: Partial<MRT_Icons> = {
 };
 
 function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowActions?: any }) {
-	const { columns, data, renderRowActions, ...rest } = props;
+	const { columns, data = [], renderRowActions, ...rest } = props;
 	const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
 	const defaults = useMemo(
 		() =>
