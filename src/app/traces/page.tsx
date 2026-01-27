@@ -34,7 +34,7 @@ export default function TraceListPage() {
 	const [featuresLoading, setFeaturesLoading] = useState(false);
 	const [featuresError, setFeaturesError] = useState<string | null>(null);
 
-	const test_project_id = 1; // TODO: Replace with actual project id source
+	const testProjectId = 1; // TODO: Replace with actual project id source
 
 	// Pagination state
 	const [pagination, setPagination] = useState({
@@ -53,13 +53,18 @@ export default function TraceListPage() {
 			setFeaturesError(null);
 			try {
 				const res = await axios.get(process.env.NEXT_PUBLIC_BASE_URL + '/features/list', {
-					params: { test_project_id },
+					params: { testProjectId },
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem('token') || ''}`
 					}
 				});
 				console.log('Fetched features:', res.data);
-				setFeatures(res.data?.result || []);
+				const featureList = res.data?.result || [];
+				setFeatures(featureList);
+
+				if (featureList.length > 0) {
+					setSelectedFeatureId(featureList[0].id);
+				}
 			} catch (err: any) {
 				setFeaturesError(err?.message || 'Failed to fetch features');
 			} finally {
@@ -67,7 +72,7 @@ export default function TraceListPage() {
 			}
 		};
 		fetchFeatures();
-	}, [test_project_id]);
+	}, [testProjectId]);
 
 	// Fetch traces only when a feature is selected
 	useEffect(() => {
@@ -125,7 +130,7 @@ export default function TraceListPage() {
 				header: 'Timestamp',
 				Cell: ({ row }) => (
 					<Typography>
-						{row.original.timestamp ? new Date(row.original.timestamp).toLocaleString() : ''}
+						{row.original.timestamp ? new Date(row.original.timestamp + 'Z').toLocaleString() : ''}
 					</Typography>
 				)
 			},

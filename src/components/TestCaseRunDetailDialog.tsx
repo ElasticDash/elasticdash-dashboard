@@ -188,15 +188,15 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 							<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 								{(showOnlyFailed
 									? runDetail.aiCalls.filter((aiCall) =>
-										['failed', 'error'].includes((aiCall.run_status || '').toLowerCase())
+										['failed', 'error'].includes((aiCall.runStatus || '').toLowerCase())
 									)
 									: runDetail.aiCalls
 								)
-								.filter((aiCall) => aiCall.input && aiCall.run_output)
+								.filter((aiCall) => aiCall.input && aiCall.runOutput)
 								.map((aiCall) => {
 									const isOpen = !!expanded[aiCall.id];
-									const start = aiCall.run_started_at ? new Date(aiCall.run_started_at) : null;
-									const end = aiCall.run_completed_at ? new Date(aiCall.run_completed_at) : null;
+									const start = aiCall.runStartedAt ? new Date(aiCall.runStartedAt) : null;
+									const end = aiCall.runCompletedAt ? new Date(aiCall.runCompletedAt) : null;
 									const duration =
 										start && end
 											? `${((end.getTime() - start.getTime()) / 1000).toFixed(2)}s`
@@ -223,7 +223,7 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 														variant="subtitle2"
 														sx={{ fontWeight: 600 }}
 													>
-														Step {aiCall.step_order}
+														Step {aiCall.stepOrder}
 													</Typography>
 													<Typography
 														variant="body2"
@@ -238,8 +238,8 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 														Duration: {duration}
 													</Typography>
 													<Chip
-														label={aiCall.run_status}
-														color={getStatusColor(aiCall.run_status)}
+														label={aiCall.runStatus}
+														color={getStatusColor(aiCall.runStatus)}
 														size="small"
 													/>
 												</Box>
@@ -285,9 +285,9 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 																wordBreak: 'break-all'
 															}}
 														>
-															{typeof aiCall.run_output === 'string'
-																? aiCall.run_output
-																: JSON.stringify(aiCall.run_output, null, 2)}
+															{typeof aiCall.runOutput === 'string'
+																? aiCall.runOutput
+																: JSON.stringify(aiCall.runOutput, null, 2)}
 														</pre>
 													</Paper>
 													<Typography
@@ -305,11 +305,35 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 																wordBreak: 'break-all'
 															}}
 														>
-															{typeof aiCall.expected_output === 'string'
-																? aiCall.expected_output
-																: JSON.stringify(aiCall.expected_output, null, 2)}
+															{typeof aiCall.expectedOutput === 'string'
+																? aiCall.expectedOutput
+																: JSON.stringify(aiCall.expectedOutput, null, 2)}
 														</pre>
 													</Paper>
+													{
+														aiCall.failureReason && (
+															<>
+																<Typography
+																	variant="subtitle2"
+																	sx={{ fontWeight: 600, mb: 1, mt: 2 }}
+																>
+																	Failure Reason
+																</Typography>
+																<Paper sx={{ p: 1, background: '#f7f7f7' }}>
+																	<pre
+																		style={{
+																			margin: 0,
+																			fontSize: 13,
+																			whiteSpace: 'pre-wrap',
+																			wordBreak: 'break-all'
+																		}}
+																	>
+																		{aiCall.failureReason}
+																	</pre>
+																</Paper>
+															</>
+														)
+													}
 												</Box>
 											)}
 										</Paper>

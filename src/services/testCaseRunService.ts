@@ -22,18 +22,18 @@ export interface TestCaseRunListResponse {
 
 export interface AiCallRun {
 	id: number;
-	step_order: number;
-	ai_model: string;
-	api_endpoint: string;
+	stepOrder: number;
+	aiModel: string;
+	apiEndpoint: string;
 	input: any;
-	expected_output: string;
-	output_match_type: string;
-	run_input: any;
-	run_output: any;
-	validation_score: number;
-	run_status: string;
-	run_started_at: string;
-	run_completed_at: string;
+	expectedOutput: string;
+	outputMatchType: string;
+	runInput: any;
+	runOutput: any;
+	validationScore: number;
+	runStatus: string;
+	runStartedAt: string;
+	runCompletedAt: string;
 }
 
 export interface TestCaseRunDetail {
@@ -42,10 +42,10 @@ export interface TestCaseRunDetail {
 }
 
 export async function createTestCaseRun(params: CreateTestCaseRunParams): Promise<TestCaseRun> {
-	const { testCaseId, created_by } = params;
+	const { testCaseId, createdBy } = params;
 	const res = (await api
 		.post(`testcases/run/${testCaseId}`, {
-			json: { created_by }
+			json: { createdBy }
 		})
 		.json()) as {
 		success: boolean;

@@ -132,21 +132,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 		}
 	};
 
-	const handleTestCaseRun = async (tc: TestCase) => {
-		setRunLoading(true);
-		setRunError(null);
-		try {
-			await runTestCase(tc.id);
-			// Optionally show a success message or refresh runs
-			alert(`Test case ${tc.id} run triggered successfully!`);
-		} catch (err: any) {
-			setRunError(err.message || 'Failed to run test case');
-			alert(err.message || 'Failed to run test case');
-		} finally {
-			setRunLoading(false);
-		}
-	};
-
 	const handleBulkRun = async () => {
 		// Get selected test case IDs
 		const selectedIds = Object.keys(rowSelection)
@@ -311,15 +296,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 											}}
 										>
 											AI Calls
-										</Button>
-										<Button
-											size="small"
-											variant="outlined"
-											onClick={() => {
-												handleTestCaseRun(row.original);
-											}}
-										>
-											Run
 										</Button>
 									</div>
 								)}
