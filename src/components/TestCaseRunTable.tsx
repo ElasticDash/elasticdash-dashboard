@@ -3,47 +3,51 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { fetchTestCaseRuns, fetchTestCaseRunDetail, TestCaseRun } from '@/services/testCaseRunService';
+import {
+	fetchTestCaseRunRecords,
+	fetchTestCaseRunRecordDetail,
+	TestCaseRunRecord
+} from '@/services/testCaseRunRecordService';
 import { Paper, Typography, Button, Chip } from '@mui/material';
-import TestCaseRunDetailDialog from './TestCaseRunDetailDialog';
+import TestCaseRunRecordDetailDialog from './TestCaseRunRecordDetailDialog';
 
 const TestCaseRunTable: React.FC = () => {
-	const [runs, setRuns] = useState<TestCaseRun[]>([]);
+	const [records, setRecords] = useState<TestCaseRunRecord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
 	// Dialog state
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
-	const [runDetail, setRunDetail] = useState<any | null>(null);
+	const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
+	const [recordDetail, setRecordDetail] = useState<any | null>(null);
 	const [detailLoading, setDetailLoading] = useState(false);
 	const [detailError, setDetailError] = useState<string | null>(null);
 
 	useEffect(() => {
 		setLoading(true);
-		fetchTestCaseRuns()
+		fetchTestCaseRunRecords()
 			.then((res) => {
-				setRuns(res);
+				setRecords(res);
 				setError(null);
 			})
 			.catch((err) => {
-				setError(err.message || 'Failed to fetch test case runs');
+				setError(err.message || 'Failed to fetch test case run records');
 			})
 			.finally(() => setLoading(false));
 	}, []);
 
-	const handleOpenDialog = async (runId: number) => {
-		setSelectedRunId(runId);
+	const handleOpenDialog = async (recordId: number) => {
+		setSelectedRecordId(recordId);
 		setDialogOpen(true);
-		setRunDetail(null);
+		setRecordDetail(null);
 		setDetailError(null);
 		setDetailLoading(true);
 
 		try {
-			const res = await fetchTestCaseRunDetail(runId);
-			setRunDetail(res);
+			const res = await fetchTestCaseRunRecordDetail(recordId);
+			setRecordDetail(res);
 		} catch (err: any) {
-			setDetailError(err.message || 'Failed to fetch test case run detail');
+			setDetailError(err.message || 'Failed to fetch test case run record detail');
 		} finally {
 			setDetailLoading(false);
 		}
@@ -51,8 +55,8 @@ const TestCaseRunTable: React.FC = () => {
 
 	const handleCloseDialog = () => {
 		setDialogOpen(false);
-		setSelectedRunId(null);
-		setRunDetail(null);
+		setSelectedRecordId(null);
+		setRecordDetail(null);
 		setDetailError(null);
 		setDetailLoading(false);
 	};
@@ -73,26 +77,29 @@ const TestCaseRunTable: React.FC = () => {
 		}
 	};
 
-	const columns = useMemo<MRT_ColumnDef<TestCaseRun>[]>(
+	const columns = useMemo<MRT_ColumnDef<TestCaseRunRecord>[]>(
 		() => [
 			{
 				accessorKey: 'id',
-				header: 'Run ID',
+				header: 'Record ID',
 				Cell: ({ row }) => (
 					<Typography
 						fontWeight={600}
 						className="font-mono"
 					>
-						{row.original.id}
+						#{row.original.id}
 					</Typography>
 				)
 			},
 			{
-				accessorKey: 'test_case_name',
-				header: 'Test Case',
-				Cell: ({ row }) => (
-					<Typography>{row.original.test_case_name || `ID: ${row.original.test_case_id}`}</Typography>
-				)
+				accessorKey: 'test_case_ids',
+				header: 'Test Cases',
+				Cell: ({ row }) => <Typography>{row.original.testCaseIds.length} test case(s)</Typography>
+			},
+			{
+				accessorKey: 'times',
+				header: 'Runs Per Case',
+				Cell: ({ row }) => <Typography>{row.original.times}×</Typography>
 			},
 			{
 				accessorKey: 'status',
@@ -106,18 +113,26 @@ const TestCaseRunTable: React.FC = () => {
 				)
 			},
 			{
-				accessorKey: 'started_at',
-				header: 'Started At',
+				accessorKey: 'total_runs',
+				header: 'Progress',
 				Cell: ({ row }) => (
-					<Typography>{new Date(row.original.started_at).toLocaleString()}</Typography>
+					<Typography>
+						{row.original.successfulRuns}/{row.original.totalRuns} successful
+						{row.original.failedRuns > 0 && ` (${row.original.failedRuns} failed)`}
+					</Typography>
 				)
 			},
 			{
-				accessorKey: 'completed_at',
+				accessorKey: 'startedAt',
+				header: 'Started At',
+				Cell: ({ row }) => <Typography>{new Date(row.original.startedAt).toLocaleString()}</Typography>
+			},
+			{
+				accessorKey: 'completedAt',
 				header: 'Completed At',
 				Cell: ({ row }) => (
 					<Typography>
-						{row.original.completed_at ? new Date(row.original.completed_at).toLocaleString() : '-'}
+						{row.original.completedAt ? new Date(row.original.completedAt).toLocaleString() : '-'}
 					</Typography>
 				)
 			}
@@ -132,7 +147,7 @@ const TestCaseRunTable: React.FC = () => {
 				elevation={0}
 			>
 				<DataTable
-					data={runs}
+					data={records}
 					columns={columns}
 					state={{
 						isLoading: loading
@@ -159,10 +174,10 @@ const TestCaseRunTable: React.FC = () => {
 					</Typography>
 				)}
 			</Paper>
-			<TestCaseRunDetailDialog
+			<TestCaseRunRecordDetailDialog
 				open={dialogOpen}
 				onClose={handleCloseDialog}
-				runDetail={runDetail}
+				recordDetail={recordDetail}
 				loading={detailLoading}
 				error={detailError}
 			/>

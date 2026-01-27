@@ -78,12 +78,19 @@ const navigationConfig: FuseNavItemType[] = [
 				url: '/test-case-runs'
 			},
 			{
+				id: 'apps.test-case-records',
+				title: 'Test Case Run Records',
+				type: 'item',
+				icon: 'lucide:clipboard-list',
+				url: '/test-case-records'
+			},
+			{
 				id: 'apps.account-settings',
 				title: 'Account Settings',
 				type: 'item',
 				icon: 'lucide:settings',
 				url: '/apps/account-settings'
-			},
+			}
 			// {
 			// 	id: 'apps.ai-image-generator',
 			// 	title: 'AI Image Generator',

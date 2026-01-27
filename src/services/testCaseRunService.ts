@@ -7,13 +7,13 @@ export interface CreateTestCaseRunParams {
 
 export interface TestCaseRun {
 	id: number;
-	test_case_id: number;
-	test_case_name?: string;
+	testCaseId: number;
+	testCaseName?: string;
 	status: string;
-	started_at: string;
-	completed_at: string | null;
-	created_by?: number;
-	updated_by?: number;
+	startedAt: string;
+	completedAt: string | null;
+	createdBy?: number;
+	updatedBy?: number;
 }
 
 export interface TestCaseRunListResponse {
@@ -78,6 +78,19 @@ export async function fetchTestCaseRunDetail(runId: number): Promise<TestCaseRun
 	};
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch test case run detail');
+
+	return res.result;
+}
+
+/**
+ * Run a test case by ID
+ * @param id - test case id
+ * @returns Promise<any>
+ */
+export async function runTestCase(id: number): Promise<any> {
+	const res = await api.post('testcases/run', { json: { id } }).json();
+
+	if (!res.success) throw new Error(res.error || 'Failed to run test case');
 
 	return res.result;
 }
