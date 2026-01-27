@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useMemo, useEffect, useState } from 'react';
-import axios from 'axios';
 import { type MRT_ColumnDef, type MRT_RowSelectionState } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { fetchTestCaseDetailWithAiCalls, fetchTestCases, TestCase } from '@/services/testCaseService';
+import { fetchTestCaseDetailWithAiCalls, fetchTestCasesPaged, TestCase } from '@/services/testCaseService';
 // import { fetchTestCaseDetail } from '@/services/testCaseDetailService';
 import { Paper, Typography, CircularProgress, Button, TextField, Box, Alert } from '@mui/material';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
@@ -13,7 +12,11 @@ import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationServi
 import { runTestCase } from '@/services/testCaseRunService';
 import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
 
-const TestCaseTable: React.FC = () => {
+interface TestCaseTableProps {
+	selectedFeatureId: number | null;
+}
+
+const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 	const [testCases, setTestCases] = useState<TestCase[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -34,41 +37,37 @@ const TestCaseTable: React.FC = () => {
 	const [bulkRunSuccess, setBulkRunSuccess] = useState<string | null>(null);
 	const [bulkRunError, setBulkRunError] = useState<string | null>(null);
 
-	// Feature sidebar state
-	const [features, setFeatures] = useState<{ id: number; featureName: string }[]>([]);
-	const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
-	const [featuresLoading, setFeaturesLoading] = useState(false);
-	const [featuresError, setFeaturesError] = useState<string | null>(null);
-
-	const test_project_id = 1; // TODO: Replace with actual project id source
+	// Pagination state
+	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+	const [total, setTotal] = useState(0);
 
 	useEffect(() => {
-		const fetchFeatures = async () => {
-			setFeaturesLoading(true);
-			setFeaturesError(null);
+		const fetchCases = async () => {
+			setLoading(true);
+			setError(null);
 			try {
-				const res = await axios.get(process.env.NEXT_PUBLIC_BASE_URL + '/features/list', {
-					params: { test_project_id },
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-					}
+				const filter = selectedFeatureId ? `feature_id = ${selectedFeatureId}` : '';
+				const { testCases, total } = await fetchTestCasesPaged({
+					limit: pagination.pageSize,
+					offset: pagination.pageIndex * pagination.pageSize,
+					filter,
+					search: ''
 				});
-				setFeatures(res.data?.result || []);
+				setTestCases(testCases);
+				setTotal(total);
 			} catch (err: any) {
-				setFeaturesError(err?.message || 'Failed to fetch features');
+				setError(err?.message || 'Failed to fetch test cases');
 			} finally {
-				setFeaturesLoading(false);
+				setLoading(false);
 			}
 		};
-		fetchFeatures();
-	}, [test_project_id]);
+		fetchCases();
+	}, [pagination.pageIndex, pagination.pageSize, selectedFeatureId]);
 
+	// Reset pagination when feature changes
 	useEffect(() => {
-		fetchTestCases()
-			.then(setTestCases)
-			.catch((err) => setError(err.message || 'Failed to fetch test cases'))
-			.finally(() => setLoading(false));
-	}, []);
+		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+	}, [selectedFeatureId]);
 
 	const handleOpenView = (tc: TestCase) => {
 		setSelected(tc);
@@ -226,45 +225,12 @@ const TestCaseTable: React.FC = () => {
 	if (error) return <Typography color="error">{error}</Typography>;
 
 	return (
-		<div style={{ display: 'flex', height: '100%' }}>
-			{/* Sidebar for features */}
-			<div style={{ width: 240, borderRight: '1px solid #eee', padding: 16, background: '#fafafa' }}>
-				<h3 style={{ marginTop: 0 }}>Features</h3>
-				{featuresLoading ? (
-					<div>Loading...</div>
-				) : featuresError ? (
-					<div style={{ color: 'red' }}>{featuresError}</div>
-				) : (
-					<ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-						{features.map((feature) => (
-							<li key={feature.id}>
-								<button
-									style={{
-										width: '100%',
-										textAlign: 'left',
-										padding: '8px 12px',
-										background: selectedFeatureId === feature.id ? '#e0e7ff' : 'transparent',
-										border: 'none',
-										borderRadius: 4,
-										cursor: 'pointer',
-										fontWeight: selectedFeatureId === feature.id ? 600 : 400
-									}}
-									onClick={() => setSelectedFeatureId(feature.id)}
-								>
-									{feature.featureName}
-								</button>
-							</li>
-						))}
-					</ul>
-				)}
-			</div>
-			{/* Main trace table area */}
-			<div style={{ flex: 1, padding: 24 }}>
-				{/* Example: Show message if no feature selected */}
-				{!selectedFeatureId ? (
-					<div style={{ color: '#888', fontStyle: 'italic' }}>Select a feature to view its trace items.</div>
-				) : (
-					<>
+		<div style={{ padding: 24 }}>
+			{/* Example: Show message if no feature selected */}
+			{!selectedFeatureId ? (
+				<div style={{ color: '#888', fontStyle: 'italic' }}>Select a feature to view its test cases.</div>
+			) : (
+				<>
 						{/* Bulk Run Controls */}
 						<Box className="mb-4 flex items-center gap-3">
 							<TextField
@@ -373,9 +339,8 @@ const TestCaseTable: React.FC = () => {
 							onClose={handleCloseAiDialog}
 							aiCalls={aiCalls}
 						/>
-					</>
-				)}
-			</div>
+				</>
+			)}
 		</div>
 	);
 };
