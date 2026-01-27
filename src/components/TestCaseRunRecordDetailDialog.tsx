@@ -334,20 +334,104 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 						{/* Tabs for each test case */}
 						{testCases.length > 0 && (
 							<Box sx={{ width: '100%' }}>
-								<Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+								<Box sx={{ borderBottom: 2, borderColor: 'divider', mb: 3 }}>
 									<Tabs
 										value={activeTab}
 										onChange={handleTabChange}
 										variant="scrollable"
 										scrollButtons="auto"
+										sx={{
+											'& .MuiTabs-indicator': {
+												height: 3,
+												borderRadius: '3px 3px 0 0'
+											},
+											'& .MuiTab-root': {
+												textTransform: 'none',
+												fontWeight: 500,
+												fontSize: '0.95rem',
+												minHeight: 48,
+												'&.Mui-selected': {
+													fontWeight: 600,
+													color: 'primary.main'
+												}
+											}
+										}}
 									>
-										{testCases.map((testCase, index) => (
-											<Tab
-												key={testCase.id}
-												label={`${testCase.name} (${groupedRuns[testCase.id]?.length || 0} runs)`}
-												id={`test-case-tab-${index}`}
-											/>
-										))}
+										{testCases.map((testCase, index) => {
+											const runs = groupedRuns[testCase.id] || [];
+											const successCount = runs.filter((r) => r.status === 'success').length;
+											const failedCount = runs.filter((r) => r.status === 'failed').length;
+											const pendingCount = runs.filter((r) => r.status === 'pending').length;
+											const runningCount = runs.filter((r) => r.status === 'running').length;
+
+											return (
+												<Tab
+													key={testCase.id}
+													id={`test-case-tab-${index}`}
+													label={
+														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+															<Typography
+																variant="body2"
+																sx={{ fontWeight: 'inherit' }}
+															>
+																{testCase.name}
+															</Typography>
+															<Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+																{successCount > 0 && (
+																	<Chip
+																		label={successCount}
+																		size="small"
+																		color="success"
+																		sx={{
+																			height: 20,
+																			fontSize: '0.7rem',
+																			'& .MuiChip-label': { px: 1 }
+																		}}
+																	/>
+																)}
+																{failedCount > 0 && (
+																	<Chip
+																		label={failedCount}
+																		size="small"
+																		color="error"
+																		sx={{
+																			height: 20,
+																			fontSize: '0.7rem',
+																			'& .MuiChip-label': { px: 1 }
+																		}}
+																	/>
+																)}
+																{runningCount > 0 && (
+																	<Chip
+																		label={runningCount}
+																		size="small"
+																		color="warning"
+																		sx={{
+																			height: 20,
+																			fontSize: '0.7rem',
+																			'& .MuiChip-label': { px: 1 }
+																		}}
+																	/>
+																)}
+																{pendingCount > 0 && (
+																	<Chip
+																		label={pendingCount}
+																		size="small"
+																		color="default"
+																		variant="outlined"
+																		sx={{
+																			height: 20,
+																			fontSize: '0.7rem',
+																			'& .MuiChip-label': { px: 1 }
+																		}}
+																	/>
+																)}
+															</Box>
+														</Box>
+													}
+												/>
+											);
+										})}
 									</Tabs>
 								</Box>
 
@@ -360,70 +444,81 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 										id={`test-case-tabpanel-${index}`}
 									>
 										{activeTab === index && (
-											<Box sx={{ py: 3 }}>
-												<Typography
-													variant="body2"
-													color="text.secondary"
-													sx={{ mb: 2, fontStyle: 'italic' }}
+											<Box>
+												<Box
+													sx={{
+														display: 'flex',
+														justifyContent: 'space-between',
+														alignItems: 'center',
+														mb: 2,
+														px: 1
+													}}
 												>
-													Click on any run to view detailed AI call information
-												</Typography>
-												<TableContainer component={Paper}>
+													<Typography
+														variant="body2"
+														color="text.secondary"
+														sx={{ fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 1 }}
+													>
+														<span style={{ fontSize: '1.1em' }}>💡</span>
+														Click on any run to view detailed AI call information
+													</Typography>
+													<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+														<Typography
+															variant="body2"
+															color="text.secondary"
+															sx={{ fontWeight: 500 }}
+														>
+															Total: {groupedRuns[testCase.id]?.length || 0} runs
+														</Typography>
+													</Box>
+												</Box>
+												<TableContainer
+													component={Paper}
+													elevation={2}
+													sx={{
+														borderRadius: 2,
+														overflow: 'hidden'
+													}}
+												>
 													<Table size="small">
 														<TableHead>
-															<TableRow>
-																<TableCell>
-																	<Typography
-																		variant="subtitle2"
-																		sx={{ fontWeight: 600 }}
-																	>
-																		Run ID
-																	</Typography>
-																</TableCell>
-																<TableCell>
-																	<Typography
-																		variant="subtitle2"
-																		sx={{ fontWeight: 600 }}
-																	>
-																		Status
-																	</Typography>
-																</TableCell>
-																<TableCell>
-																	<Typography
-																		variant="subtitle2"
-																		sx={{ fontWeight: 600 }}
-																	>
-																		Started At
-																	</Typography>
-																</TableCell>
-																<TableCell>
-																	<Typography
-																		variant="subtitle2"
-																		sx={{ fontWeight: 600 }}
-																	>
-																		Completed At
-																	</Typography>
-																</TableCell>
-																<TableCell>
-																	<Typography
-																		variant="subtitle2"
-																		sx={{ fontWeight: 600 }}
-																	>
-																		Duration
-																	</Typography>
-																</TableCell>
-																<TableCell width={100}>
-																	<Typography
-																		variant="subtitle2"
-																		sx={{ fontWeight: 600 }}
-																	>
-																		Actions
-																	</Typography>
-																</TableCell>
+															<TableRow
+																sx={{
+																	backgroundColor: 'rgba(0, 0, 0, 0.04)',
+																	'& .MuiTableCell-root': {
+																		fontWeight: 600,
+																		color: 'text.primary',
+																		borderBottom: '2px solid',
+																		borderColor: 'divider'
+																	}
+																}}
+															>
+																<TableCell>Run ID</TableCell>
+																<TableCell>Status</TableCell>
+																<TableCell>Started At</TableCell>
+																<TableCell>Completed At</TableCell>
+																<TableCell>Duration</TableCell>
+																<TableCell width={100}>Actions</TableCell>
 															</TableRow>
 														</TableHead>
 														<TableBody>
-															{groupedRuns[testCase.id]?.map((run) => {
+															{(!groupedRuns[testCase.id] || groupedRuns[testCase.id].length === 0) ? (
+																<TableRow>
+																	<TableCell
+																		colSpan={6}
+																		sx={{ textAlign: 'center', py: 4 }}
+																	>
+																		<Typography
+																			variant="body2"
+																			color="text.secondary"
+																			sx={{ fontStyle: 'italic' }}
+																		>
+																			No runs found for this test case
+																		</Typography>
+																	</TableCell>
+																</TableRow>
+															) : (
+																groupedRuns[testCase.id]?.map((run) => {
 																const start = run.startedAt
 																	? new Date(run.startedAt)
 																	: null;
@@ -442,8 +537,14 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 																		onClick={() => handleOpenRunDetail(run.id)}
 																		sx={{
 																			cursor: 'pointer',
+																			transition: 'all 0.2s ease',
 																			'&:hover': {
-																				backgroundColor: 'rgba(0, 0, 0, 0.04)'
+																				backgroundColor: 'rgba(25, 118, 210, 0.08)',
+																				transform: 'scale(1.001)',
+																				boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+																			},
+																			'&:nth-of-type(even)': {
+																				backgroundColor: 'rgba(0, 0, 0, 0.02)'
 																			}
 																		}}
 																	>
@@ -483,18 +584,25 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 																		<TableCell>
 																			<Button
 																				size="small"
-																				variant="outlined"
+																				variant="contained"
 																				onClick={(e) => {
 																					e.stopPropagation();
 																					handleOpenRunDetail(run.id);
 																				}}
+																				sx={{
+																					textTransform: 'none',
+																					fontWeight: 500,
+																					px: 2,
+																					py: 0.5,
+																					minWidth: 'auto'
+																				}}
 																			>
-																				View
+																				View Details
 																			</Button>
 																		</TableCell>
 																	</TableRow>
 																);
-															})}
+															}))}
 														</TableBody>
 													</Table>
 												</TableContainer>
@@ -506,13 +614,31 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 						)}
 
 						{testCases.length === 0 && (
-							<Typography
-								variant="body2"
-								color="text.secondary"
-								sx={{ textAlign: 'center', py: 4 }}
+							<Paper
+								elevation={1}
+								sx={{
+									textAlign: 'center',
+									py: 6,
+									px: 3,
+									backgroundColor: 'rgba(0, 0, 0, 0.02)',
+									borderRadius: 2
+								}}
 							>
-								No test case runs found for this record.
-							</Typography>
+								<Typography
+									variant="h6"
+									color="text.secondary"
+									sx={{ mb: 1, fontWeight: 500 }}
+								>
+									No Test Case Runs
+								</Typography>
+								<Typography
+									variant="body2"
+									color="text.secondary"
+									sx={{ fontStyle: 'italic' }}
+								>
+									No test case runs found for this record.
+								</Typography>
+							</Paper>
 						)}
 					</>
 				)}

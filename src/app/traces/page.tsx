@@ -76,11 +76,11 @@ export default function TraceListPage() {
 		setLoading(true);
 		setError('');
 		const offset = pagination.pageIndex * pagination.pageSize;
-		// Add feature_id to filter
-		// const featureFilter = filter
-		// 	? `${filter} AND metadata['feature_id'] = ${selectedFeatureId}`
-		// 	: `metadata['feature_id'] = ${selectedFeatureId}`;
-		const featureFilter = '';
+		// Add feature_id to filter (ensure string comparison for ClickHouse)
+		const featureFilter = filter
+			? `${filter} AND metadata['feature_id'] = '${selectedFeatureId}'`
+			: `metadata['feature_id'] = '${selectedFeatureId}'`;
+		// const featureFilter = '';
 		fetchTraces({ limit: pagination.pageSize, offset, filter: featureFilter })
 			.then((res) => {
 				setTraces(res.result.data.data || []);
