@@ -6,9 +6,10 @@ import DataTable from 'src/components/data-table/DataTable';
 import {
 	fetchTestCaseRunRecords,
 	fetchTestCaseRunRecordDetail,
-	TestCaseRunRecord
+	TestCaseRunRecord,
+	getMockPromptDriftData
 } from '@/services/testCaseRunRecordService';
-import { Paper, Typography, Button, Chip } from '@mui/material';
+import { Paper, Typography, Button, Chip, Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import TestCaseRunRecordDetailDialog from './TestCaseRunRecordDetailDialog';
 
 const TestCaseRunTable: React.FC = () => {
@@ -22,12 +23,28 @@ const TestCaseRunTable: React.FC = () => {
 	const [recordDetail, setRecordDetail] = useState<any | null>(null);
 	const [detailLoading, setDetailLoading] = useState(false);
 	const [detailError, setDetailError] = useState<string | null>(null);
+	const [autoRefresh, setAutoRefresh] = useState<'off' | '60000'>('off');
 
 	useEffect(() => {
 		setLoading(true);
 		fetchTestCaseRunRecords()
 			.then((res) => {
-				setRecords(res);
+				// Add mock prompt drift record at the beginning
+				const mockRecord: TestCaseRunRecord = {
+					id: 999,
+					testCaseIds: [1],
+					times: 1,
+					status: 'suspicious',
+					totalRuns: 1,
+					successfulRuns: 1,
+					failedRuns: 0,
+					pendingRuns: 0,
+					runningRuns: 0,
+					createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
+				};
+				setRecords([mockRecord, ...res]);
 				setError(null);
 			})
 			.catch((err) => {
@@ -44,13 +61,85 @@ const TestCaseRunTable: React.FC = () => {
 		setDetailLoading(true);
 
 		try {
-			const res = await fetchTestCaseRunRecordDetail(recordId);
+			// Use mock data for the prompt drift example (ID 999)
+			let res;
+
+			if (recordId === 999) {
+				res = getMockPromptDriftData();
+			} else {
+				res = await fetchTestCaseRunRecordDetail(recordId);
+			}
+
 			setRecordDetail(res);
 		} catch (err: any) {
 			setDetailError(err.message || 'Failed to fetch test case run record detail');
 		} finally {
 			setDetailLoading(false);
 		}
+	};
+	
+	// Auto-refresh interval
+	useEffect(() => {
+		if (autoRefresh === 'off') return;
+
+		const interval = setInterval(() => {
+			setLoading(true);
+			fetchTestCaseRunRecords()
+				.then((res) => {
+					// Add mock prompt drift record at the beginning
+					const mockRecord: TestCaseRunRecord = {
+						id: 999,
+						testCaseIds: [1],
+						times: 1,
+						status: 'suspicious',
+						totalRuns: 1,
+						successfulRuns: 1,
+						failedRuns: 0,
+						pendingRuns: 0,
+						runningRuns: 0,
+						createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+						startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+						completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
+					};
+					setRecords([mockRecord, ...res]);
+					setError(null);
+				})
+				.catch((err) => {
+					setError(err.message || 'Failed to fetch test case run records');
+				})
+				.finally(() => setLoading(false));
+		}, parseInt(autoRefresh));
+
+		return () => clearInterval(interval);
+	}, [autoRefresh]);
+
+	// Manual refresh handler
+	const handleManualRefresh = () => {
+		setLoading(true);
+		fetchTestCaseRunRecords()
+			.then((res) => {
+				// Add mock prompt drift record at the beginning
+				const mockRecord: TestCaseRunRecord = {
+					id: 999,
+					testCaseIds: [1],
+					times: 1,
+					status: 'suspicious',
+					totalRuns: 1,
+					successfulRuns: 1,
+					failedRuns: 0,
+					pendingRuns: 0,
+					runningRuns: 0,
+					createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
+				};
+				setRecords([mockRecord, ...res]);
+				setError(null);
+			})
+			.catch((err) => {
+				setError(err.message || 'Failed to fetch test case run records');
+			})
+			.finally(() => setLoading(false));
 	};
 
 	const handleCloseDialog = () => {
@@ -61,14 +150,16 @@ const TestCaseRunTable: React.FC = () => {
 		setDetailLoading(false);
 	};
 
-	const getProgressColor = (successfulRuns: number, totalRuns: number) => {
+	const getProgressColor = (successfulRuns: number, totalRuns: number, status: string) => {
+		console.log('Calculating progress color:', { successfulRuns, totalRuns, status });
 		if (totalRuns === 0) return { bgcolor: '#9e9e9e', color: '#fff' }; // Gray for no data
+
 		const successRate = (successfulRuns / totalRuns) * 100;
 
 		if (successfulRuns === 0) {
 			// Red bg + white text: no success cases
 			return { bgcolor: '#d32f2f', color: '#fff' };
-		} else if (successRate < 80) {
+		} else if (successRate < 80 || status === 'suspicious') {
 			// Yellow bg + black text: some success but less than 80%
 			return { bgcolor: '#ffc107', color: '#000' };
 		} else {
@@ -110,7 +201,11 @@ const TestCaseRunTable: React.FC = () => {
 				accessorKey: 'status',
 				header: 'Status',
 				Cell: ({ row }) => {
-					const colors = getProgressColor(row.original.successfulRuns, row.original.totalRuns);
+					const colors = getProgressColor(
+						row.original.successfulRuns,
+						row.original.totalRuns,
+						row.original.status
+					);
 					const progressText = `${row.original.successfulRuns}/${row.original.totalRuns} successful`;
 					const failedText = row.original.failedRuns > 0 ? ` (${row.original.failedRuns} failed)` : '';
 
@@ -135,6 +230,7 @@ const TestCaseRunTable: React.FC = () => {
 				header: 'Duration',
 				Cell: ({ row }) => {
 					const { startedAt, completedAt } = row.original;
+
 					if (!startedAt) return <Typography>-</Typography>;
 
 					const start = new Date(startedAt).getTime();
@@ -148,6 +244,7 @@ const TestCaseRunTable: React.FC = () => {
 					const days = Math.floor(hours / 24);
 
 					let durationText = '';
+
 					if (days > 0) {
 						durationText = `${days}d ${hours % 24}h ${minutes % 60}m`;
 					} else if (hours > 0) {
@@ -167,6 +264,68 @@ const TestCaseRunTable: React.FC = () => {
 
 	return (
 		<>
+
+			{/* Filter UI */}
+			<Paper
+				sx={{ p: 2, borderRadius: 0 }}
+				elevation={1}
+				className="border-b-2 border-gray-300"
+			>
+				<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
+					{/* <TextField
+						label="Name contains"
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						size="small"
+						sx={{ minWidth: 200 }}
+						placeholder="e.g. chat"
+					/> */}
+					{/* <TextField
+						label="Start date"
+						type="date"
+						value={startDate}
+						onChange={(e) => setStartDate(e.target.value)}
+						size="small"
+						sx={{ minWidth: 160 }}
+						slotProps={{ inputLabel: { shrink: true } }}
+					/>
+					<TextField
+						label="End date"
+						type="date"
+						value={endDate}
+						onChange={(e) => setEndDate(e.target.value)}
+						size="small"
+						sx={{ minWidth: 160 }}
+						slotProps={{ inputLabel: { shrink: true } }}
+					/> */}
+					{/* <Button
+						variant="contained"
+						onClick={handleApplyFilter}
+					>
+						Apply Filter
+					</Button> */}
+					<FormControl
+						size="small"
+						sx={{ minWidth: 160 }}
+					>
+						<InputLabel>Auto Refresh</InputLabel>
+						<Select
+							value={autoRefresh}
+							label="Auto Refresh"
+							onChange={(e) => setAutoRefresh(e.target.value as 'off' | '60000')}
+						>
+							<MenuItem value="off">Off</MenuItem>
+							<MenuItem value="60000">Once per minute</MenuItem>
+						</Select>
+					</FormControl>
+					<Button
+						variant="outlined"
+						onClick={handleManualRefresh}
+					>
+						Refresh
+					</Button>
+				</Box>
+			</Paper>
 			<Paper
 				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
 				elevation={0}

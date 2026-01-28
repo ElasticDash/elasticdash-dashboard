@@ -39,6 +39,8 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 			case 'pending':
 			case 'running':
 				return 'warning';
+			case 'suspicious':
+				return 'warning';
 			case 'failed':
 			case 'error':
 				return 'error';
@@ -188,130 +190,129 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 							<Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 								{(showOnlyFailed
 									? runDetail.aiCalls.filter((aiCall) =>
-										['failed', 'error'].includes((aiCall.runStatus || '').toLowerCase())
-									)
+											['failed', 'error'].includes((aiCall.runStatus || '').toLowerCase())
+										)
 									: runDetail.aiCalls
 								)
-								.filter((aiCall) => aiCall.input && aiCall.runOutput)
-								.map((aiCall) => {
-									const isOpen = !!expanded[aiCall.id];
-									const start = aiCall.runStartedAt ? new Date(aiCall.runStartedAt) : null;
-									const end = aiCall.runCompletedAt ? new Date(aiCall.runCompletedAt) : null;
-									const duration =
-										start && end
-											? `${((end.getTime() - start.getTime()) / 1000).toFixed(2)}s`
-											: 'N/A';
-									return (
-										<Paper
-											key={aiCall.id}
-											sx={{ p: 1, mb: 1 }}
-											elevation={1}
-										>
-											<Box
-												display="flex"
-												alignItems="center"
-												justifyContent="space-between"
-												onClick={() => handleToggle(aiCall.id)}
-												sx={{ cursor: 'pointer', userSelect: 'none' }}
+									.filter((aiCall) => aiCall.input && aiCall.runOutput)
+									.map((aiCall) => {
+										const isOpen = !!expanded[aiCall.id];
+										const start = aiCall.runStartedAt ? new Date(aiCall.runStartedAt) : null;
+										const end = aiCall.runCompletedAt ? new Date(aiCall.runCompletedAt) : null;
+										const duration =
+											start && end
+												? `${((end.getTime() - start.getTime()) / 1000).toFixed(2)}s`
+												: 'N/A';
+										return (
+											<Paper
+												key={aiCall.id}
+												sx={{ p: 1, mb: 1 }}
+												elevation={1}
 											>
 												<Box
 													display="flex"
 													alignItems="center"
-													gap={2}
+													justifyContent="space-between"
+													onClick={() => handleToggle(aiCall.id)}
+													sx={{ cursor: 'pointer', userSelect: 'none' }}
 												>
-													<Typography
-														variant="subtitle2"
-														sx={{ fontWeight: 600 }}
+													<Box
+														display="flex"
+														alignItems="center"
+														gap={2}
 													>
-														Step {aiCall.stepOrder}
-													</Typography>
+														<Typography
+															variant="subtitle2"
+															sx={{ fontWeight: 600 }}
+														>
+															Step {aiCall.stepOrder}
+														</Typography>
+														<Typography
+															variant="body2"
+															color="text.secondary"
+														>
+															{start ? start.toLocaleTimeString() : 'N/A'}
+														</Typography>
+														<Typography
+															variant="body2"
+															color="text.secondary"
+														>
+															Duration: {duration}
+														</Typography>
+														<Chip
+															label={aiCall.runStatus}
+															color={getStatusColor(aiCall.runStatus)}
+															size="small"
+														/>
+													</Box>
 													<Typography
 														variant="body2"
-														color="text.secondary"
+														color="primary"
 													>
-														{start ? start.toLocaleTimeString() : 'N/A'}
+														{isOpen ? '▼' : '▶'}
 													</Typography>
-													<Typography
-														variant="body2"
-														color="text.secondary"
-													>
-														Duration: {duration}
-													</Typography>
-													<Chip
-														label={aiCall.runStatus}
-														color={getStatusColor(aiCall.runStatus)}
-														size="small"
-													/>
 												</Box>
-												<Typography
-													variant="body2"
-													color="primary"
-												>
-													{isOpen ? '▼' : '▶'}
-												</Typography>
-											</Box>
-											{isOpen && (
-												<Box sx={{ mt: 2, ml: 2 }}>
-													<Typography
-														variant="subtitle2"
-														sx={{ fontWeight: 600, mb: 1 }}
-													>
-														Input
-													</Typography>
-													<Paper sx={{ p: 1, mb: 1, background: '#f7f7f7' }}>
-														<pre
-															style={{
-																margin: 0,
-																fontSize: 13,
-																whiteSpace: 'pre-wrap',
-																wordBreak: 'break-all'
-															}}
+												{isOpen && (
+													<Box sx={{ mt: 2, ml: 2 }}>
+														<Typography
+															variant="subtitle2"
+															sx={{ fontWeight: 600, mb: 1 }}
 														>
-															{JSON.stringify(aiCall.input, null, 2)}
-														</pre>
-													</Paper>
-													<Typography
-														variant="subtitle2"
-														sx={{ fontWeight: 600, mb: 1 }}
-													>
-														Output
-													</Typography>
-													<Paper sx={{ p: 1, mb: 1, background: '#f7f7f7' }}>
-														<pre
-															style={{
-																margin: 0,
-																fontSize: 13,
-																whiteSpace: 'pre-wrap',
-																wordBreak: 'break-all'
-															}}
+															Input
+														</Typography>
+														<Paper sx={{ p: 1, mb: 1, background: '#f7f7f7' }}>
+															<pre
+																style={{
+																	margin: 0,
+																	fontSize: 13,
+																	whiteSpace: 'pre-wrap',
+																	wordBreak: 'break-all'
+																}}
+															>
+																{JSON.stringify(aiCall.input, null, 2)}
+															</pre>
+														</Paper>
+														<Typography
+															variant="subtitle2"
+															sx={{ fontWeight: 600, mb: 1 }}
 														>
-															{typeof aiCall.runOutput === 'string'
-																? aiCall.runOutput
-																: JSON.stringify(aiCall.runOutput, null, 2)}
-														</pre>
-													</Paper>
-													<Typography
-														variant="subtitle2"
-														sx={{ fontWeight: 600, mb: 1 }}
-													>
-														Expected Output
-													</Typography>
-													<Paper sx={{ p: 1, background: '#f7f7f7' }}>
-														<pre
-															style={{
-																margin: 0,
-																fontSize: 13,
-																whiteSpace: 'pre-wrap',
-																wordBreak: 'break-all'
-															}}
+															Output
+														</Typography>
+														<Paper sx={{ p: 1, mb: 1, background: '#f7f7f7' }}>
+															<pre
+																style={{
+																	margin: 0,
+																	fontSize: 13,
+																	whiteSpace: 'pre-wrap',
+																	wordBreak: 'break-all'
+																}}
+															>
+																{typeof aiCall.runOutput === 'string'
+																	? aiCall.runOutput
+																	: JSON.stringify(aiCall.runOutput, null, 2)}
+															</pre>
+														</Paper>
+														<Typography
+															variant="subtitle2"
+															sx={{ fontWeight: 600, mb: 1 }}
 														>
-															{typeof aiCall.expectedOutput === 'string'
-																? aiCall.expectedOutput
-																: JSON.stringify(aiCall.expectedOutput, null, 2)}
-														</pre>
-													</Paper>
-													{
-														aiCall.failureReason && (
+															Expected Output
+														</Typography>
+														<Paper sx={{ p: 1, background: '#f7f7f7' }}>
+															<pre
+																style={{
+																	margin: 0,
+																	fontSize: 13,
+																	whiteSpace: 'pre-wrap',
+																	wordBreak: 'break-all'
+																}}
+															>
+																{typeof aiCall.expectedOutput === 'string'
+																	? aiCall.expectedOutput
+																	: JSON.stringify(aiCall.expectedOutput, null, 2)}
+															</pre>
+														</Paper>
+														{aiCall.failureReason && (
 															<>
 																<Typography
 																	variant="subtitle2"
@@ -332,13 +333,12 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 																	</pre>
 																</Paper>
 															</>
-														)
-													}
-												</Box>
-											)}
-										</Paper>
-									);
-								})}
+														)}
+													</Box>
+												)}
+											</Paper>
+										);
+									})}
 							</Box>
 						) : (
 							<Typography

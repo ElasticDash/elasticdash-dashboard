@@ -2,7 +2,7 @@ import { api } from '@/utils/api';
 
 export interface CreateTestCaseRunParams {
 	testCaseId: number;
-	created_by?: number;
+	createdBy?: number;
 }
 
 export interface TestCaseRun {
@@ -32,6 +32,8 @@ export interface AiCallRun {
 	runOutput: any;
 	validationScore: number;
 	runStatus: string;
+	promptDriftDetected?: boolean;
+	failureReason?: string;
 	runStartedAt: string;
 	runCompletedAt: string;
 }
@@ -93,4 +95,44 @@ export async function runTestCase(id: number): Promise<any> {
 	if (!res.success) throw new Error(res.error || 'Failed to run test case');
 
 	return res.result;
+}
+
+/**
+ * Get mock test case run detail with AI call that has prompt drift
+ */
+export function getMockTestCaseRunDetailWithPromptDrift(runId: number): TestCaseRunDetail {
+	const now = new Date();
+	const startTime = new Date(now.getTime() - 3 * 60 * 1000); // 3 minutes ago
+	const completedTime = new Date(now.getTime() - 1 * 60 * 1000); // 1 minute ago
+
+	return {
+		run: {
+			id: runId,
+			testCaseId: 1,
+			testCaseName: 'Test Case with Prompt Drift',
+			status: 'suspicious',
+			startedAt: startTime.toISOString(),
+			completedAt: completedTime.toISOString(),
+			createdBy: 1,
+			updatedBy: 1
+		},
+		aiCalls: [
+			{
+				id: 2001,
+				stepOrder: 1,
+				aiModel: 'gpt-4',
+				apiEndpoint: '/api/chat/completions',
+				input: { prompt: 'Test prompt', context: 'Test context' },
+				expectedOutput: 'Expected response',
+				outputMatchType: 'exact',
+				runInput: { prompt: 'Test prompt', context: 'Test context' },
+				runOutput: { response: 'Actual response' },
+				validationScore: 0.95,
+				runStatus: 'success',
+				promptDriftDetected: true,
+				runStartedAt: startTime.toISOString(),
+				runCompletedAt: completedTime.toISOString()
+			}
+		]
+	};
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { type MRT_ColumnDef, type MRT_RowSelectionState } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { fetchTestCaseDetailWithAiCalls, fetchTestCasesPaged, TestCase } from '@/services/testCaseService';
@@ -11,12 +11,16 @@ import {
 	CircularProgress,
 	Button,
 	Box,
-	Alert,
 	Dialog,
 	DialogTitle,
 	DialogContent,
 	DialogContentText,
-	DialogActions
+	DialogActions,
+	TextField,
+	Select,
+	MenuItem,
+	FormControl,
+	InputLabel
 } from '@mui/material';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
@@ -82,7 +86,13 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 	const [total, setTotal] = useState(0);
 
-	useEffect(() => {
+	// Search and refresh state
+	const [searchName, setSearchName] = useState('');
+	const [autoRefresh, setAutoRefresh] = useState<'off' | '60000'>('off');
+	const [refreshKey, setRefreshKey] = useState(0);
+
+	// Fetch test cases function
+	const loadTestCases = useCallback(() => {
 		const fetchCases = async () => {
 			setLoading(true);
 			setError(null);
@@ -91,7 +101,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 					limit: pagination.pageSize,
 					offset: pagination.pageIndex * pagination.pageSize,
 					filter: '',
-					search: ''
+					search: searchName
 				});
 				console.log('Fetched test cases paged:', res);
 				const { testCases, total } = res;
@@ -105,7 +115,34 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			}
 		};
 		fetchCases();
-	}, [pagination.pageIndex, pagination.pageSize, fetchNeeded]);
+	}, [pagination.pageIndex, pagination.pageSize, searchName, fetchNeeded]);
+
+	// Fetch test cases when dependencies change
+	useEffect(() => {
+		loadTestCases();
+	}, [loadTestCases, refreshKey]);
+
+	// Auto-refresh interval
+	useEffect(() => {
+		if (autoRefresh === 'off') return;
+
+		const interval = setInterval(() => {
+			loadTestCases();
+		}, parseInt(autoRefresh));
+
+		return () => clearInterval(interval);
+	}, [autoRefresh, loadTestCases]);
+
+	// Manual refresh handler
+	const handleManualRefresh = () => {
+		setRefreshKey((prev) => prev + 1);
+	};
+
+	// Search handler
+	const handleSearch = () => {
+		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+		setFetchNeeded(true);
+	};
 
 	const handleCloseEdit = () => {
 		setEditDialogOpen(false);
@@ -237,7 +274,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	return (
 		<>
 			{/* Status Messages and Controls */}
-			<Paper
+			{/* <Paper
 				sx={{ p: 2, borderRadius: 0 }}
 				elevation={1}
 				className="border-b-2 border-gray-300"
@@ -287,6 +324,49 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 							{resetError}
 						</Alert>
 					)}
+				</Box>
+			</Paper> */}
+			{/* Filter UI */}
+			<Paper
+				sx={{ p: 2, borderRadius: 0 }}
+				elevation={1}
+				className="border-b-2 border-gray-300"
+			>
+				<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
+					<TextField
+						label="Name contains"
+						value={searchName}
+						onChange={(e) => setSearchName(e.target.value)}
+						size="small"
+						sx={{ minWidth: 200 }}
+						placeholder="e.g. chat"
+					/>
+					<Button
+						variant="contained"
+						onClick={handleSearch}
+					>
+						Apply Filter
+					</Button>
+					<FormControl
+						size="small"
+						sx={{ minWidth: 160 }}
+					>
+						<InputLabel>Auto Refresh</InputLabel>
+						<Select
+							value={autoRefresh}
+							label="Auto Refresh"
+							onChange={(e) => setAutoRefresh(e.target.value as 'off' | '60000')}
+						>
+							<MenuItem value="off">Off</MenuItem>
+							<MenuItem value="60000">Once per minute</MenuItem>
+						</Select>
+					</FormControl>
+					<Button
+						variant="outlined"
+						onClick={handleManualRefresh}
+					>
+						Refresh
+					</Button>
 				</Box>
 			</Paper>
 

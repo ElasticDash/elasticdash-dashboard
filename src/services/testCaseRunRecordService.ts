@@ -7,7 +7,7 @@ export interface TestCaseRunRecord {
 	id: number;
 	testCaseIds: number[];
 	times: number;
-	status: 'pending' | 'running' | 'completed';
+	status: 'pending' | 'running' | 'completed' | 'suspicious';
 	totalRuns: number;
 	successfulRuns: number;
 	failedRuns: number;
@@ -28,6 +28,7 @@ export interface TestCaseRunInRecord {
 	testCaseId: number;
 	testCaseName: string;
 	status: 'pending' | 'running' | 'success' | 'failed';
+	promptDriftDetected?: boolean;
 	startedAt: string;
 	completedAt: string | null;
 	createdAt: string;
@@ -41,7 +42,7 @@ export interface TestCaseRunRecordDetail {
 		id: number;
 		test_case_ids: number[];
 		times: number;
-		status: 'pending' | 'running' | 'completed';
+		status: 'pending' | 'running' | 'completed' | 'suspicious';
 		created_at: string;
 		started_at: string;
 		completed_at: string | null;
@@ -144,4 +145,47 @@ export async function fetchTestCaseRunRecordDetail(id: number): Promise<TestCase
 	}
 
 	return res.result;
+}
+
+/**
+ * Get mock data for testing prompt drift detection
+ * Returns a test case run record detail with promptDriftDetected = true
+ */
+export function getMockPromptDriftData(): TestCaseRunRecordDetail {
+	const now = new Date();
+	const startTime = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutes ago
+	const completedTime = new Date(now.getTime() - 2 * 60 * 1000); // 2 minutes ago
+
+	return {
+		record: {
+			id: 999,
+			test_case_ids: [1],
+			times: 1,
+			status: 'suspicious',
+			created_at: startTime.toISOString(),
+			started_at: startTime.toISOString(),
+			completed_at: completedTime.toISOString(),
+			created_by: 1,
+			updated_by: 1
+		},
+		runs: [
+			{
+				id: 1001,
+				testCaseId: 1,
+				testCaseName: 'Test Case with Prompt Drift',
+				status: 'success',
+				promptDriftDetected: true,
+				startedAt: startTime.toISOString(),
+				completedAt: completedTime.toISOString(),
+				createdAt: startTime.toISOString()
+			}
+		],
+		summary: {
+			total: 1,
+			pending: 0,
+			running: 0,
+			success: 1,
+			failed: 0
+		}
+	};
 }

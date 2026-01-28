@@ -10,12 +10,13 @@ import {
 	Chip,
 	List,
 	ListItem,
-	ListItemButton
+	ListItemButton,
+	Button
 } from '@mui/material';
 import React, { useState, useMemo, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import { TestCaseRunRecordDetail } from '@/services/testCaseRunRecordService';
-import { fetchTestCaseRunDetail } from '@/services/testCaseRunService';
+import { fetchTestCaseRunDetail, getMockTestCaseRunDetailWithPromptDrift } from '@/services/testCaseRunService';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
 
@@ -61,7 +62,12 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 		}
 	};
 
-	const getStatusColor = (status: string) => {
+	const getStatusColor = (status: string, promptDriftDetected?: boolean) => {
+		// Prompt drift gets yellow/warning regardless of status
+		if (promptDriftDetected) {
+			return 'warning';
+		}
+
 		switch (status?.toLowerCase()) {
 			case 'completed':
 			case 'success':
@@ -77,9 +83,18 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 		}
 	};
 
+	const getStatusLabel = (status: string, promptDriftDetected?: boolean, isRun?: boolean) => {
+		if (promptDriftDetected) {
+			return isRun ? 'Suspicious' : 'Prompt Drifted';
+		}
+
+		return status;
+	};
+
 	// Get all runs as individual items in the list
 	const runs = useMemo(() => {
 		if (!recordDetail?.runs) return [];
+
 		return recordDetail.runs;
 	}, [recordDetail]);
 
@@ -101,7 +116,14 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 		const fetchAiCalls = async () => {
 			setAiCallsLoading(true);
 			try {
-				const detail = await fetchTestCaseRunDetail(selectedRun.id);
+				// Use mock data if promptDriftDetected is true
+				let detail;
+
+				if (selectedRun.promptDriftDetected) {
+					detail = getMockTestCaseRunDetailWithPromptDrift(selectedRun.id);
+				} else {
+					detail = await fetchTestCaseRunDetail(selectedRun.id);
+				}
 
 				if (detail.aiCalls && detail.aiCalls.length > 0) {
 					setAllAiCalls(detail.aiCalls);
@@ -252,18 +274,36 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 													}}
 												>
 													<Box>
-														<Typography variant="body2" fontWeight={600}>
+														<Typography
+															variant="body2"
+															fontWeight={600}
+														>
 															{run.testCaseName}
 														</Typography>
-														<Typography variant="caption" color="text.secondary">
+														<Typography
+															variant="caption"
+															color="text.secondary"
+														>
 															Run #{run.id}
 														</Typography>
 													</Box>
 													<Chip
-														label={run.status}
-														color={getStatusColor(run.status)}
+														label={getStatusLabel(
+															run.status,
+															run.promptDriftDetected,
+															true
+														)}
+														color={getStatusColor(run.status, run.promptDriftDetected)}
 														size="small"
-														sx={{ height: 18, fontSize: '0.65rem' }}
+														sx={{
+															height: 18,
+															fontSize: '0.65rem',
+															...(run.promptDriftDetected && {
+																backgroundColor: '#ffc107',
+																color: '#000',
+																fontWeight: 600
+															})
+														}}
 													/>
 												</Box>
 											</ListItemButton>
@@ -340,20 +380,40 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 													}}
 												>
 													<Box>
-														<Typography variant="body2" fontWeight={600}>
+														<Typography
+															variant="body2"
+															fontWeight={600}
+														>
 															AI Call #{call.stepOrder || index + 1}
 														</Typography>
 														{call.name && (
-															<Typography variant="caption" color="text.secondary">
+															<Typography
+																variant="caption"
+																color="text.secondary"
+															>
 																{call.name}
 															</Typography>
 														)}
 													</Box>
 													<Chip
-														label={call.runStatus || call.status}
-														color={getStatusColor(call.runStatus || call.status)}
+														label={getStatusLabel(
+															call.runStatus || call.status,
+															call.promptDriftDetected
+														)}
+														color={getStatusColor(
+															call.runStatus || call.status,
+															call.promptDriftDetected
+														)}
 														size="small"
-														sx={{ height: 18, fontSize: '0.65rem' }}
+														sx={{
+															height: 18,
+															fontSize: '0.65rem',
+															...(call.promptDriftDetected && {
+																backgroundColor: '#ffc107',
+																color: '#000',
+																fontWeight: 600
+															})
+														}}
 													/>
 												</Box>
 											</ListItemButton>
@@ -367,88 +427,165 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 						<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
 							{selectedAiCall ? (
 								<>
-									<Typography
-										variant="h6"
-										gutterBottom
-									>
-										Input
-									</Typography>
-									<pre
-										style={{
-											background: '#f5f5f5',
-											padding: '16px',
-											borderRadius: '4px',
-											overflow: 'auto',
-											fontSize: '14px',
-											marginBottom: '24px'
-										}}
-									>
-										{prettifyJSON(selectedAiCall.input)}
-									</pre>
+									<Box sx={{ height: 'calc(100% - 44px)', overflow: 'auto' }}>
+										<Typography
+											variant="h6"
+											gutterBottom
+										>
+											Input
+										</Typography>
+										<pre
+											style={{
+												background: '#f5f5f5',
+												padding: '16px',
+												borderRadius: '4px',
+												overflow: 'auto',
+												fontSize: '14px',
+												marginBottom: '24px'
+											}}
+										>
+											{prettifyJSON(selectedAiCall.input)}
+										</pre>
 
-									<Typography
-										variant="h6"
-										gutterBottom
-									>
-										Output
-									</Typography>
-									<pre
-										style={{
-											background: '#f5f5f5',
-											padding: '16px',
-											borderRadius: '4px',
-											overflow: 'auto',
-											fontSize: '14px',
-											marginBottom: '24px'
-										}}
-									>
-										{prettifyJSON(selectedAiCall.runOutput || selectedAiCall.output)}
-									</pre>
+										<Typography
+											variant="h6"
+											gutterBottom
+										>
+											Output
+										</Typography>
+										<pre
+											style={{
+												background: '#f5f5f5',
+												padding: '16px',
+												borderRadius: '4px',
+												overflow: 'auto',
+												fontSize: '14px',
+												marginBottom: '24px'
+											}}
+										>
+											{prettifyJSON(selectedAiCall.runOutput || selectedAiCall.output)}
+										</pre>
 
-									{selectedAiCall.expectedOutput && (
+										{selectedAiCall.expectedOutput && (
+											<>
+												<Typography
+													variant="h6"
+													gutterBottom
+												>
+													Expected Output
+												</Typography>
+												<pre
+													style={{
+														background: '#f5f5f5',
+														padding: '16px',
+														borderRadius: '4px',
+														overflow: 'auto',
+														fontSize: '14px'
+													}}
+												>
+													{prettifyJSON(selectedAiCall.expectedOutput)}
+												</pre>
+											</>
+										)}
+
+										{selectedAiCall.failureReason && (
+											<>
+												<Typography
+													variant="h6"
+													gutterBottom
+													sx={{ mt: 2, color: 'error.main' }}
+												>
+													Failure Reason
+												</Typography>
+												<pre
+													style={{
+														background: '#ffebee',
+														padding: '16px',
+														borderRadius: '4px',
+														overflow: 'auto',
+														fontSize: '14px',
+														color: '#c62828'
+													}}
+												>
+													{selectedAiCall.failureReason}
+												</pre>
+											</>
+										)}
+
+										{selectedAiCall.promptDriftDetected && (
+											<>
+												<Typography
+													variant="h6"
+													gutterBottom
+													sx={{ mt: 2, color: 'warning.main' }}
+												>
+													Detected Prompt
+												</Typography>
+												<pre
+													style={{
+														background: '#fffbf0',
+														padding: '16px',
+														borderRadius: '4px',
+														overflow: 'auto',
+														fontSize: '14px',
+														color: '#333',
+														border: '1px solid #ffc107'
+													}}
+												>
+													{`You are a helpful AI assistant. Your task is to analyze user input and provide accurate, concise responses.
+
+When the user asks a question:
+1. Break down the question into key components
+2. Research relevant information from your knowledge base
+3. Formulate a clear, structured response
+4. Provide examples when appropriate
+
+Always maintain a professional and friendly tone.`}
+												</pre>
+											</>
+										)}
+									</Box>
+
+									{selectedAiCall.promptDriftDetected ? (
 										<>
-											<Typography
-												variant="h6"
-												gutterBottom
-											>
-												Expected Output
-											</Typography>
-											<pre
-												style={{
-													background: '#f5f5f5',
-													padding: '16px',
-													borderRadius: '4px',
-													overflow: 'auto',
-													fontSize: '14px'
-												}}
-											>
-												{prettifyJSON(selectedAiCall.expectedOutput)}
-											</pre>
+											<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+												<Button
+													variant="outlined"
+													color="secondary"
+													size="small"
+												>
+													Ignore
+												</Button>
+												<Button
+													variant="contained"
+													color="primary"
+													size="small"
+												>
+													Apply New Prompt
+												</Button>
+											</Box>
 										</>
-									)}
-
-									{selectedAiCall.failureReason && (
-										<>
-											<Typography
-												variant="h6"
-												gutterBottom
-												sx={{ mt: 2, color: 'error.main' }}
-											>
-												Failure Reason
-											</Typography>
-											<pre
-												style={{
-													background: '#ffebee',
-													padding: '16px',
-													borderRadius: '4px',
-													overflow: 'auto',
-													fontSize: '14px',
-													color: '#c62828'
-												}}
-											>
-												{selectedAiCall.failureReason}
-											</pre>
-										</>
+									) : (
+										<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+											{(selectedAiCall.runStatus || selectedAiCall.status)?.toLowerCase() ===
+											'success' ? (
+												<Button
+													variant="contained"
+													color="error"
+													size="small"
+												>
+													Mark as Failure
+												</Button>
+											) : (
+												<Button
+													variant="contained"
+													color="success"
+													size="small"
+												>
+													Mark as Success
+												</Button>
+											)}
+										</Box>
 									)}
 								</>
 							) : (
