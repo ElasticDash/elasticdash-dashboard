@@ -171,7 +171,7 @@ export default function TraceListPage() {
 			{
 				header: 'Steps',
 				Cell: ({ row }) => <Typography>{row.original.steps ?? 0}</Typography>
-			},
+			}
 			// {
 			// 	accessorKey: 'project_id',
 			// 	header: 'Project ID',
@@ -227,6 +227,19 @@ export default function TraceListPage() {
 								sx={{ minWidth: 160 }}
 								slotProps={{ inputLabel: { shrink: true } }}
 							/> */}
+							<FormControl
+								size="small"
+								sx={{ minWidth: 160 }}
+							>
+								<InputLabel>Environment</InputLabel>
+								<Select
+									label="Environment"
+									defaultValue="development"
+									sx={{ minWidth: 160 }}
+								>
+									<MenuItem value="development">Development</MenuItem>
+								</Select>
+							</FormControl>
 							<Button
 								variant="contained"
 								onClick={handleApplyFilter}
@@ -295,7 +308,9 @@ export default function TraceListPage() {
 															textAlign: 'left',
 															padding: '10px 12px',
 															background:
-																selectedFeatureId === feature.id ? '#e0e7ff' : 'transparent',
+																selectedFeatureId === feature.id
+																	? '#e0e7ff'
+																	: 'transparent',
 															border: 'none',
 															borderRadius: 6,
 															cursor: 'pointer',

@@ -341,6 +341,19 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						sx={{ minWidth: 200 }}
 						placeholder="e.g. chat"
 					/>
+					<FormControl
+						size="small"
+						sx={{ minWidth: 160 }}
+					>
+						<InputLabel>Environment</InputLabel>
+						<Select
+							label="Environment"
+							defaultValue="development"
+							sx={{ minWidth: 160 }}
+						>
+							<MenuItem value="development">Development</MenuItem>
+						</Select>
+					</FormControl>
 					<Button
 						variant="contained"
 						onClick={handleSearch}
@@ -388,43 +401,43 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						onRowSelectionChange={onRowSelectionChange}
 						onPaginationChange={setPagination}
 						manualPagination
-					renderRowActions={({ row }) => (
-						<div style={{ display: 'flex', gap: 8 }}>
-							<Button
-								size="small"
-								variant="contained"
-								color="primary"
-								onClick={() => {
-									setSelected(row.original);
-									setEditDialogOpen(true);
-								}}
-							>
-								Edit
-							</Button>
-							<Button
-								size="small"
-								variant="outlined"
-								color="secondary"
-								onClick={() => {
-									handleAiCallDialog(row.original);
-								}}
-							>
-								Detail
-							</Button>
-							<Button
-								size="small"
-								variant="outlined"
-								color="error"
-								onClick={() => {
-									setDeleteTarget(row.original);
-									setDeleteDialogOpen(true);
-								}}
-							>
-								Delete
-							</Button>
-						</div>
-					)}
-				/>
+						renderRowActions={({ row }) => (
+							<div style={{ display: 'flex', gap: 8 }}>
+								<Button
+									size="small"
+									variant="contained"
+									color="primary"
+									onClick={() => {
+										setSelected(row.original);
+										setEditDialogOpen(true);
+									}}
+								>
+									Edit
+								</Button>
+								<Button
+									size="small"
+									variant="outlined"
+									color="secondary"
+									onClick={() => {
+										handleAiCallDialog(row.original);
+									}}
+								>
+									Detail
+								</Button>
+								<Button
+									size="small"
+									variant="outlined"
+									color="error"
+									onClick={() => {
+										setDeleteTarget(row.original);
+										setDeleteDialogOpen(true);
+									}}
+								>
+									Delete
+								</Button>
+							</div>
+						)}
+					/>
 				</div>
 			</Paper>
 			{/* Delete Confirmation Dialog */}

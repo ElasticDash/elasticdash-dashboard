@@ -77,7 +77,7 @@ const TestCaseRunTable: React.FC = () => {
 			setDetailLoading(false);
 		}
 	};
-	
+
 	// Auto-refresh interval
 	useEffect(() => {
 		if (autoRefresh === 'off') return;
@@ -264,7 +264,6 @@ const TestCaseRunTable: React.FC = () => {
 
 	return (
 		<>
-
 			{/* Filter UI */}
 			<Paper
 				sx={{ p: 2, borderRadius: 0 }}
@@ -304,6 +303,20 @@ const TestCaseRunTable: React.FC = () => {
 					>
 						Apply Filter
 					</Button> */}
+					<FormControl
+						size="small"
+						sx={{ minWidth: 160 }}
+					>
+						<InputLabel>Environment</InputLabel>
+						<Select
+							label="Environment"
+							defaultValue="development"
+							sx={{ minWidth: 160 }}
+						>
+							<MenuItem value="development">Development</MenuItem>
+						</Select>
+					</FormControl>
+					<Button variant="contained">Apply Filter</Button>
 					<FormControl
 						size="small"
 						sx={{ minWidth: 160 }}
