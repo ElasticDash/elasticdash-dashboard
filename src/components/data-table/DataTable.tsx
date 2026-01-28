@@ -76,12 +76,12 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 					variant: 'outlined',
 					showRowsPerPage: false
 				},
-				muiSearchTextFieldProps: {
-					placeholder: 'Search',
-					sx: { minWidth: '300px' },
-					variant: 'outlined',
-					size: 'small'
-				},
+				// muiSearchTextFieldProps: {
+				// 	placeholder: 'Search',
+				// 	sx: { minWidth: '300px' },
+				// 	variant: 'outlined',
+				// 	size: 'small'
+				// },
 				muiFilterTextFieldProps: {
 					variant: 'outlined',
 					size: 'small',

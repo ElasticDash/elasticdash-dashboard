@@ -1,6 +1,20 @@
 'use client';
-import React, { useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import {
+	Dialog,
+	AppBar,
+	Toolbar,
+	Typography,
+	IconButton,
+	DialogContent,
+	List,
+	ListItem,
+	ListItemButton,
+	Box
+} from '@mui/material';
+import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import { Divider as MuiDivider } from '@mui/material';
 
 interface AiCallDialogProps {
 	open: boolean;
@@ -9,334 +23,211 @@ interface AiCallDialogProps {
 }
 
 const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) => {
-	const [selectedStep, setSelectedStep] = React.useState<any | null>(null);
-	// For message viewer collapse state
-	const [expanded, setExpanded] = React.useState<boolean[]>([]);
+	const [selectedCall, setSelectedCall] = useState<any | null>(null);
 
+	// Helper function to prettify JSON content
+	const prettifyJSON = (content: any): string => {
+		if (content === null || content === undefined) {
+			return '';
+		}
+
+		// If it's already a string, try to parse and re-stringify it
+		if (typeof content === 'string') {
+			try {
+				const parsed = JSON.parse(content);
+				return JSON.stringify(parsed, null, 2);
+			} catch {
+				// If parsing fails, return the original string
+				return content;
+			}
+		}
+
+		// If it's an object, stringify it with formatting
+		try {
+			return JSON.stringify(content, null, 2);
+		} catch {
+			return String(content);
+		}
+	};
+
+	// Auto-select first AI call when dialog opens
 	useEffect(() => {
-		if (!open) setSelectedStep(null);
+		if (open && aiCalls && aiCalls.length > 0) {
+			setSelectedCall(aiCalls[0]);
+		}
+	}, [open, aiCalls]);
+
+	// Reset state when dialog closes
+	useEffect(() => {
+		if (!open) {
+			setSelectedCall(null);
+		}
 	}, [open]);
-
-	// Helper to pretty-print JSON or string, with \n handling
-	const renderJsonOrString = (data: any, maxHeight = 240) => {
-		let parsed = data;
-
-		if (typeof data === 'string') {
-			try {
-				parsed = JSON.parse(data);
-			} catch {
-				// keep as string
-			}
-		}
-
-		if (typeof parsed === 'object') {
-			return (
-				<pre
-					style={{
-						whiteSpace: 'pre-wrap',
-						wordBreak: 'break-word',
-						fontSize: 13,
-						maxHeight,
-						overflow: 'auto',
-						margin: 0
-					}}
-				>
-					{JSON.stringify(parsed, null, 2)}
-				</pre>
-			);
-		}
-
-		// If string, replace \n with real newlines
-		return (
-			<pre
-				style={{
-					whiteSpace: 'pre-wrap',
-					wordBreak: 'break-word',
-					fontSize: 13,
-					maxHeight,
-					overflow: 'auto',
-					margin: 0
-				}}
-			>
-				{String(parsed).replace(/\\n/g, '\n')}
-			</pre>
-		);
-	};
-
-	// Helper to check if input is a message array format
-	const isMessageArray = (input: any) => {
-		if (!input) return false;
-
-		let obj = input;
-
-		if (typeof input === 'string') {
-			try {
-				obj = JSON.parse(input);
-			} catch {
-				return false;
-			}
-		}
-
-		return (
-			obj &&
-			typeof obj === 'object' &&
-			Array.isArray(obj.messages) &&
-			obj.messages.every((m: any) => m.role && m.content)
-		);
-	};
-
-	// Message viewer for input with collapsible blocks
-	const MessageViewer = ({
-		input,
-		expanded,
-		onToggle
-	}: {
-		input: any;
-		expanded: boolean[];
-		onToggle: (idx: number) => void;
-	}) => {
-		let obj = input;
-
-		if (typeof input === 'string') {
-			try {
-				obj = JSON.parse(input);
-			} catch {
-				return renderJsonOrString(input);
-			}
-		}
-
-		if (!obj || !Array.isArray(obj.messages)) return renderJsonOrString(input);
-
-		return (
-			<div
-				style={{
-					maxHeight: 256,
-					overflow: 'auto',
-					display: 'flex',
-					flexDirection: 'column',
-					gap: 8,
-					background: '#fff',
-					padding: 4
-				}}
-			>
-				{obj.messages.map((msg: any, idx: number) => (
-					<div
-						key={idx}
-						style={{
-							background: '#f5f5f5',
-							borderRadius: 6,
-							borderLeft: `4px solid ${msg.role === 'user' ? '#1976d2' : '#43a047'}`
-						}}
-					>
-						<div
-							style={{
-								fontWeight: 600,
-								color: msg.role === 'user' ? '#1976d2' : '#43a047',
-								marginBottom: 4,
-								cursor: 'pointer',
-								padding: 8,
-								display: 'flex',
-								alignItems: 'center',
-								userSelect: 'none'
-							}}
-							onClick={() => onToggle(idx)}
-						>
-							<span style={{ marginRight: 8 }}>{expanded[idx] ? '▼' : '▶'}</span>
-							{msg.role}
-						</div>
-						{expanded[idx] && (
-							<div
-								style={{
-									whiteSpace: 'pre-wrap',
-									fontSize: 13,
-									padding: 8,
-									borderTop: '1px solid #e0e0e0'
-								}}
-							>
-								{String(msg.content).replace(/\\n/g, '\n')}
-							</div>
-						)}
-					</div>
-				))}
-			</div>
-		);
-	};
-
-	const [showMessageView, setShowMessageView] = React.useState(true);
-
-	// Reset expanded state when selectedStep/input changes
-	useEffect(() => {
-		if (selectedStep && isMessageArray(selectedStep.input)) {
-			let obj = selectedStep.input;
-
-			if (typeof obj === 'string') {
-				try {
-					obj = JSON.parse(obj);
-				} catch {
-					obj = null;
-				}
-			}
-
-			if (obj && Array.isArray(obj.messages)) {
-				setExpanded(obj.messages.map(() => false));
-			}
-		}
-	}, [selectedStep]);
 
 	return (
 		<Dialog
 			open={open}
 			onClose={onClose}
-			maxWidth="md"
+			maxWidth="xl"
 			fullWidth
+			PaperProps={{
+				sx: {
+					height: '80vh',
+					maxHeight: '80vh'
+				}
+			}}
 		>
-			<DialogTitle>AI Calls</DialogTitle>
-			<DialogContent>
-				{selectedStep ? (
-					<div style={{ padding: 16 }}>
-						<div style={{ fontWeight: 600, color: '#1976d2', fontSize: 18, marginBottom: 8 }}>
-							Step {selectedStep.stepOrder ?? ''} Details
-						</div>
-						<div style={{ marginBottom: 12 }}>
-							<b>Input:</b>
-							<div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-								{isMessageArray(selectedStep.input) && (
-									<Button
-										size="small"
-										variant={showMessageView ? 'contained' : 'outlined'}
-										sx={{ mr: 1 }}
-										onClick={() => setShowMessageView(true)}
-									>
-										Message View
-									</Button>
-								)}
-								<Button
-									size="small"
-									variant={!showMessageView ? 'contained' : 'outlined'}
-									onClick={() => setShowMessageView(false)}
-								>
-									Plan JSON
-								</Button>
-							</div>
-							<div
-								style={{
-									background: '#f5f5f5',
-									borderRadius: 6,
-									padding: 8,
-									marginTop: 4,
-									maxHeight: 272,
-									overflow: 'auto'
-								}}
-							>
-								{isMessageArray(selectedStep.input) && showMessageView ? (
-									<MessageViewer
-										input={selectedStep.input}
-										expanded={expanded}
-										onToggle={(idx) =>
-											setExpanded((prev) => prev.map((v, i) => (i === idx ? !v : v)))
-										}
-									/>
-								) : (
-									renderJsonOrString(selectedStep.input)
-								)}
-							</div>
-						</div>
-						<div>
-							<b>Output:</b>
-							<div
-								style={{
-									background: '#f5f5f5',
-									borderRadius: 6,
-									padding: 8,
-									marginTop: 4,
-									maxHeight: 240,
-									overflow: 'auto'
-								}}
-							>
-								{renderJsonOrString(selectedStep.expectedOutput ?? selectedStep.output)}
-							</div>
-						</div>
-					</div>
-				) : (
-					<div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto', padding: 24 }}>
-						{aiCalls.map((call, idx) => (
-							<React.Fragment key={call.id}>
-								<div
-									style={{
-										minWidth: 120,
-										minHeight: 80,
-										background: '#f5f5f5',
-										border: '2px solid #1976d2',
-										borderRadius: 8,
-										display: 'flex',
-										flexDirection: 'column',
-										alignItems: 'center',
-										justifyContent: 'center',
-										marginRight: 16,
-										position: 'relative',
-										boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-										cursor: 'pointer',
-										transition: 'box-shadow 0.2s'
-									}}
-									onClick={() => setSelectedStep(call)}
-								>
-									<div style={{ fontWeight: 600, color: '#1976d2', fontSize: 16 }}>
-										Step {call.stepOrder ?? idx + 1}
-									</div>
-									<div style={{ fontSize: 12, color: '#555', marginTop: 8 }}>ID: {call.id}</div>
-								</div>
-								{idx < aiCalls.length - 1 && (
-									<div style={{ display: 'flex', alignItems: 'center', marginRight: 16 }}>
-										<svg
-											width="32"
-											height="24"
-											style={{ display: 'block' }}
-										>
-											<line
-												x1="0"
-												y1="12"
-												x2="28"
-												y2="12"
-												stroke="#1976d2"
-												strokeWidth="2"
-												markerEnd="url(#arrowhead)"
-											/>
-											<defs>
-												<marker
-													id="arrowhead"
-													markerWidth="6"
-													markerHeight="6"
-													refX="6"
-													refY="3"
-													orient="auto"
-													markerUnits="strokeWidth"
-												>
-													<path
-														d="M0,0 L0,6 L6,3 Z"
-														fill="#1976d2"
-													/>
-												</marker>
-											</defs>
-										</svg>
-									</div>
-								)}
-							</React.Fragment>
-						))}
-					</div>
-				)}
-			</DialogContent>
-			<DialogActions>
-				{selectedStep ? (
-					<Button
-						onClick={() => setSelectedStep(null)}
-						color="primary"
-						variant="outlined"
+			<AppBar
+				position="relative"
+				color="default"
+				elevation={0}
+			>
+				<Toolbar>
+					<Typography
+						variant="h6"
+						sx={{ flex: 1 }}
 					>
-						Back
-					</Button>
-				) : null}
-				<Button onClick={onClose}>Close</Button>
-			</DialogActions>
+						AI Calls
+					</Typography>
+					<IconButton
+						edge="end"
+						color="inherit"
+						onClick={onClose}
+						aria-label="close"
+					>
+						<CloseIcon />
+					</IconButton>
+				</Toolbar>
+			</AppBar>
+			<DialogContent
+				sx={{ p: 0, height: '100%', display: 'flex', overflow: 'hidden' }}
+				className="border-t-2 border-gray-300"
+			>
+				<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
+					{/* Left sidebar - AI Calls list */}
+					<Box
+						sx={{
+							width: 300,
+							borderRight: '1px solid',
+							borderColor: 'divider',
+							overflowY: 'auto',
+							bgcolor: 'background.default'
+						}}
+					>
+						{aiCalls.length === 0 ? (
+							<Typography sx={{ p: 2, color: 'text.secondary' }}>
+								No AI calls found.
+							</Typography>
+						) : (
+							<List sx={{ p: 0 }}>
+								{aiCalls.map((call: any, index: number) => (
+									<ListItem
+										disablePadding
+										key={call.id || index}
+										sx={{ alignItems: 'flex-start' }}
+									>
+										<Box
+											sx={{
+												display: 'flex',
+												flexDirection: 'column',
+												alignItems: 'center',
+												minWidth: 28,
+												pt: 1
+											}}
+										>
+											<FiberManualRecordIcon
+												fontSize="small"
+												color={selectedCall === call ? 'primary' : 'disabled'}
+											/>
+											{index < aiCalls.length - 1 && (
+												<MuiDivider
+													orientation="vertical"
+													flexItem
+													sx={{
+														height: 28,
+														borderRightWidth: 2,
+														borderColor: 'divider',
+														my: 0,
+														mx: 'auto'
+													}}
+												/>
+											)}
+										</Box>
+										<ListItemButton
+											selected={selectedCall === call}
+											onClick={() => setSelectedCall(call)}
+											sx={{ pl: 1, alignItems: 'flex-start' }}
+										>
+											<Box sx={{ width: '100%' }}>
+												<Typography
+													variant="body2"
+													fontWeight={600}
+												>
+													AI Call #{call.stepOrder ?? index + 1}
+												</Typography>
+												<Typography
+													variant="caption"
+													color="text.secondary"
+												>
+													ID: {call.id}
+												</Typography>
+											</Box>
+										</ListItemButton>
+									</ListItem>
+								))}
+							</List>
+						)}
+					</Box>
+
+					{/* Right content - AI Call details */}
+					<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+						{selectedCall ? (
+							<>
+								<Typography
+									variant="h6"
+									gutterBottom
+								>
+									Input
+								</Typography>
+								<pre
+									style={{
+										background: '#f5f5f5',
+										padding: '16px',
+										borderRadius: '4px',
+										overflow: 'auto',
+										fontSize: '14px',
+										marginBottom: '24px'
+									}}
+								>
+									{prettifyJSON(selectedCall.input)}
+								</pre>
+
+								<Typography
+									variant="h6"
+									gutterBottom
+								>
+									Output
+								</Typography>
+								<pre
+									style={{
+										background: '#f5f5f5',
+										padding: '16px',
+										borderRadius: '4px',
+										overflow: 'auto',
+										fontSize: '14px'
+									}}
+								>
+									{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
+								</pre>
+							</>
+						) : (
+							<Typography color="text.secondary">
+								Select an AI call from the list to view details
+							</Typography>
+						)}
+					</Box>
+				</Box>
+			</DialogContent>
 		</Dialog>
 	);
 };

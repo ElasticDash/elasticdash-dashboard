@@ -220,75 +220,81 @@ const TestCaseTable: React.FC = () => {
 	return (
 		<div>
 			{/* Bulk Run Controls */}
-			<Box className="mb-4 flex items-center gap-3">
-				<TextField
-					type="number"
-					label="Number of Runs"
-					value={bulkRunTimes}
-					onChange={(e) => setBulkRunTimes(parseInt(e.target.value) || 1)}
-					slotProps={{
-						htmlInput: { min: 1, max: 100 }
-					}}
-					size="small"
-					sx={{ width: 150 }}
-				/>
-				<Button
-					variant="contained"
-					color="primary"
-					onClick={handleBulkRun}
-					disabled={
-						bulkRunLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
-					}
-				>
-					{bulkRunLoading ? 'Running...' : 'Bulk Run'}
-					{Object.keys(rowSelection).filter((key) => rowSelection[key]).length > 0 &&
-						` (${Object.keys(rowSelection).filter((key) => rowSelection[key]).length})`}
-				</Button>
-				{bulkRunSuccess && (
-					<Alert
-						severity="success"
-						onClose={() => setBulkRunSuccess(null)}
-						sx={{ flex: 1 }}
+			<Paper
+				sx={{ p: 2, borderRadius: 0 }}
+				elevation={1}
+				className="border-b-2 border-gray-300"
+			>
+				<Box className="flex items-center gap-3">
+					<TextField
+						type="number"
+						label="Number of Runs"
+						value={bulkRunTimes}
+						onChange={(e) => setBulkRunTimes(parseInt(e.target.value) || 1)}
+						slotProps={{
+							htmlInput: { min: 1, max: 100 }
+						}}
+						size="small"
+						sx={{ width: 150 }}
+					/>
+					<Button
+						variant="contained"
+						color="primary"
+						onClick={handleBulkRun}
+						disabled={
+							bulkRunLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
+						}
 					>
-						{bulkRunSuccess}
-					</Alert>
-				)}
-				{bulkRunError && (
-					<Alert
-						severity="error"
-						onClose={() => setBulkRunError(null)}
-						sx={{ flex: 1 }}
+						{bulkRunLoading ? 'Running...' : 'Bulk Run'}
+						{Object.keys(rowSelection).filter((key) => rowSelection[key]).length > 0 &&
+							` (${Object.keys(rowSelection).filter((key) => rowSelection[key]).length})`}
+					</Button>
+					{bulkRunSuccess && (
+						<Alert
+							severity="success"
+							onClose={() => setBulkRunSuccess(null)}
+							sx={{ flex: 1 }}
+						>
+							{bulkRunSuccess}
+						</Alert>
+					)}
+					{bulkRunError && (
+						<Alert
+							severity="error"
+							onClose={() => setBulkRunError(null)}
+							sx={{ flex: 1 }}
+						>
+							{bulkRunError}
+						</Alert>
+					)}
+					<Button
+						variant="outlined"
+						color="secondary"
+						onClick={handleReset}
+						disabled={resetLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0}
 					>
-						{bulkRunError}
-					</Alert>
-				)}
-				<Button
-					variant="outlined"
-					color="secondary"
-					onClick={handleReset}
-					disabled={resetLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0}
-				>
-					{resetLoading ? 'Resetting...' : 'Reset Selected'}
-				</Button>
-				{resetSuccess && (
-					<Alert
-						severity="success"
-						onClose={() => setResetSuccess(null)}
-						sx={{ flex: 1 }}
-					>
-						{resetSuccess}
-					</Alert>
-				)}
-				{resetError && (
-					<Alert
-						severity="error"
-						onClose={() => setResetError(null)}
-						sx={{ flex: 1 }}
-					>
-						{resetError}
-					</Alert>
-				)}
-			</Box>
+						{resetLoading ? 'Resetting...' : 'Reset Selected'}
+					</Button>
+					{resetSuccess && (
+						<Alert
+							severity="success"
+							onClose={() => setResetSuccess(null)}
+							sx={{ flex: 1 }}
+						>
+							{resetSuccess}
+						</Alert>
+					)}
+					{resetError && (
+						<Alert
+							severity="error"
+							onClose={() => setResetError(null)}
+							sx={{ flex: 1 }}
+						>
+							{resetError}
+						</Alert>
+					)}
+				</Box>
+			</Paper>
 
 			{/* ...existing table UI, filtered by selectedFeatureId... */}
 			<Paper
@@ -327,7 +333,7 @@ const TestCaseTable: React.FC = () => {
 									handleAiCallDialog(row.original);
 								}}
 							>
-								AI Calls
+								Detail
 							</Button>
 							<Button
 								size="small"

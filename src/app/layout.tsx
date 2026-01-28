@@ -10,8 +10,8 @@ import App from './App';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const metadata = await generateMetadata({
-	title: 'Fuse React - NextJS',
-	description: 'Fuse React - NextJS by FuseTech',
+	title: 'ElasticDash - AI Regression Test',
+	description: 'Automated testing to ensure consistent, reliable LLM behavior across updates, deployments, and real-world workflows.',
 	cardImage: '/card.png',
 	robots: 'follow, index',
 	favicon: '/favicon.ico',

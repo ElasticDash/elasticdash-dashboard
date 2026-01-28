@@ -250,8 +250,12 @@ export default function TraceListPage() {
 					style={{ height: '100vh', minHeight: 0 }}
 				>
 					{/* Filter UI */}
-					<Paper sx={{ mb: 2, p: 2 }}>
-						<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+					<Paper
+						sx={{ p: 2, borderRadius: 0 }}
+						elevation={1}
+						className="border-b-2 border-gray-300"
+					>
+						<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
 							<TextField
 								label="Name contains"
 								value={name}
@@ -260,7 +264,7 @@ export default function TraceListPage() {
 								sx={{ minWidth: 200 }}
 								placeholder="e.g. chat"
 							/>
-							<TextField
+							{/* <TextField
 								label="Start date"
 								type="date"
 								value={startDate}
@@ -277,7 +281,7 @@ export default function TraceListPage() {
 								size="small"
 								sx={{ minWidth: 160 }}
 								slotProps={{ inputLabel: { shrink: true } }}
-							/>
+							/> */}
 							<Button
 								variant="contained"
 								onClick={handleApplyFilter}

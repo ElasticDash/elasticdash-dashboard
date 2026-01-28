@@ -212,37 +212,62 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 								</Typography>
 							) : (
 								<List sx={{ p: 0 }}>
-								{observations.map((observation: any, index: number) => (
-									<ListItem disablePadding key={index} sx={{ alignItems: 'flex-start' }}>
-										<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 28, pt: 1 }}>
-											<FiberManualRecordIcon fontSize="small" color={selectedObservation === observation ? 'primary' : 'disabled'} />
-											{index < observations.length - 1 && (
-												<MuiDivider orientation="vertical" flexItem sx={{ height: 28, borderRightWidth: 2, borderColor: 'divider', my: 0, mx: 'auto' }} />
-											)}
-										</Box>
-										<ListItemButton
-											selected={selectedObservation === observation}
-											onClick={() => setSelectedObservation(observation)}
-											sx={{ pl: 1, alignItems: 'flex-start' }}
+									{observations.map((observation: any, index: number) => (
+										<ListItem
+											disablePadding
+											key={index}
+											sx={{ alignItems: 'flex-start' }}
 										>
-											<Box sx={{ width: '100%' }}>
-												<Typography
-													variant="body2"
-													fontWeight={600}
-												>
-													AI Call #{index + 1}
-												</Typography>
-												<Typography
-													variant="caption"
-													color="text.secondary"
-												>
-													{observation.name || 'Unnamed'}
-												</Typography>
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={selectedObservation === observation ? 'primary' : 'disabled'}
+												/>
+												{index < observations.length - 1 && (
+													<MuiDivider
+														orientation="vertical"
+														flexItem
+														sx={{
+															height: 28,
+															borderRightWidth: 2,
+															borderColor: 'divider',
+															my: 0,
+															mx: 'auto'
+														}}
+													/>
+												)}
 											</Box>
-										</ListItemButton>
-									</ListItem>
-								))}
-							</List>
+											<ListItemButton
+												selected={selectedObservation === observation}
+												onClick={() => setSelectedObservation(observation)}
+												sx={{ pl: 1, alignItems: 'flex-start' }}
+											>
+												<Box sx={{ width: '100%' }}>
+													<Typography
+														variant="body2"
+														fontWeight={600}
+													>
+														AI Call #{index + 1}
+													</Typography>
+													<Typography
+														variant="caption"
+														color="text.secondary"
+													>
+														{observation.name || 'Unnamed'}
+													</Typography>
+												</Box>
+											</ListItemButton>
+										</ListItem>
+									))}
+								</List>
 							)}
 						</Box>
 
