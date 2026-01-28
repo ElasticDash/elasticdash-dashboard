@@ -5,25 +5,19 @@ import {
 	Typography,
 	IconButton,
 	DialogContent,
-	Button,
 	CircularProgress,
-	Paper,
 	Box,
 	Chip,
-	Tabs,
-	Tab,
-	Table,
-	TableHead,
-	TableBody,
-	TableRow,
-	TableCell,
-	TableContainer
+	List,
+	ListItem,
+	ListItemButton
 } from '@mui/material';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import { TestCaseRunRecordDetail } from '@/services/testCaseRunRecordService';
 import { fetchTestCaseRunDetail } from '@/services/testCaseRunService';
-import TestCaseRunDetailDialog from './TestCaseRunDetailDialog';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import { Divider as MuiDivider } from '@mui/material';
 
 interface TestCaseRunRecordDetailDialogProps {
 	open: boolean;
@@ -40,42 +34,35 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 	loading,
 	error
 }) => {
-	const [activeTab, setActiveTab] = useState(0);
+	const [selectedRun, setSelectedRun] = useState<any | null>(null);
+	const [selectedAiCall, setSelectedAiCall] = useState<any | null>(null);
+	const [aiCallsLoading, setAiCallsLoading] = useState(false);
+	const [allAiCalls, setAllAiCalls] = useState<any[]>([]);
 
-	// State for individual run detail dialog
-	const [runDetailOpen, setRunDetailOpen] = useState(false);
-	const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
-	const [runDetail, setRunDetail] = useState<any | null>(null);
-	const [runDetailLoading, setRunDetailLoading] = useState(false);
-	const [runDetailError, setRunDetailError] = useState<string | null>(null);
+	// Helper function to prettify JSON
+	const prettifyJSON = (content: any): string => {
+		if (content === null || content === undefined) {
+			return '';
+		}
 
-	const handleOpenRunDetail = async (runId: number) => {
-		setSelectedRunId(runId);
-		setRunDetailOpen(true);
-		setRunDetail(null);
-		setRunDetailError(null);
-		setRunDetailLoading(true);
+		if (typeof content === 'string') {
+			try {
+				const parsed = JSON.parse(content);
+				return JSON.stringify(parsed, null, 2);
+			} catch {
+				return content;
+			}
+		}
 
 		try {
-			const detail = await fetchTestCaseRunDetail(runId);
-			setRunDetail(detail);
-		} catch (err: any) {
-			setRunDetailError(err.message || 'Failed to fetch test case run detail');
-		} finally {
-			setRunDetailLoading(false);
+			return JSON.stringify(content, null, 2);
+		} catch {
+			return String(content);
 		}
 	};
 
-	const handleCloseRunDetail = () => {
-		setRunDetailOpen(false);
-		setSelectedRunId(null);
-		setRunDetail(null);
-		setRunDetailError(null);
-		setRunDetailLoading(false);
-	};
-
 	const getStatusColor = (status: string) => {
-		switch (status.toLowerCase()) {
+		switch (status?.toLowerCase()) {
 			case 'completed':
 			case 'success':
 				return 'success';
@@ -90,41 +77,64 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 		}
 	};
 
-	// Group runs by test case ID
-	const groupedRuns = useMemo(() => {
-		if (!recordDetail?.runs) return {};
-
-		const groups: Record<number, typeof recordDetail.runs> = {};
-		recordDetail.runs.forEach((run) => {
-			if (!groups[run.testCaseId]) {
-				groups[run.testCaseId] = [];
-			}
-			groups[run.testCaseId].push(run);
-		});
-
-		return groups;
-	}, [recordDetail]);
-
-	// Get unique test cases with names
-	const testCases = useMemo(() => {
+	// Get all runs as individual items in the list
+	const runs = useMemo(() => {
 		if (!recordDetail?.runs) return [];
-
-		const uniqueTestCases = new Map<number, { id: number; name: string }>();
-		recordDetail.runs.forEach((run) => {
-			if (!uniqueTestCases.has(run.testCaseId)) {
-				uniqueTestCases.set(run.testCaseId, {
-					id: run.testCaseId,
-					name: run.testCaseName
-				});
-			}
-		});
-
-		return Array.from(uniqueTestCases.values());
+		return recordDetail.runs;
 	}, [recordDetail]);
 
-	const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-		setActiveTab(newValue);
-	};
+	// Auto-select first run
+	useEffect(() => {
+		if (open && runs.length > 0 && !selectedRun) {
+			setSelectedRun(runs[0]);
+		}
+	}, [open, runs, selectedRun]);
+
+	// Fetch AI calls for selected run
+	useEffect(() => {
+		if (!selectedRun) {
+			setAllAiCalls([]);
+			setSelectedAiCall(null);
+			return;
+		}
+
+		const fetchAiCalls = async () => {
+			setAiCallsLoading(true);
+			try {
+				const detail = await fetchTestCaseRunDetail(selectedRun.id);
+
+				if (detail.aiCalls && detail.aiCalls.length > 0) {
+					setAllAiCalls(detail.aiCalls);
+					// Auto-select first AI call
+					setSelectedAiCall(detail.aiCalls[0]);
+				} else {
+					setAllAiCalls([]);
+					setSelectedAiCall(null);
+				}
+			} catch (err) {
+				console.error(`Failed to fetch AI calls for run ${selectedRun.id}:`, err);
+				setAllAiCalls([]);
+				setSelectedAiCall(null);
+			} finally {
+				setAiCallsLoading(false);
+			}
+		};
+
+		fetchAiCalls();
+	}, [selectedRun]);
+
+	// Reset state when dialog closes
+	useEffect(() => {
+		if (!open) {
+			setSelectedRun(null);
+			setSelectedAiCall(null);
+			setAllAiCalls([]);
+		}
+	}, [open]);
+
+	useEffect(() => {
+		console.log('allAiCalls: ', allAiCalls);
+	}, [allAiCalls]);
 
 	if (!open) return null;
 
@@ -134,12 +144,17 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 			onClose={onClose}
 			maxWidth="xl"
 			fullWidth
+			PaperProps={{
+				sx: {
+					height: '80vh',
+					maxHeight: '80vh'
+				}
+			}}
 		>
 			<AppBar
 				position="relative"
 				color="default"
 				elevation={0}
-				sx={{ position: 'sticky' }}
 			>
 				<Toolbar>
 					<Typography
@@ -158,508 +173,293 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 					</IconButton>
 				</Toolbar>
 			</AppBar>
-			<DialogContent>
+			<DialogContent
+				sx={{ p: 0, height: '100%', display: 'flex', overflow: 'hidden' }}
+				className="border-t-2 border-gray-300"
+			>
 				{loading && (
-					<div className="flex items-center justify-center py-8">
+					<Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
 						<CircularProgress />
-					</div>
+					</Box>
 				)}
 
-				{error && <Typography color="error">{error}</Typography>}
+				{error && (
+					<Box sx={{ width: '100%', p: 2 }}>
+						<Typography color="error">{error}</Typography>
+					</Box>
+				)}
 
 				{!loading && !error && recordDetail && (
-					<>
-						{/* Record Metadata */}
-						<Paper
-							sx={{ p: 2, mb: 2 }}
-							elevation={1}
+					<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
+						{/* First column - Test Cases list */}
+						<Box
+							sx={{
+								width: 240,
+								borderRight: '1px solid',
+								borderColor: 'divider',
+								overflowY: 'auto',
+								bgcolor: 'background.default'
+							}}
 						>
-							<Typography
-								variant="h6"
-								sx={{ mb: 2 }}
-							>
-								Record Information
-							</Typography>
-							<Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-								<Box sx={{ display: 'flex', gap: 2 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600, minWidth: 150 }}
-									>
-										Record ID:
-									</Typography>
-									<Typography variant="body2">#{recordDetail.record.id}</Typography>
-								</Box>
-								<Box sx={{ display: 'flex', gap: 2 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600, minWidth: 150 }}
-									>
-										Test Cases:
-									</Typography>
-									<Typography variant="body2">
-										{recordDetail.record.test_case_ids?.length || 0} test case(s)
-									</Typography>
-								</Box>
-								<Box sx={{ display: 'flex', gap: 2 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600, minWidth: 150 }}
-									>
-										Runs Per Case:
-									</Typography>
-									<Typography variant="body2">{recordDetail.record.times}×</Typography>
-								</Box>
-								<Box sx={{ display: 'flex', gap: 2 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600, minWidth: 150 }}
-									>
-										Status:
-									</Typography>
-									<Chip
-										label={recordDetail.record.status}
-										color={getStatusColor(recordDetail.record.status)}
-										size="small"
-									/>
-								</Box>
-								<Box sx={{ display: 'flex', gap: 2 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600, minWidth: 150 }}
-									>
-										Started At:
-									</Typography>
-									<Typography variant="body2">
-										{new Date(recordDetail.record.started_at).toLocaleString()}
-									</Typography>
-								</Box>
-								{recordDetail.record.completed_at && (
-									<Box sx={{ display: 'flex', gap: 2 }}>
-										<Typography
-											variant="body2"
-											sx={{ fontWeight: 600, minWidth: 150 }}
+							{runs.length === 0 ? (
+								<Typography sx={{ p: 2, color: 'text.secondary' }}>No test runs found.</Typography>
+							) : (
+								<List sx={{ p: 0 }}>
+									{runs.map((run, index) => (
+										<ListItem
+											disablePadding
+											key={run.id}
+											sx={{ alignItems: 'flex-start' }}
 										>
-											Completed At:
-										</Typography>
-										<Typography variant="body2">
-											{new Date(recordDetail.record.completed_at).toLocaleString()}
-										</Typography>
-									</Box>
-								)}
-							</Box>
-						</Paper>
-
-						{/* Summary Statistics */}
-						<Paper
-							sx={{ p: 2, mb: 3 }}
-							elevation={1}
-						>
-							<Typography
-								variant="h6"
-								sx={{ mb: 2 }}
-							>
-								Summary
-							</Typography>
-							<Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600 }}
-									>
-										Total:
-									</Typography>
-									<Chip
-										label={recordDetail.summary.total}
-										size="small"
-										color="default"
-									/>
-								</Box>
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600 }}
-									>
-										Success:
-									</Typography>
-									<Chip
-										label={recordDetail.summary.success}
-										size="small"
-										color="success"
-									/>
-								</Box>
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600 }}
-									>
-										Failed:
-									</Typography>
-									<Chip
-										label={recordDetail.summary.failed}
-										size="small"
-										color="error"
-									/>
-								</Box>
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600 }}
-									>
-										Running:
-									</Typography>
-									<Chip
-										label={recordDetail.summary.running}
-										size="small"
-										color="warning"
-									/>
-								</Box>
-								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-									<Typography
-										variant="body2"
-										sx={{ fontWeight: 600 }}
-									>
-										Pending:
-									</Typography>
-									<Chip
-										label={recordDetail.summary.pending}
-										size="small"
-										color="default"
-										variant="outlined"
-									/>
-								</Box>
-							</Box>
-						</Paper>
-
-						{/* Tabs for each test case */}
-						{testCases.length > 0 && (
-							<Box sx={{ width: '100%' }}>
-								<Box sx={{ borderBottom: 2, borderColor: 'divider', mb: 3 }}>
-									<Tabs
-										value={activeTab}
-										onChange={handleTabChange}
-										variant="scrollable"
-										scrollButtons="auto"
-										sx={{
-											'& .MuiTabs-indicator': {
-												height: 3,
-												borderRadius: '3px 3px 0 0'
-											},
-											'& .MuiTab-root': {
-												textTransform: 'none',
-												fontWeight: 500,
-												fontSize: '0.95rem',
-												minHeight: 48,
-												'&.Mui-selected': {
-													fontWeight: 600,
-													color: 'primary.main'
-												}
-											}
-										}}
-									>
-										{testCases.map((testCase, index) => {
-											const runs = groupedRuns[testCase.id] || [];
-											const successCount = runs.filter((r) => r.status === 'success').length;
-											const failedCount = runs.filter((r) => r.status === 'failed').length;
-											const pendingCount = runs.filter((r) => r.status === 'pending').length;
-											const runningCount = runs.filter((r) => r.status === 'running').length;
-
-											return (
-												<Tab
-													key={testCase.id}
-													id={`test-case-tab-${index}`}
-													label={
-														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-															<Typography
-																variant="body2"
-																sx={{ fontWeight: 'inherit' }}
-															>
-																{testCase.name}
-															</Typography>
-															<Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-																{successCount > 0 && (
-																	<Chip
-																		label={successCount}
-																		size="small"
-																		color="success"
-																		sx={{
-																			height: 20,
-																			fontSize: '0.7rem',
-																			'& .MuiChip-label': { px: 1 }
-																		}}
-																	/>
-																)}
-																{failedCount > 0 && (
-																	<Chip
-																		label={failedCount}
-																		size="small"
-																		color="error"
-																		sx={{
-																			height: 20,
-																			fontSize: '0.7rem',
-																			'& .MuiChip-label': { px: 1 }
-																		}}
-																	/>
-																)}
-																{runningCount > 0 && (
-																	<Chip
-																		label={runningCount}
-																		size="small"
-																		color="warning"
-																		sx={{
-																			height: 20,
-																			fontSize: '0.7rem',
-																			'& .MuiChip-label': { px: 1 }
-																		}}
-																	/>
-																)}
-																{pendingCount > 0 && (
-																	<Chip
-																		label={pendingCount}
-																		size="small"
-																		color="default"
-																		variant="outlined"
-																		sx={{
-																			height: 20,
-																			fontSize: '0.7rem',
-																			'& .MuiChip-label': { px: 1 }
-																		}}
-																	/>
-																)}
-															</Box>
-														</Box>
-													}
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={selectedRun?.id === run.id ? 'primary' : 'disabled'}
 												/>
-											);
-										})}
-									</Tabs>
-								</Box>
-
-								{/* Tab panels */}
-								{testCases.map((testCase, index) => (
-									<div
-										key={testCase.id}
-										role="tabpanel"
-										hidden={activeTab !== index}
-										id={`test-case-tabpanel-${index}`}
-									>
-										{activeTab === index && (
-											<Box>
+												{index < runs.length - 1 && (
+													<MuiDivider
+														orientation="vertical"
+														flexItem
+														sx={{
+															height: 28,
+															borderRightWidth: 2,
+															borderColor: 'divider',
+															my: 0,
+															mx: 'auto'
+														}}
+													/>
+												)}
+											</Box>
+											<ListItemButton
+												selected={selectedRun?.id === run.id}
+												onClick={() => setSelectedRun(run)}
+												sx={{ pl: 1, alignItems: 'flex-start' }}
+											>
 												<Box
 													sx={{
+														width: '100%',
 														display: 'flex',
 														justifyContent: 'space-between',
-														alignItems: 'center',
-														mb: 2,
-														px: 1
+														alignItems: 'center'
 													}}
 												>
-													<Typography
-														variant="body2"
-														color="text.secondary"
-														sx={{ fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 1 }}
-													>
-														<span style={{ fontSize: '1.1em' }}>💡</span>
-														Click on any run to view detailed AI call information
-													</Typography>
-													<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-														<Typography
-															variant="body2"
-															color="text.secondary"
-															sx={{ fontWeight: 500 }}
-														>
-															Total: {groupedRuns[testCase.id]?.length || 0} runs
+													<Box>
+														<Typography variant="body2" fontWeight={600}>
+															{run.testCaseName}
+														</Typography>
+														<Typography variant="caption" color="text.secondary">
+															Run #{run.id}
 														</Typography>
 													</Box>
+													<Chip
+														label={run.status}
+														color={getStatusColor(run.status)}
+														size="small"
+														sx={{ height: 18, fontSize: '0.65rem' }}
+													/>
 												</Box>
-												<TableContainer
-													component={Paper}
-													elevation={2}
+											</ListItemButton>
+										</ListItem>
+									))}
+								</List>
+							)}
+						</Box>
+
+						{/* Second column - AI Calls list */}
+						<Box
+							sx={{
+								width: 300,
+								borderRight: '1px solid',
+								borderColor: 'divider',
+								overflowY: 'auto',
+								bgcolor: 'background.default'
+							}}
+						>
+							{aiCallsLoading ? (
+								<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+									<CircularProgress size={24} />
+								</Box>
+							) : allAiCalls.length === 0 ? (
+								<Typography sx={{ p: 2, color: 'text.secondary' }}>
+									{selectedRun ? 'No AI calls found for this run.' : 'Select a run to view AI calls.'}
+								</Typography>
+							) : (
+								<List sx={{ p: 0 }}>
+									{allAiCalls.map((call, index) => (
+										<ListItem
+											disablePadding
+											key={call.id}
+											sx={{ alignItems: 'flex-start' }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={selectedAiCall === call ? 'primary' : 'disabled'}
+												/>
+												{index < allAiCalls.length - 1 && (
+													<MuiDivider
+														orientation="vertical"
+														flexItem
+														sx={{
+															height: 28,
+															borderRightWidth: 2,
+															borderColor: 'divider',
+															my: 0,
+															mx: 'auto'
+														}}
+													/>
+												)}
+											</Box>
+											<ListItemButton
+												selected={selectedAiCall === call}
+												onClick={() => setSelectedAiCall(call)}
+												sx={{ pl: 1, alignItems: 'flex-start' }}
+											>
+												<Box
 													sx={{
-														borderRadius: 2,
-														overflow: 'hidden'
+														width: '100%',
+														display: 'flex',
+														justifyContent: 'space-between',
+														alignItems: 'center'
 													}}
 												>
-													<Table size="small">
-														<TableHead>
-															<TableRow
-																sx={{
-																	backgroundColor: 'rgba(0, 0, 0, 0.04)',
-																	'& .MuiTableCell-root': {
-																		fontWeight: 600,
-																		color: 'text.primary',
-																		borderBottom: '2px solid',
-																		borderColor: 'divider'
-																	}
-																}}
-															>
-																<TableCell>Run ID</TableCell>
-																<TableCell>Status</TableCell>
-																<TableCell>Started At</TableCell>
-																<TableCell>Completed At</TableCell>
-																<TableCell>Duration</TableCell>
-																<TableCell width={100}>Actions</TableCell>
-															</TableRow>
-														</TableHead>
-														<TableBody>
-															{(!groupedRuns[testCase.id] || groupedRuns[testCase.id].length === 0) ? (
-																<TableRow>
-																	<TableCell
-																		colSpan={6}
-																		sx={{ textAlign: 'center', py: 4 }}
-																	>
-																		<Typography
-																			variant="body2"
-																			color="text.secondary"
-																			sx={{ fontStyle: 'italic' }}
-																		>
-																			No runs found for this test case
-																		</Typography>
-																	</TableCell>
-																</TableRow>
-															) : (
-																groupedRuns[testCase.id]?.map((run) => {
-																const start = run.startedAt
-																	? new Date(run.startedAt)
-																	: null;
-																const end = run.completedAt
-																	? new Date(run.completedAt)
-																	: null;
-																const duration =
-																	start && end
-																		? `${((end.getTime() - start.getTime()) / 1000).toFixed(2)}s`
-																		: '-';
+													<Box>
+														<Typography variant="body2" fontWeight={600}>
+															AI Call #{call.stepOrder || index + 1}
+														</Typography>
+														{call.name && (
+															<Typography variant="caption" color="text.secondary">
+																{call.name}
+															</Typography>
+														)}
+													</Box>
+													<Chip
+														label={call.runStatus || call.status}
+														color={getStatusColor(call.runStatus || call.status)}
+														size="small"
+														sx={{ height: 18, fontSize: '0.65rem' }}
+													/>
+												</Box>
+											</ListItemButton>
+										</ListItem>
+									))}
+								</List>
+							)}
+						</Box>
 
-																return (
-																	<TableRow
-																		key={run.id}
-																		hover
-																		onClick={() => handleOpenRunDetail(run.id)}
-																		sx={{
-																			cursor: 'pointer',
-																			transition: 'all 0.2s ease',
-																			'&:hover': {
-																				backgroundColor: 'rgba(25, 118, 210, 0.08)',
-																				transform: 'scale(1.001)',
-																				boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-																			},
-																			'&:nth-of-type(even)': {
-																				backgroundColor: 'rgba(0, 0, 0, 0.02)'
-																			}
-																		}}
-																	>
-																		<TableCell>
-																			<Typography
-																				variant="body2"
-																				className="font-mono"
-																				sx={{ fontWeight: 600 }}
-																			>
-																				#{run.id}
-																			</Typography>
-																		</TableCell>
-																		<TableCell>
-																			<Chip
-																				label={run.status}
-																				color={getStatusColor(run.status)}
-																				size="small"
-																			/>
-																		</TableCell>
-																		<TableCell>
-																			<Typography variant="body2">
-																				{start
-																					? start.toLocaleString()
-																					: '-'}
-																			</Typography>
-																		</TableCell>
-																		<TableCell>
-																			<Typography variant="body2">
-																				{end ? end.toLocaleString() : '-'}
-																			</Typography>
-																		</TableCell>
-																		<TableCell>
-																			<Typography variant="body2">
-																				{duration}
-																			</Typography>
-																		</TableCell>
-																		<TableCell>
-																			<Button
-																				size="small"
-																				variant="contained"
-																				onClick={(e) => {
-																					e.stopPropagation();
-																					handleOpenRunDetail(run.id);
-																				}}
-																				sx={{
-																					textTransform: 'none',
-																					fontWeight: 500,
-																					px: 2,
-																					py: 0.5,
-																					minWidth: 'auto'
-																				}}
-																			>
-																				View Details
-																			</Button>
-																		</TableCell>
-																	</TableRow>
-																);
-															}))}
-														</TableBody>
-													</Table>
-												</TableContainer>
-											</Box>
-										)}
-									</div>
-								))}
-							</Box>
-						)}
+						{/* Third column - AI Call details */}
+						<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+							{selectedAiCall ? (
+								<>
+									<Typography
+										variant="h6"
+										gutterBottom
+									>
+										Input
+									</Typography>
+									<pre
+										style={{
+											background: '#f5f5f5',
+											padding: '16px',
+											borderRadius: '4px',
+											overflow: 'auto',
+											fontSize: '14px',
+											marginBottom: '24px'
+										}}
+									>
+										{prettifyJSON(selectedAiCall.input)}
+									</pre>
 
-						{testCases.length === 0 && (
-							<Paper
-								elevation={1}
-								sx={{
-									textAlign: 'center',
-									py: 6,
-									px: 3,
-									backgroundColor: 'rgba(0, 0, 0, 0.02)',
-									borderRadius: 2
-								}}
-							>
-								<Typography
-									variant="h6"
-									color="text.secondary"
-									sx={{ mb: 1, fontWeight: 500 }}
-								>
-									No Test Results
+									<Typography
+										variant="h6"
+										gutterBottom
+									>
+										Output
+									</Typography>
+									<pre
+										style={{
+											background: '#f5f5f5',
+											padding: '16px',
+											borderRadius: '4px',
+											overflow: 'auto',
+											fontSize: '14px',
+											marginBottom: '24px'
+										}}
+									>
+										{prettifyJSON(selectedAiCall.runOutput || selectedAiCall.output)}
+									</pre>
+
+									{selectedAiCall.expectedOutput && (
+										<>
+											<Typography
+												variant="h6"
+												gutterBottom
+											>
+												Expected Output
+											</Typography>
+											<pre
+												style={{
+													background: '#f5f5f5',
+													padding: '16px',
+													borderRadius: '4px',
+													overflow: 'auto',
+													fontSize: '14px'
+												}}
+											>
+												{prettifyJSON(selectedAiCall.expectedOutput)}
+											</pre>
+										</>
+									)}
+
+									{selectedAiCall.failureReason && (
+										<>
+											<Typography
+												variant="h6"
+												gutterBottom
+												sx={{ mt: 2, color: 'error.main' }}
+											>
+												Failure Reason
+											</Typography>
+											<pre
+												style={{
+													background: '#ffebee',
+													padding: '16px',
+													borderRadius: '4px',
+													overflow: 'auto',
+													fontSize: '14px',
+													color: '#c62828'
+												}}
+											>
+												{selectedAiCall.failureReason}
+											</pre>
+										</>
+									)}
+								</>
+							) : (
+								<Typography color="text.secondary">
+									Select an AI call from the list to view details
 								</Typography>
-								<Typography
-									variant="body2"
-									color="text.secondary"
-									sx={{ fontStyle: 'italic' }}
-								>
-									No test case runs found for this record.
-								</Typography>
-							</Paper>
-						)}
-					</>
+							)}
+						</Box>
+					</Box>
 				)}
-
-				<Button
-					onClick={onClose}
-					variant="outlined"
-					sx={{ mt: 2 }}
-				>
-					Close
-				</Button>
 			</DialogContent>
-
-			{/* Individual Run Detail Dialog */}
-			<TestCaseRunDetailDialog
-				open={runDetailOpen}
-				onClose={handleCloseRunDetail}
-				runDetail={runDetail}
-				loading={runDetailLoading}
-				error={runDetailError}
-			/>
 		</Dialog>
 	);
 };
