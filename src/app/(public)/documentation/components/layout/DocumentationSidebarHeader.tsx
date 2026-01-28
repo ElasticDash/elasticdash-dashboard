@@ -17,7 +17,7 @@ function DocumentationSidebarHeader(props: DocumentationSidebarHeaderProps) {
 				alt="logo"
 			/>
 			<div className="logo-text flex flex-auto flex-col">
-				<Typography className="tracking-light text-2xl leading-none font-semibold">FUSE</Typography>
+				<Typography className="tracking-light text-2xl leading-none font-semibold">ElasticDash</Typography>
 				<Typography
 					className="tracking-light text-xl leading-none font-bold"
 					color="primary"

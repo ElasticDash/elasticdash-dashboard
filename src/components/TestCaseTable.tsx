@@ -9,26 +9,18 @@ import { Paper, Typography, CircularProgress, Button, TextField, Box, Alert } fr
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
 import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
-import { runTestCase } from '@/services/testCaseRunService';
+// import { runTestCase } from '@/services/testCaseRunService';
 import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
+import { resetTestCases } from '@/services/testCaseResetService';
 
-interface TestCaseTableProps {
-	selectedFeatureId: number | null;
-}
-
-const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
+const TestCaseTable: React.FC = () => {
 	const [testCases, setTestCases] = useState<TestCase[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [selected, setSelected] = useState<TestCase | null>(null);
 	const [aiCalls, setAiCalls] = useState<any[]>([]);
-	const [detailLoading, setDetailLoading] = useState(false);
-	const [detailError, setDetailError] = useState<string | null>(null);
-	const [viewDialogOpen, setViewDialogOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [aiDialogOpen, setAiDialogOpen] = useState(false);
-	const [runLoading, setRunLoading] = useState(false);
-	const [runError, setRunError] = useState<string | null>(null);
 
 	// Bulk run state
 	const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
@@ -36,25 +28,44 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 	const [bulkRunLoading, setBulkRunLoading] = useState(false);
 	const [bulkRunSuccess, setBulkRunSuccess] = useState<string | null>(null);
 	const [bulkRunError, setBulkRunError] = useState<string | null>(null);
+	const [resetLoading, setResetLoading] = useState(false);
+	const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+	const [resetError, setResetError] = useState<string | null>(null);
+	const handleReset = async () => {
+		const selectedIds = Object.keys(rowSelection)
+			.filter((key) => rowSelection[key])
+			.map((key) => testCases[parseInt(key)].id);
+		if (selectedIds.length === 0) return;
+		setResetLoading(true);
+		setResetError(null);
+		setResetSuccess(null);
+		try {
+			await resetTestCases(selectedIds);
+			setResetSuccess(`Successfully reset ${selectedIds.length} test case(s).`);
+			setRowSelection({});
+			setTimeout(() => setResetSuccess(null), 5000);
+		} catch (err: any) {
+			setResetError(err.message || 'Failed to reset test case(s)');
+		} finally {
+			setResetLoading(false);
+		}
+	};
 
 	// Pagination state
 	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-	const [total, setTotal] = useState(0);
 
 	useEffect(() => {
 		const fetchCases = async () => {
 			setLoading(true);
 			setError(null);
 			try {
-				const filter = selectedFeatureId ? `feature_id = ${selectedFeatureId}` : '';
-				const { testCases, total } = await fetchTestCasesPaged({
+				const { testCases } = await fetchTestCasesPaged({
 					limit: pagination.pageSize,
 					offset: pagination.pageIndex * pagination.pageSize,
-					filter,
+					filter: '',
 					search: ''
 				});
 				setTestCases(testCases);
-				setTotal(total);
 			} catch (err: any) {
 				setError(err?.message || 'Failed to fetch test cases');
 			} finally {
@@ -62,27 +73,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 			}
 		};
 		fetchCases();
-	}, [pagination.pageIndex, pagination.pageSize, selectedFeatureId]);
-
-	// Reset pagination when feature changes
-	useEffect(() => {
-		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-	}, [selectedFeatureId]);
-
-	const handleOpenView = (tc: TestCase) => {
-		setSelected(tc);
-		setViewDialogOpen(true);
-	};
-
-	const handleCloseView = () => {
-		setViewDialogOpen(false);
-		setSelected(null);
-	};
-
-	const handleOpenEdit = () => {
-		setEditDialogOpen(true);
-		setViewDialogOpen(false);
-	};
+	}, [pagination.pageIndex, pagination.pageSize]);
 
 	const handleCloseEdit = () => {
 		setEditDialogOpen(false);
@@ -96,9 +87,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 			setAiCalls(res.aiCalls || []);
 			setAiDialogOpen(true);
 		} catch (err: any) {
-			setDetailError(err.message || 'Failed to fetch test case detail');
-		} finally {
-			setDetailLoading(false);
+			console.error('Failed to fetch test case detail:', err);
 		}
 	};
 
@@ -126,7 +115,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 			await deleteTestCase(selected.id);
 			setTestCases((prev) => prev.filter((tc) => tc.id !== selected.id));
 			handleCloseEdit();
-			setViewDialogOpen(false);
 		} catch (err: any) {
 			alert(err.message || 'Failed to delete test case');
 		}
@@ -160,7 +148,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 			});
 
 			setBulkRunSuccess(
-				`Successfully created run record for ${selectedIds.length} test case(s), ${bulkRunTimes} time(s) each. Total runs: ${result.total_runs || selectedIds.length * bulkRunTimes}`
+				`Successfully created run record for ${selectedIds.length} test case(s), ${bulkRunTimes} time(s) each. Total runs: ${result.totalRuns || selectedIds.length * bulkRunTimes}`
 			);
 
 			// Clear selection after successful bulk run
@@ -211,13 +199,8 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 
 	return (
 		<div style={{ padding: 24 }}>
-			{/* Example: Show message if no feature selected */}
-			{!selectedFeatureId ? (
-				<div style={{ color: '#888', fontStyle: 'italic' }}>Select a feature to view its test cases.</div>
-			) : (
-				<>
-						{/* Bulk Run Controls */}
-						<Box className="mb-4 flex items-center gap-3">
+			{/* Bulk Run Controls */}
+			<Box className="mb-4 flex items-center gap-3">
 							<TextField
 								type="number"
 								label="Number of Runs"
@@ -260,6 +243,35 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 									{bulkRunError}
 								</Alert>
 							)}
+							<Button
+								variant="outlined"
+								color="secondary"
+								onClick={handleReset}
+								disabled={
+									resetLoading ||
+									Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
+								}
+							>
+								{resetLoading ? 'Resetting...' : 'Reset Selected'}
+							</Button>
+							{resetSuccess && (
+								<Alert
+									severity="success"
+									onClose={() => setResetSuccess(null)}
+									sx={{ flex: 1 }}
+								>
+									{resetSuccess}
+								</Alert>
+							)}
+							{resetError && (
+								<Alert
+									severity="error"
+									onClose={() => setResetError(null)}
+									sx={{ flex: 1 }}
+								>
+									{resetError}
+								</Alert>
+							)}
 						</Box>
 
 						{/* ...existing table UI, filtered by selectedFeatureId... */}
@@ -271,9 +283,12 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 								data={testCases}
 								columns={columns}
 								state={{
-									rowSelection
+									rowSelection,
+									pagination
 								}}
 								onRowSelectionChange={setRowSelection}
+								onPaginationChange={setPagination}
+								manualPagination
 								renderRowActions={({ row }) => (
 									<div style={{ display: 'flex', gap: 8 }}>
 										<Button
@@ -309,14 +324,12 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({ selectedFeatureId }) => {
 							onSave={handleSave}
 							onDelete={handleDelete}
 						/>
-						{/* AI Calls Dialog */}
-						<AiCallDialog
-							open={aiDialogOpen}
-							onClose={handleCloseAiDialog}
-							aiCalls={aiCalls}
-						/>
-				</>
-			)}
+			{/* AI Calls Dialog */}
+			<AiCallDialog
+				open={aiDialogOpen}
+				onClose={handleCloseAiDialog}
+				aiCalls={aiCalls}
+			/>
 		</div>
 	);
 };

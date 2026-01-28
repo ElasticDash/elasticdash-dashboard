@@ -122,7 +122,7 @@ function InvoiceTab(props: InvoiceTabProps) {
 								<div className="divider mx-2 h-24" />
 
 								<div className="px-2">
-									<Typography color="inherit">FUSE INC.</Typography>
+									<Typography color="inherit">ElasticDash INC.</Typography>
 
 									<Typography color="inherit">2810 Country Club Road Cranford, NJ 07016</Typography>
 									<Typography color="inherit">+66 123 455 87</Typography>

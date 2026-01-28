@@ -21,40 +21,19 @@ const navigationConfig: FuseNavItemType[] = [
 		icon: 'lucide:box',
 		translate: 'APPLICATIONS',
 		children: [
-			// {
-			// 	id: 'apps.chat',
-			// 	title: 'Chat',
-			// 	type: 'item',
-			// 	icon: 'lucide:message-square',
-			// 	url: '/apps/chat',
-			// },
-			// {
-			// 	id: 'apps.data-table-knowledge-base',
-			// 	title: 'Data Table Knowledge Base',
-			// 	type: 'item',
-			// 	icon: 'lucide:message-square',
-			// 	url: '/apps/data-table-knowledge-base',
-			// },
-			// {
-			// 	id: 'apps.api-knowledge-base',
-			// 	title: 'API Knowledge Base',
-			// 	type: 'item',
-			// 	icon: 'lucide:message-square',
-			// 	url: '/apps/api-knowledge-base',
-			// },
-			// {
-			// 	id: 'apps.tickets',
-			// 	title: 'Tickets',
-			// 	type: 'item',
-			// 	icon: 'lucide:ticket',
-			// 	url: '/apps/tickets'
-			// },
 			{
-				id: 'apps.sessions',
-				title: 'Sessions',
+				id: 'apps.test-results',
+				title: 'Test Results',
 				type: 'item',
-				icon: 'lucide:list',
-				url: '/sessions'
+				icon: 'lucide:activity',
+				url: '/test-results'
+			},
+			{
+				id: 'apps.test-cases',
+				title: 'Test Cases',
+				type: 'item',
+				icon: 'lucide:activity',
+				url: '/test-cases'
 			},
 			{
 				id: 'apps.traces',
@@ -62,27 +41,6 @@ const navigationConfig: FuseNavItemType[] = [
 				type: 'item',
 				icon: 'lucide:activity',
 				url: '/traces'
-			},
-			{
-				id: 'apps.test-cases',
-				title: 'Test Cases',
-				type: 'item',
-				icon: 'lucide:check-square',
-				url: '/test-cases'
-			},
-			{
-				id: 'apps.test-case-runs',
-				title: 'Test Case Runs',
-				type: 'item',
-				icon: 'lucide:play-circle',
-				url: '/test-case-runs'
-			},
-			{
-				id: 'apps.test-case-records',
-				title: 'Test Case Run Records',
-				type: 'item',
-				icon: 'lucide:clipboard-list',
-				url: '/test-case-records'
 			},
 			{
 				id: 'apps.account-settings',

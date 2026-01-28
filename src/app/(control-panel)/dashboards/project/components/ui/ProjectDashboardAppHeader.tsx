@@ -13,7 +13,7 @@ function ProjectDashboardAppHeader() {
 	const { data: user, isGuest } = useUser();
 
 	return (
-		<div className="flex flex-auto flex-col px-4 pt-4 sm:px-8">
+		<div className="flex flex-auto flex-col border-b-2 px-4 pt-4 sm:px-8">
 			<PageBreadcrumb className="mb-2" />
 			<div className="flex min-w-0 flex-auto flex-col gap-2 sm:flex-row sm:items-center">
 				<div className="flex flex-auto items-center gap-2">

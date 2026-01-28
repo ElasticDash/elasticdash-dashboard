@@ -10,7 +10,7 @@ type PurchaseButtonProps = ButtonProps & {
  * The purchase button.
  */
 function PurchaseButton(props: PurchaseButtonProps) {
-	const { className = '', children = 'Purchase FUSE React', ...rest } = props;
+	const { className = '', children = 'Purchase ElasticDash React', ...rest } = props;
 
 	return (
 		<Button
