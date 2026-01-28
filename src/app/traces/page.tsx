@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { Paper, TextField, Button, Typography, Box } from '@mui/material';
+import { Paper, TextField, Button, Typography, Box, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import FusePageSimple from '@fuse/core/FusePageSimple';
 import { fetchTraces } from '@/services/traceListService';
 import TraceDetailDialog from '@/components/TraceDetailDialog';
@@ -27,6 +27,10 @@ export default function TraceListPage() {
 	const [startDate, setStartDate] = useState('');
 	const [endDate, setEndDate] = useState('');
 	const [filter, setFilter] = useState('');
+
+	// Auto-refresh state
+	const [autoRefresh, setAutoRefresh] = useState<'off' | '60000'>('off');
+	const [refreshKey, setRefreshKey] = useState(0);
 
 	// Feature sidebar state
 	const [features, setFeatures] = useState<{ id: number; featureName: string }[]>([]);
@@ -74,18 +78,17 @@ export default function TraceListPage() {
 		fetchFeatures();
 	}, [testProjectId]);
 
-	// Fetch traces only when a feature is selected
-	useEffect(() => {
+	// Fetch traces function
+	const loadTraces = useCallback(() => {
 		if (!selectedFeatureId) return;
 
 		setLoading(true);
 		setError('');
 		const offset = pagination.pageIndex * pagination.pageSize;
-		// Add feature_id to filter (ensure string comparison for ClickHouse)
 		const featureFilter = filter
 			? `${filter} AND metadata['feature_id'] = '${selectedFeatureId}'`
 			: `metadata['feature_id'] = '${selectedFeatureId}'`;
-		// const featureFilter = '';
+
 		fetchTraces({ limit: pagination.pageSize, offset, filter: featureFilter })
 			.then((res) => {
 				setTraces(res.result.data.data || []);
@@ -94,6 +97,27 @@ export default function TraceListPage() {
 			.catch((err) => setError(err.message || 'Failed to fetch traces'))
 			.finally(() => setLoading(false));
 	}, [filter, pagination.pageIndex, pagination.pageSize, selectedFeatureId]);
+
+	// Fetch traces when dependencies change
+	useEffect(() => {
+		loadTraces();
+	}, [loadTraces, refreshKey]);
+
+	// Auto-refresh interval
+	useEffect(() => {
+		if (autoRefresh === 'off') return;
+
+		const interval = setInterval(() => {
+			loadTraces();
+		}, parseInt(autoRefresh));
+
+		return () => clearInterval(interval);
+	}, [autoRefresh, loadTraces]);
+
+	// Manual refresh handler
+	const handleManualRefresh = () => {
+		setRefreshKey((prev) => prev + 1);
+	};
 
 	useEffect(() => {
 		console.log('Current features:', features);
@@ -140,6 +164,10 @@ export default function TraceListPage() {
 				Cell: ({ row }) => <Typography>{row.original.name ?? ''}</Typography>
 			},
 			{
+				header: 'Environment',
+				Cell: () => <Typography>Development</Typography>
+			},
+			{
 				accessorKey: 'project_id',
 				header: 'Project ID',
 				Cell: ({ row }) => <Typography>{row.original.project_id ?? ''}</Typography>
@@ -168,7 +196,9 @@ export default function TraceListPage() {
 							background: '#fafafa'
 						}}
 					>
-						<h3 style={{ marginTop: 0, marginBottom: 16, fontSize: '1.1rem', fontWeight: 600 }}>Features</h3>
+						<h3 style={{ marginTop: 0, marginBottom: 16, fontSize: '1.1rem', fontWeight: 600 }}>
+							Features
+						</h3>
 						{featuresLoading ? (
 							<div>Loading...</div>
 						) : featuresError ? (
@@ -185,11 +215,12 @@ export default function TraceListPage() {
 												width: '100%',
 												textAlign: 'left',
 												padding: '10px 12px',
-												background: selectedFeatureId === feature.id ? '#e0e7ff' : 'transparent',
+												background:
+													selectedFeatureId === feature.id ? '#e0e7ff' : 'transparent',
 												border: 'none',
 												borderRadius: 6,
 												cursor: 'pointer',
-												fontWeight: selectedFeatureId === feature.id ? 600 : 400,
+												fontWeight: 400,
 												transition: 'all 0.2s ease'
 											}}
 											onMouseEnter={(e) => {
@@ -214,55 +245,78 @@ export default function TraceListPage() {
 				)
 			}}
 			content={
-				<div className="w-full pt-4 sm:pt-6" style={{ padding: 24 }}>
-						{/* Filter UI */}
-						<Paper sx={{ mb: 2, p: 2 }}>
-							<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-								<TextField
-									label="Name contains"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									size="small"
-									sx={{ minWidth: 200 }}
-									placeholder="e.g. chat"
-								/>
-								<TextField
-									label="Start date"
-									type="date"
-									value={startDate}
-									onChange={(e) => setStartDate(e.target.value)}
-									size="small"
-									sx={{ minWidth: 160 }}
-									InputLabelProps={{ shrink: true }}
-								/>
-								<TextField
-									label="End date"
-									type="date"
-									value={endDate}
-									onChange={(e) => setEndDate(e.target.value)}
-									size="small"
-									sx={{ minWidth: 160 }}
-									InputLabelProps={{ shrink: true }}
-								/>
-								<Button
-									variant="contained"
-									onClick={handleApplyFilter}
+				<div
+					className="flex h-full min-h-0 w-full flex-col p-0"
+					style={{ height: '100vh', minHeight: 0 }}
+				>
+					{/* Filter UI */}
+					<Paper sx={{ mb: 2, p: 2 }}>
+						<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+							<TextField
+								label="Name contains"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								size="small"
+								sx={{ minWidth: 200 }}
+								placeholder="e.g. chat"
+							/>
+							<TextField
+								label="Start date"
+								type="date"
+								value={startDate}
+								onChange={(e) => setStartDate(e.target.value)}
+								size="small"
+								sx={{ minWidth: 160 }}
+								slotProps={{ inputLabel: { shrink: true } }}
+							/>
+							<TextField
+								label="End date"
+								type="date"
+								value={endDate}
+								onChange={(e) => setEndDate(e.target.value)}
+								size="small"
+								sx={{ minWidth: 160 }}
+								slotProps={{ inputLabel: { shrink: true } }}
+							/>
+							<Button
+								variant="contained"
+								onClick={handleApplyFilter}
+							>
+								Apply Filter
+							</Button>
+							<FormControl
+								size="small"
+								sx={{ minWidth: 160 }}
+							>
+								<InputLabel>Auto Refresh</InputLabel>
+								<Select
+									value={autoRefresh}
+									label="Auto Refresh"
+									onChange={(e) => setAutoRefresh(e.target.value as 'off' | '60000')}
 								>
-									Apply Filter
-								</Button>
-							</Box>
-						</Paper>
-						{/* Only show table if a feature is selected */}
-						{!selectedFeatureId ? (
-							<div style={{ color: '#888', fontStyle: 'italic' }}>
-								Select a feature to view its traces.
-							</div>
-						) : (
-							<>
-								<Paper
-									className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
-									elevation={0}
-								>
+									<MenuItem value="off">Off</MenuItem>
+									<MenuItem value="60000">Once per minute</MenuItem>
+								</Select>
+							</FormControl>
+							<Button
+								variant="outlined"
+								onClick={handleManualRefresh}
+							>
+								Refresh
+							</Button>
+						</Box>
+					</Paper>
+					{/* Only show table if a feature is selected */}
+					{!selectedFeatureId ? (
+						<div style={{ color: '#888', fontStyle: 'italic' }}>Select a feature to view its traces.</div>
+					) : (
+						<>
+							<Paper
+								className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+								elevation={0}
+								style={{ minHeight: 0 }}
+							>
+								<div className="flex h-full min-h-0 flex-auto flex-col">
 									<DataTable
 										data={traces}
 										columns={columns}
@@ -274,7 +328,14 @@ export default function TraceListPage() {
 										}}
 										onPaginationChange={setPagination}
 										renderRowActions={({ row }) => (
-											<div style={{ display: 'flex', gap: 8 }}>
+											<div
+												style={{
+													display: 'flex',
+													gap: 8,
+													flexGrow: 1,
+													justifyContent: 'flex-end'
+												}}
+											>
 												<Button
 													size="small"
 													variant="outlined"
@@ -293,14 +354,15 @@ export default function TraceListPage() {
 											{error}
 										</Typography>
 									)}
-								</Paper>
-								<TraceDetailDialog
-									open={dialogOpen}
-									onClose={handleCloseDialog}
-									traceId={selectedTraceId}
-								/>
-							</>
-						)}
+								</div>
+							</Paper>
+							<TraceDetailDialog
+								open={dialogOpen}
+								onClose={handleCloseDialog}
+								traceId={selectedTraceId}
+							/>
+						</>
+					)}
 				</div>
 			}
 		/>

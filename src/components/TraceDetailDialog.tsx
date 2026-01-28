@@ -1,8 +1,22 @@
-import { Dialog, AppBar, Toolbar, Typography, IconButton, DialogContent, Button, CircularProgress } from '@mui/material';
+import {
+	Dialog,
+	AppBar,
+	Toolbar,
+	Typography,
+	IconButton,
+	DialogContent,
+	Button,
+	CircularProgress,
+	List,
+	ListItem,
+	ListItemButton,
+	Box
+} from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceDetailService';
-import TraceObservationStepper from './TraceObservationStepper';
+import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import { Divider as MuiDivider } from '@mui/material';
 
 interface TraceDetailDialogProps {
 	open: boolean;
@@ -17,6 +31,32 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 	const [testCaseLoading, setTestCaseLoading] = useState(false);
 	const [testCaseError, setTestCaseError] = useState<string | null>(null);
 	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
+	const [selectedObservation, setSelectedObservation] = useState<any | null>(null);
+
+	// Helper function to prettify JSON content
+	const prettifyJSON = (content: any): string => {
+		if (content === null || content === undefined) {
+			return '';
+		}
+
+		// If it's already a string, try to parse and re-stringify it
+		if (typeof content === 'string') {
+			try {
+				const parsed = JSON.parse(content);
+				return JSON.stringify(parsed, null, 2);
+			} catch {
+				// If parsing fails, return the original string
+				return content;
+			}
+		}
+
+		// If it's an object, stringify it with formatting
+		try {
+			return JSON.stringify(content, null, 2);
+		} catch {
+			return String(content);
+		}
+	};
 
 	// Fetch trace detail when dialog opens and traceId changes
 	useEffect(() => {
@@ -26,11 +66,17 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 			setTraceDetail(null);
 			setTestCaseError(null);
 			setTestCaseSuccess(null);
+			setSelectedObservation(null);
 
 			fetchTraceDetail({ id: traceId })
 				.then((res) => {
 					console.log('Fetched trace detail:', res);
 					setTraceDetail(res);
+
+					// Auto-select first observation
+					if (res?.observations && res.observations.length > 0) {
+						setSelectedObservation(res.observations[0]);
+					}
 				})
 				.catch((err: any) => {
 					setError(err.message || 'Failed to fetch trace detail');
@@ -49,8 +95,13 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 			setLoading(false);
 			setTestCaseError(null);
 			setTestCaseSuccess(null);
+			setSelectedObservation(null);
 		}
 	}, [open]);
+
+	useEffect(() => {
+		console.log('selectedObservation: ', selectedObservation);
+	}, [selectedObservation]);
 
 	const handleCreateTestCase = async () => {
 		if (!traceId) return;
@@ -76,18 +127,25 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 
 	if (!open) return null;
 
+	const observations = traceDetail?.observations || [];
+
 	return (
 		<Dialog
 			open={open}
 			onClose={onClose}
 			maxWidth="xl"
 			fullWidth
+			PaperProps={{
+				sx: {
+					height: '80vh',
+					maxHeight: '80vh'
+				}
+			}}
 		>
 			<AppBar
 				position="relative"
 				color="default"
 				elevation={0}
-				sx={{ position: 'sticky' }}
 			>
 				<Toolbar>
 					<Typography
@@ -114,33 +172,134 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 					</IconButton>
 				</Toolbar>
 			</AppBar>
-			<DialogContent>
+			<DialogContent
+				sx={{ p: 0, height: '100%', display: 'flex', overflow: 'hidden' }}
+				className="border-t-2 border-gray-300"
+			>
 				{loading && (
-					<div className="flex items-center justify-center py-8">
+					<div
+						className="flex items-center justify-center py-8"
+						style={{ width: '100%' }}
+					>
 						<CircularProgress />
 					</div>
 				)}
 
-				{error && <div className="text-red-500">{error}</div>}
-
-				{!loading && !error && traceDetail && Array.isArray(traceDetail.observations) && (
-					<TraceObservationStepper observations={traceDetail.observations} />
+				{error && (
+					<div
+						className="text-red-500"
+						style={{ padding: 16 }}
+					>
+						{error}
+					</div>
 				)}
 
-				{!loading && !error && traceDetail && !Array.isArray(traceDetail.observations) && (
-					<div className="text-gray-500">No observations found for this trace.</div>
+				{!loading && !error && (
+					<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
+						{/* Left sidebar - AI Calls list */}
+						<Box
+							sx={{
+								width: 300,
+								borderRight: '1px solid',
+								borderColor: 'divider',
+								overflowY: 'auto',
+								bgcolor: 'background.default'
+							}}
+						>
+							{observations.length === 0 ? (
+								<Typography sx={{ p: 2, color: 'text.secondary' }}>
+									No AI calls found for this trace.
+								</Typography>
+							) : (
+								<List sx={{ p: 0 }}>
+								{observations.map((observation: any, index: number) => (
+									<ListItem disablePadding key={index} sx={{ alignItems: 'flex-start' }}>
+										<Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 28, pt: 1 }}>
+											<FiberManualRecordIcon fontSize="small" color={selectedObservation === observation ? 'primary' : 'disabled'} />
+											{index < observations.length - 1 && (
+												<MuiDivider orientation="vertical" flexItem sx={{ height: 28, borderRightWidth: 2, borderColor: 'divider', my: 0, mx: 'auto' }} />
+											)}
+										</Box>
+										<ListItemButton
+											selected={selectedObservation === observation}
+											onClick={() => setSelectedObservation(observation)}
+											sx={{ pl: 1, alignItems: 'flex-start' }}
+										>
+											<Box sx={{ width: '100%' }}>
+												<Typography
+													variant="body2"
+													fontWeight={600}
+												>
+													AI Call #{index + 1}
+												</Typography>
+												<Typography
+													variant="caption"
+													color="text.secondary"
+												>
+													{observation.name || 'Unnamed'}
+												</Typography>
+											</Box>
+										</ListItemButton>
+									</ListItem>
+								))}
+							</List>
+							)}
+						</Box>
+
+						{/* Right content - AI Call details */}
+						<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+							{selectedObservation ? (
+								<>
+									<Typography
+										variant="h6"
+										gutterBottom
+									>
+										Input
+									</Typography>
+									<pre
+										style={{
+											background: '#f5f5f5',
+											padding: '16px',
+											borderRadius: '4px',
+											overflow: 'auto',
+											fontSize: '14px',
+											marginBottom: '24px'
+										}}
+									>
+										{prettifyJSON(selectedObservation.input)}
+									</pre>
+
+									<Typography
+										variant="h6"
+										gutterBottom
+									>
+										Output
+									</Typography>
+									<pre
+										style={{
+											background: '#f5f5f5',
+											padding: '16px',
+											borderRadius: '4px',
+											overflow: 'auto',
+											fontSize: '14px'
+										}}
+									>
+										{prettifyJSON(selectedObservation.output)}
+									</pre>
+
+									{testCaseError && <div className="mt-2 text-xs text-red-500">{testCaseError}</div>}
+									{testCaseSuccess && (
+										<div className="mt-2 text-xs text-green-600">{testCaseSuccess}</div>
+									)}
+								</>
+							) : (
+								<Typography color="text.secondary">
+									Select an AI call from the list to view details
+								</Typography>
+							)}
+						</Box>
+					</Box>
 				)}
-
-				{testCaseError && <div className="mt-2 text-xs text-red-500">{testCaseError}</div>}
-				{testCaseSuccess && <div className="mt-2 text-xs text-green-600">{testCaseSuccess}</div>}
-
-				<Button
-					onClick={onClose}
-					variant="outlined"
-					sx={{ mt: 2 }}
-				>
-					Close
-				</Button>
 			</DialogContent>
 		</Dialog>
 	);

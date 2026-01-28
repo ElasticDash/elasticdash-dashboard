@@ -9,7 +9,7 @@ export default function TestCasesPanel() {
 		<FusePageSimple
 			header={<TestCasesHeader />}
 			content={
-				<div className="w-full pt-4 sm:pt-6">
+				<div className="w-full p-0">
 					<TestCaseTable />
 				</div>
 			}

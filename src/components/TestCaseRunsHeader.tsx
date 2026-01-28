@@ -10,7 +10,7 @@ function TestCaseRunsHeader() {
 			<PageBreadcrumb className="mb-2" />
 			<div className="flex min-w-0 flex-auto flex-col gap-2 sm:flex-row sm:items-center">
 				<SharedHeader
-					title="Test Case Runs"
+					title="Test Results"
 					subtitle="View and monitor test case execution runs"
 					icon="lucide:play-circle"
 				/>

@@ -8,12 +8,16 @@ export interface FetchTestCasesPagedParams {
 
 export interface ListTestCasesPagedResponse {
 	success: boolean;
-	result: TestCase[];
-	total?: number;
+	result: {
+		testCases: TestCase[];
+		total: number;
+	};
 	error?: string;
 }
 
-export async function fetchTestCasesPaged(params: FetchTestCasesPagedParams): Promise<{ testCases: TestCase[]; total: number }> {
+export async function fetchTestCasesPaged(
+	params: FetchTestCasesPagedParams
+): Promise<{ testCases: TestCase[]; total: number }> {
 	const res = await axios.post(
 		process.env.NEXT_PUBLIC_BASE_URL + '/testcases/list',
 		{
@@ -29,8 +33,10 @@ export async function fetchTestCasesPaged(params: FetchTestCasesPagedParams): Pr
 		}
 	);
 	const data: ListTestCasesPagedResponse = res.data;
+
 	if (!data.success) throw new Error(data.error || 'Failed to fetch test cases');
-	return { testCases: data.result, total: data.total || 0 };
+
+	return data.result;
 }
 import { api } from '@/utils/api';
 

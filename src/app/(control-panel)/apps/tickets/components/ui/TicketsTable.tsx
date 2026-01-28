@@ -93,7 +93,7 @@ function TicketsTable() {
 			},
 			{
 				accessorKey: 'created_at',
-				header: 'Created At',
+				header: 'Timestamp',
 				Cell: ({ row }) => <Typography>{new Date(row.original.created_at).toLocaleString()}</Typography>
 			},
 			{

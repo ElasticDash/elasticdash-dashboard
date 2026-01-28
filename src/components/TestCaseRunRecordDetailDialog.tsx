@@ -629,7 +629,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 									color="text.secondary"
 									sx={{ mb: 1, fontWeight: 500 }}
 								>
-									No Test Case Runs
+									No Test Results
 								</Typography>
 								<Typography
 									variant="body2"

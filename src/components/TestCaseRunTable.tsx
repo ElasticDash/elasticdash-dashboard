@@ -80,6 +80,11 @@ const TestCaseRunTable: React.FC = () => {
 	const columns = useMemo<MRT_ColumnDef<TestCaseRunRecord>[]>(
 		() => [
 			{
+				accessorKey: 'createdAt',
+				header: 'Timestamp',
+				Cell: ({ row }) => <Typography>{new Date(row.original.createdAt).toLocaleString()}</Typography>
+			},
+			{
 				accessorKey: 'id',
 				header: 'Record ID',
 				Cell: ({ row }) => (
@@ -92,7 +97,7 @@ const TestCaseRunTable: React.FC = () => {
 				)
 			},
 			{
-				accessorKey: 'test_case_ids',
+				accessorKey: 'testCaseIds',
 				header: 'Test Cases',
 				Cell: ({ row }) => <Typography>{row.original.testCaseIds.length} test case(s)</Typography>
 			},

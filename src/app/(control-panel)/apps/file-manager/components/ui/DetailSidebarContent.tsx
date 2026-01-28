@@ -62,7 +62,7 @@ function DetailSidebarContent() {
 						<Typography>{selectedItem.createdBy}</Typography>
 					</div>
 					<div className="flex items-center justify-between py-3">
-						<Typography color="text.secondary">Created At</Typography>
+						<Typography color="text.secondary">Timestamp</Typography>
 						<Typography>{selectedItem.createdAt}</Typography>
 					</div>
 					<div className="flex items-center justify-between py-3">

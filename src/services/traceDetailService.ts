@@ -29,6 +29,7 @@ export interface TraceDetailResponse {
 	id: string;
 	timestamp: string;
 	name: string;
+	observations: any[];
 	metadata: Record<string, any>;
 	release: string | null;
 	version: string | null;

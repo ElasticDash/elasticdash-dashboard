@@ -5,7 +5,20 @@ import { type MRT_ColumnDef, type MRT_RowSelectionState } from 'material-react-t
 import DataTable from 'src/components/data-table/DataTable';
 import { fetchTestCaseDetailWithAiCalls, fetchTestCasesPaged, TestCase } from '@/services/testCaseService';
 // import { fetchTestCaseDetail } from '@/services/testCaseDetailService';
-import { Paper, Typography, CircularProgress, Button, TextField, Box, Alert } from '@mui/material';
+import {
+	Paper,
+	Typography,
+	CircularProgress,
+	Button,
+	TextField,
+	Box,
+	Alert,
+	Dialog,
+	DialogTitle,
+	DialogContent,
+	DialogContentText,
+	DialogActions
+} from '@mui/material';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
 import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
@@ -14,6 +27,9 @@ import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
 import { resetTestCases } from '@/services/testCaseResetService';
 
 const TestCaseTable: React.FC = () => {
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<TestCase | null>(null);
+	const [fetchNeeded, setFetchNeeded] = useState(true);
 	const [testCases, setTestCases] = useState<TestCase[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -35,7 +51,9 @@ const TestCaseTable: React.FC = () => {
 		const selectedIds = Object.keys(rowSelection)
 			.filter((key) => rowSelection[key])
 			.map((key) => testCases[parseInt(key)].id);
+
 		if (selectedIds.length === 0) return;
+
 		setResetLoading(true);
 		setResetError(null);
 		setResetSuccess(null);
@@ -53,27 +71,32 @@ const TestCaseTable: React.FC = () => {
 
 	// Pagination state
 	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+	const [total, setTotal] = useState(0);
 
 	useEffect(() => {
 		const fetchCases = async () => {
 			setLoading(true);
 			setError(null);
 			try {
-				const { testCases } = await fetchTestCasesPaged({
+				const res = await fetchTestCasesPaged({
 					limit: pagination.pageSize,
 					offset: pagination.pageIndex * pagination.pageSize,
 					filter: '',
 					search: ''
 				});
+				console.log('Fetched test cases paged:', res);
+				const { testCases, total } = res;
 				setTestCases(testCases);
+				setTotal(total);
 			} catch (err: any) {
 				setError(err?.message || 'Failed to fetch test cases');
 			} finally {
 				setLoading(false);
+				setFetchNeeded(false);
 			}
 		};
 		fetchCases();
-	}, [pagination.pageIndex, pagination.pageSize]);
+	}, [pagination.pageIndex, pagination.pageSize, fetchNeeded]);
 
 	const handleCloseEdit = () => {
 		setEditDialogOpen(false);
@@ -109,12 +132,17 @@ const TestCaseTable: React.FC = () => {
 	};
 
 	const handleDelete = async () => {
-		if (!selected) return;
+		if (!deleteTarget) return;
 
 		try {
-			await deleteTestCase(selected.id);
-			setTestCases((prev) => prev.filter((tc) => tc.id !== selected.id));
-			handleCloseEdit();
+			await deleteTestCase(deleteTarget.id);
+			setFetchNeeded(true);
+			setDeleteDialogOpen(false);
+			setDeleteTarget(null);
+
+			if (selected && selected.id === deleteTarget.id) {
+				handleCloseEdit();
+			}
 		} catch (err: any) {
 			alert(err.message || 'Failed to delete test case');
 		}
@@ -168,14 +196,11 @@ const TestCaseTable: React.FC = () => {
 	const columns = useMemo<MRT_ColumnDef<TestCase>[]>(
 		() => [
 			{
-				accessorKey: 'id',
-				header: 'ID',
+				accessorKey: 'createdAt',
+				header: 'Timestamp',
 				Cell: ({ row }) => (
-					<Typography
-						fontWeight={600}
-						className="font-mono"
-					>
-						{row.original.id}
+					<Typography>
+						{row.original.createdAt ? new Date(row.original.createdAt).toLocaleString() : ''}
 					</Typography>
 				)
 			},
@@ -183,11 +208,6 @@ const TestCaseTable: React.FC = () => {
 				accessorKey: 'name',
 				header: 'Name',
 				Cell: ({ row }) => <Typography>{row.original.name}</Typography>
-			},
-			{
-				accessorKey: 'description',
-				header: 'Description',
-				Cell: ({ row }) => <Typography>{row.original.description}</Typography>
 			}
 		],
 		[]
@@ -198,132 +218,173 @@ const TestCaseTable: React.FC = () => {
 	if (error) return <Typography color="error">{error}</Typography>;
 
 	return (
-		<div style={{ padding: 24 }}>
+		<div>
 			{/* Bulk Run Controls */}
 			<Box className="mb-4 flex items-center gap-3">
-							<TextField
-								type="number"
-								label="Number of Runs"
-								value={bulkRunTimes}
-								onChange={(e) => setBulkRunTimes(parseInt(e.target.value) || 1)}
-								slotProps={{
-									htmlInput: { min: 1, max: 100 }
-								}}
-								size="small"
-								sx={{ width: 150 }}
-							/>
+				<TextField
+					type="number"
+					label="Number of Runs"
+					value={bulkRunTimes}
+					onChange={(e) => setBulkRunTimes(parseInt(e.target.value) || 1)}
+					slotProps={{
+						htmlInput: { min: 1, max: 100 }
+					}}
+					size="small"
+					sx={{ width: 150 }}
+				/>
+				<Button
+					variant="contained"
+					color="primary"
+					onClick={handleBulkRun}
+					disabled={
+						bulkRunLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
+					}
+				>
+					{bulkRunLoading ? 'Running...' : 'Bulk Run'}
+					{Object.keys(rowSelection).filter((key) => rowSelection[key]).length > 0 &&
+						` (${Object.keys(rowSelection).filter((key) => rowSelection[key]).length})`}
+				</Button>
+				{bulkRunSuccess && (
+					<Alert
+						severity="success"
+						onClose={() => setBulkRunSuccess(null)}
+						sx={{ flex: 1 }}
+					>
+						{bulkRunSuccess}
+					</Alert>
+				)}
+				{bulkRunError && (
+					<Alert
+						severity="error"
+						onClose={() => setBulkRunError(null)}
+						sx={{ flex: 1 }}
+					>
+						{bulkRunError}
+					</Alert>
+				)}
+				<Button
+					variant="outlined"
+					color="secondary"
+					onClick={handleReset}
+					disabled={resetLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0}
+				>
+					{resetLoading ? 'Resetting...' : 'Reset Selected'}
+				</Button>
+				{resetSuccess && (
+					<Alert
+						severity="success"
+						onClose={() => setResetSuccess(null)}
+						sx={{ flex: 1 }}
+					>
+						{resetSuccess}
+					</Alert>
+				)}
+				{resetError && (
+					<Alert
+						severity="error"
+						onClose={() => setResetError(null)}
+						sx={{ flex: 1 }}
+					>
+						{resetError}
+					</Alert>
+				)}
+			</Box>
+
+			{/* ...existing table UI, filtered by selectedFeatureId... */}
+			<Paper
+				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+				elevation={0}
+			>
+				<DataTable
+					data={testCases}
+					columns={columns}
+					rowCount={total}
+					state={{
+						rowSelection,
+						pagination
+					}}
+					onRowSelectionChange={setRowSelection}
+					onPaginationChange={setPagination}
+					manualPagination
+					renderRowActions={({ row }) => (
+						<div style={{ display: 'flex', gap: 8 }}>
 							<Button
+								size="small"
 								variant="contained"
 								color="primary"
-								onClick={handleBulkRun}
-								disabled={
-									bulkRunLoading ||
-									Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
-								}
+								onClick={() => {
+									setSelected(row.original);
+									setEditDialogOpen(true);
+								}}
 							>
-								{bulkRunLoading ? 'Running...' : 'Bulk Run'}
-								{Object.keys(rowSelection).filter((key) => rowSelection[key]).length > 0 &&
-									` (${Object.keys(rowSelection).filter((key) => rowSelection[key]).length})`}
+								Edit
 							</Button>
-							{bulkRunSuccess && (
-								<Alert
-									severity="success"
-									onClose={() => setBulkRunSuccess(null)}
-									sx={{ flex: 1 }}
-								>
-									{bulkRunSuccess}
-								</Alert>
-							)}
-							{bulkRunError && (
-								<Alert
-									severity="error"
-									onClose={() => setBulkRunError(null)}
-									sx={{ flex: 1 }}
-								>
-									{bulkRunError}
-								</Alert>
-							)}
 							<Button
+								size="small"
 								variant="outlined"
 								color="secondary"
-								onClick={handleReset}
-								disabled={
-									resetLoading ||
-									Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
-								}
-							>
-								{resetLoading ? 'Resetting...' : 'Reset Selected'}
-							</Button>
-							{resetSuccess && (
-								<Alert
-									severity="success"
-									onClose={() => setResetSuccess(null)}
-									sx={{ flex: 1 }}
-								>
-									{resetSuccess}
-								</Alert>
-							)}
-							{resetError && (
-								<Alert
-									severity="error"
-									onClose={() => setResetError(null)}
-									sx={{ flex: 1 }}
-								>
-									{resetError}
-								</Alert>
-							)}
-						</Box>
-
-						{/* ...existing table UI, filtered by selectedFeatureId... */}
-						<Paper
-							className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
-							elevation={0}
-						>
-							<DataTable
-								data={testCases}
-								columns={columns}
-								state={{
-									rowSelection,
-									pagination
+								onClick={() => {
+									handleAiCallDialog(row.original);
 								}}
-								onRowSelectionChange={setRowSelection}
-								onPaginationChange={setPagination}
-								manualPagination
-								renderRowActions={({ row }) => (
-									<div style={{ display: 'flex', gap: 8 }}>
-										<Button
-											size="small"
-											variant="contained"
-											color="primary"
-											onClick={() => {
-												setSelected(row.original);
-												setEditDialogOpen(true);
-											}}
-										>
-											Edit
-										</Button>
-										<Button
-											size="small"
-											variant="outlined"
-											color="secondary"
-											onClick={() => {
-												handleAiCallDialog(row.original);
-											}}
-										>
-											AI Calls
-										</Button>
-									</div>
-								)}
-							/>
-						</Paper>
-						{/* Edit Dialog */}
-						<TestCaseDetailDialog
-							open={editDialogOpen}
-							onClose={handleCloseEdit}
-							testCase={selected}
-							onSave={handleSave}
-							onDelete={handleDelete}
-						/>
+							>
+								AI Calls
+							</Button>
+							<Button
+								size="small"
+								variant="outlined"
+								color="error"
+								onClick={() => {
+									setDeleteTarget(row.original);
+									setDeleteDialogOpen(true);
+								}}
+							>
+								Delete
+							</Button>
+						</div>
+					)}
+				/>
+			</Paper>
+			{/* Delete Confirmation Dialog */}
+			<Dialog
+				open={deleteDialogOpen}
+				onClose={() => {
+					setDeleteDialogOpen(false);
+					setDeleteTarget(null);
+				}}
+			>
+				<DialogTitle>Delete Test Case</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+						Are you sure you want to delete this test case? This action cannot be undone.
+					</DialogContentText>
+				</DialogContent>
+				<DialogActions>
+					<Button
+						onClick={() => {
+							setDeleteDialogOpen(false);
+							setDeleteTarget(null);
+						}}
+					>
+						Cancel
+					</Button>
+					<Button
+						onClick={handleDelete}
+						color="error"
+						variant="contained"
+						autoFocus
+					>
+						Delete
+					</Button>
+				</DialogActions>
+			</Dialog>
+			{/* Edit Dialog */}
+			<TestCaseDetailDialog
+				open={editDialogOpen}
+				onClose={handleCloseEdit}
+				testCase={selected}
+				onSave={handleSave}
+				onDelete={handleDelete}
+			/>
 			{/* AI Calls Dialog */}
 			<AiCallDialog
 				open={aiDialogOpen}
