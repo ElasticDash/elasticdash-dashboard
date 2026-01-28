@@ -10,7 +10,6 @@ import {
 	Typography,
 	CircularProgress,
 	Button,
-	TextField,
 	Box,
 	Alert,
 	Dialog,
@@ -26,7 +25,19 @@ import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationServi
 import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
 import { resetTestCases } from '@/services/testCaseResetService';
 
-const TestCaseTable: React.FC = () => {
+interface TestCaseTableProps {
+	rowSelection: MRT_RowSelectionState;
+	onRowSelectionChange: (selection: MRT_RowSelectionState) => void;
+	bulkRunTrigger: number;
+	bulkRunTimes: number;
+}
+
+const TestCaseTable: React.FC<TestCaseTableProps> = ({
+	rowSelection,
+	onRowSelectionChange,
+	bulkRunTrigger,
+	bulkRunTimes
+}) => {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<TestCase | null>(null);
 	const [fetchNeeded, setFetchNeeded] = useState(true);
@@ -39,8 +50,6 @@ const TestCaseTable: React.FC = () => {
 	const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
 	// Bulk run state
-	const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
-	const [bulkRunTimes, setBulkRunTimes] = useState<number>(5);
 	const [bulkRunLoading, setBulkRunLoading] = useState(false);
 	const [bulkRunSuccess, setBulkRunSuccess] = useState<string | null>(null);
 	const [bulkRunError, setBulkRunError] = useState<string | null>(null);
@@ -60,7 +69,7 @@ const TestCaseTable: React.FC = () => {
 		try {
 			await resetTestCases(selectedIds);
 			setResetSuccess(`Successfully reset ${selectedIds.length} test case(s).`);
-			setRowSelection({});
+			onRowSelectionChange({});
 			setTimeout(() => setResetSuccess(null), 5000);
 		} catch (err: any) {
 			setResetError(err.message || 'Failed to reset test case(s)');
@@ -180,7 +189,7 @@ const TestCaseTable: React.FC = () => {
 			);
 
 			// Clear selection after successful bulk run
-			setRowSelection({});
+			onRowSelectionChange({});
 
 			// Auto-dismiss success message after 5 seconds
 			setTimeout(() => {
@@ -192,6 +201,14 @@ const TestCaseTable: React.FC = () => {
 			setBulkRunLoading(false);
 		}
 	};
+
+	// Trigger bulk run when button clicked in header
+	useEffect(() => {
+		if (bulkRunTrigger > 0) {
+			handleBulkRun();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [bulkRunTrigger]);
 
 	const columns = useMemo<MRT_ColumnDef<TestCase>[]>(
 		() => [
@@ -218,37 +235,14 @@ const TestCaseTable: React.FC = () => {
 	if (error) return <Typography color="error">{error}</Typography>;
 
 	return (
-		<div>
-			{/* Bulk Run Controls */}
+		<>
+			{/* Status Messages and Controls */}
 			<Paper
 				sx={{ p: 2, borderRadius: 0 }}
 				elevation={1}
 				className="border-b-2 border-gray-300"
 			>
 				<Box className="flex items-center gap-3">
-					<TextField
-						type="number"
-						label="Number of Runs"
-						value={bulkRunTimes}
-						onChange={(e) => setBulkRunTimes(parseInt(e.target.value) || 1)}
-						slotProps={{
-							htmlInput: { min: 1, max: 100 }
-						}}
-						size="small"
-						sx={{ width: 150 }}
-					/>
-					<Button
-						variant="contained"
-						color="primary"
-						onClick={handleBulkRun}
-						disabled={
-							bulkRunLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0
-						}
-					>
-						{bulkRunLoading ? 'Running...' : 'Bulk Run'}
-						{Object.keys(rowSelection).filter((key) => rowSelection[key]).length > 0 &&
-							` (${Object.keys(rowSelection).filter((key) => rowSelection[key]).length})`}
-					</Button>
 					{bulkRunSuccess && (
 						<Alert
 							severity="success"
@@ -300,18 +294,20 @@ const TestCaseTable: React.FC = () => {
 			<Paper
 				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
 				elevation={0}
+				style={{ minHeight: 0 }}
 			>
-				<DataTable
-					data={testCases}
-					columns={columns}
-					rowCount={total}
-					state={{
-						rowSelection,
-						pagination
-					}}
-					onRowSelectionChange={setRowSelection}
-					onPaginationChange={setPagination}
-					manualPagination
+				<div className="flex h-full min-h-0 flex-auto flex-col">
+					<DataTable
+						data={testCases}
+						columns={columns}
+						rowCount={total}
+						state={{
+							rowSelection,
+							pagination
+						}}
+						onRowSelectionChange={onRowSelectionChange}
+						onPaginationChange={setPagination}
+						manualPagination
 					renderRowActions={({ row }) => (
 						<div style={{ display: 'flex', gap: 8 }}>
 							<Button
@@ -349,6 +345,7 @@ const TestCaseTable: React.FC = () => {
 						</div>
 					)}
 				/>
+				</div>
 			</Paper>
 			{/* Delete Confirmation Dialog */}
 			<Dialog
@@ -397,7 +394,7 @@ const TestCaseTable: React.FC = () => {
 				onClose={handleCloseAiDialog}
 				aiCalls={aiCalls}
 			/>
-		</div>
+		</>
 	);
 };
 

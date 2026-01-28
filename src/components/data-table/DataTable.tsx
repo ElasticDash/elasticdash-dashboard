@@ -36,7 +36,7 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 				initialState: {
 					density: 'compact',
 					showColumnFilters: false,
-					showGlobalFilter: true,
+					showGlobalFilter: false,
 					columnPinning: {
 						left: isMobile ? [] : ['mrt-row-expand', 'mrt-row-select'],
 						right: ['mrt-row-actions']
@@ -54,8 +54,14 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 				enableFacetedValues: true,
 				enableRowActions: true, // Enable default row actions
 				enableRowSelection: true, // Enable default row selection
+				enablePagination: true,
+				enableBottomToolbar: true,
 				muiBottomToolbarProps: {
-					className: 'flex items-center min-h-14 h-14'
+					className: 'flex items-center min-h-14 h-14',
+					sx: {
+						minHeight: '56px',
+						display: 'flex !important'
+					}
 				},
 				muiTablePaperProps: {
 					elevation: 0,

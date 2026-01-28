@@ -61,19 +61,19 @@ const TestCaseRunTable: React.FC = () => {
 		setDetailLoading(false);
 	};
 
-	const getStatusColor = (status: string) => {
-		switch (status.toLowerCase()) {
-			case 'completed':
-			case 'success':
-				return 'success';
-			case 'pending':
-			case 'running':
-				return 'warning';
-			case 'failed':
-			case 'error':
-				return 'error';
-			default:
-				return 'default';
+	const getProgressColor = (successfulRuns: number, totalRuns: number) => {
+		if (totalRuns === 0) return { bgcolor: '#9e9e9e', color: '#fff' }; // Gray for no data
+		const successRate = (successfulRuns / totalRuns) * 100;
+
+		if (successfulRuns === 0) {
+			// Red bg + white text: no success cases
+			return { bgcolor: '#d32f2f', color: '#fff' };
+		} else if (successRate < 80) {
+			// Yellow bg + black text: some success but less than 80%
+			return { bgcolor: '#ffc107', color: '#000' };
+		} else {
+			// Green bg + white text: 80% or more success
+			return { bgcolor: '#388e3c', color: '#fff' };
 		}
 	};
 
@@ -96,50 +96,70 @@ const TestCaseRunTable: React.FC = () => {
 					</Typography>
 				)
 			},
-			{
-				accessorKey: 'testCaseIds',
-				header: 'Test Cases',
-				Cell: ({ row }) => <Typography>{row.original.testCaseIds.length} test case(s)</Typography>
-			},
-			{
-				accessorKey: 'times',
-				header: 'Runs Per Case',
-				Cell: ({ row }) => <Typography>{row.original.times}×</Typography>
-			},
+			// {
+			// 	accessorKey: 'testCaseIds',
+			// 	header: 'Test Cases',
+			// 	Cell: ({ row }) => <Typography>{row.original.testCaseIds.length} test case(s)</Typography>
+			// },
+			// {
+			// 	accessorKey: 'times',
+			// 	header: 'Runs Per Case',
+			// 	Cell: ({ row }) => <Typography>{row.original.times}×</Typography>
+			// },
 			{
 				accessorKey: 'status',
 				header: 'Status',
-				Cell: ({ row }) => (
-					<Chip
-						label={row.original.status}
-						color={getStatusColor(row.original.status)}
-						size="small"
-					/>
-				)
+				Cell: ({ row }) => {
+					const colors = getProgressColor(row.original.successfulRuns, row.original.totalRuns);
+					const progressText = `${row.original.successfulRuns}/${row.original.totalRuns} successful`;
+					const failedText = row.original.failedRuns > 0 ? ` (${row.original.failedRuns} failed)` : '';
+
+					return (
+						<Chip
+							label={progressText + failedText}
+							size="small"
+							sx={{
+								backgroundColor: colors.bgcolor,
+								color: colors.color,
+								fontWeight: 600,
+								'& .MuiChip-label': {
+									color: colors.color
+								}
+							}}
+						/>
+					);
+				}
 			},
 			{
-				accessorKey: 'total_runs',
-				header: 'Progress',
-				Cell: ({ row }) => (
-					<Typography>
-						{row.original.successfulRuns}/{row.original.totalRuns} successful
-						{row.original.failedRuns > 0 && ` (${row.original.failedRuns} failed)`}
-					</Typography>
-				)
-			},
-			{
-				accessorKey: 'startedAt',
-				header: 'Started At',
-				Cell: ({ row }) => <Typography>{new Date(row.original.startedAt).toLocaleString()}</Typography>
-			},
-			{
-				accessorKey: 'completedAt',
-				header: 'Completed At',
-				Cell: ({ row }) => (
-					<Typography>
-						{row.original.completedAt ? new Date(row.original.completedAt).toLocaleString() : '-'}
-					</Typography>
-				)
+				accessorKey: 'duration',
+				header: 'Duration',
+				Cell: ({ row }) => {
+					const { startedAt, completedAt } = row.original;
+					if (!startedAt) return <Typography>-</Typography>;
+
+					const start = new Date(startedAt).getTime();
+					const end = completedAt ? new Date(completedAt).getTime() : Date.now();
+					const durationMs = end - start;
+
+					// Convert to human-readable format
+					const seconds = Math.floor(durationMs / 1000);
+					const minutes = Math.floor(seconds / 60);
+					const hours = Math.floor(minutes / 60);
+					const days = Math.floor(hours / 24);
+
+					let durationText = '';
+					if (days > 0) {
+						durationText = `${days}d ${hours % 24}h ${minutes % 60}m`;
+					} else if (hours > 0) {
+						durationText = `${hours}h ${minutes % 60}m`;
+					} else if (minutes > 0) {
+						durationText = `${minutes}m ${seconds % 60}s`;
+					} else {
+						durationText = `${seconds}s`;
+					}
+
+					return <Typography>{durationText}</Typography>;
+				}
 			}
 		],
 		[]

@@ -16,6 +16,7 @@ interface Trace {
 	name: string;
 	project_id: string;
 	user_id: string;
+	steps: number;
 }
 
 export default function TraceListPage() {
@@ -168,15 +169,19 @@ export default function TraceListPage() {
 				Cell: () => <Typography>Development</Typography>
 			},
 			{
-				accessorKey: 'project_id',
-				header: 'Project ID',
-				Cell: ({ row }) => <Typography>{row.original.project_id ?? ''}</Typography>
+				header: 'Steps',
+				Cell: ({ row }) => <Typography>{row.original.steps ?? 0}</Typography>
 			},
-			{
-				accessorKey: 'user_id',
-				header: 'User ID',
-				Cell: ({ row }) => <Typography>{row.original.user_id ?? ''}</Typography>
-			}
+			// {
+			// 	accessorKey: 'project_id',
+			// 	header: 'Project ID',
+			// 	Cell: ({ row }) => <Typography>{row.original.project_id ?? ''}</Typography>
+			// },
+			// {
+			// 	accessorKey: 'user_id',
+			// 	header: 'User ID',
+			// 	Cell: ({ row }) => <Typography>{row.original.user_id ?? ''}</Typography>
+			// }
 		],
 		[]
 	);
@@ -184,66 +189,6 @@ export default function TraceListPage() {
 	return (
 		<FusePageSimple
 			header={<TracesHeader />}
-			leftSidebarProps={{
-				open: true,
-				width: 240,
-				content: (
-					<div
-						style={{
-							width: '100%',
-							height: '100%',
-							padding: 16,
-							background: '#fafafa'
-						}}
-					>
-						<h3 style={{ marginTop: 0, marginBottom: 16, fontSize: '1.1rem', fontWeight: 600 }}>
-							Features
-						</h3>
-						{featuresLoading ? (
-							<div>Loading...</div>
-						) : featuresError ? (
-							<div style={{ color: 'red' }}>{featuresError}</div>
-						) : (
-							<ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-								{features.map((feature) => (
-									<li
-										key={feature.id}
-										style={{ marginBottom: 4 }}
-									>
-										<button
-											style={{
-												width: '100%',
-												textAlign: 'left',
-												padding: '10px 12px',
-												background:
-													selectedFeatureId === feature.id ? '#e0e7ff' : 'transparent',
-												border: 'none',
-												borderRadius: 6,
-												cursor: 'pointer',
-												fontWeight: 400,
-												transition: 'all 0.2s ease'
-											}}
-											onMouseEnter={(e) => {
-												if (selectedFeatureId !== feature.id) {
-													e.currentTarget.style.background = '#f5f5f5';
-												}
-											}}
-											onMouseLeave={(e) => {
-												if (selectedFeatureId !== feature.id) {
-													e.currentTarget.style.background = 'transparent';
-												}
-											}}
-											onClick={() => setSelectedFeatureId(feature.id)}
-										>
-											{feature.featureName}
-										</button>
-									</li>
-								))}
-							</ul>
-						)}
-					</div>
-				)
-			}}
 			content={
 				<div
 					className="flex h-full min-h-0 w-full flex-col p-0"
@@ -316,11 +261,70 @@ export default function TraceListPage() {
 					) : (
 						<>
 							<Paper
-								className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+								className="shadow-1 flex h-full w-full flex-auto flex-row overflow-hidden rounded-t-lg rounded-b-none"
 								elevation={0}
 								style={{ minHeight: 0 }}
 							>
-								<div className="flex h-full min-h-0 flex-auto flex-col">
+								<div
+									style={{
+										width: '300px',
+										minWidth: '300px',
+										maxWidth: '300px',
+										height: '100%',
+										padding: 16,
+										background: '#fafafa'
+									}}
+								>
+									<h3 style={{ marginTop: 0, marginBottom: 16, fontSize: '1.1rem', fontWeight: 600 }}>
+										Features
+									</h3>
+									{featuresLoading ? (
+										<div>Loading...</div>
+									) : featuresError ? (
+										<div style={{ color: 'red' }}>{featuresError}</div>
+									) : (
+										<ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+											{features.map((feature) => (
+												<li
+													key={feature.id}
+													style={{ marginBottom: 4 }}
+												>
+													<button
+														style={{
+															width: '100%',
+															textAlign: 'left',
+															padding: '10px 12px',
+															background:
+																selectedFeatureId === feature.id ? '#e0e7ff' : 'transparent',
+															border: 'none',
+															borderRadius: 6,
+															cursor: 'pointer',
+															fontWeight: 400,
+															transition: 'all 0.2s ease'
+														}}
+														onMouseEnter={(e) => {
+															if (selectedFeatureId !== feature.id) {
+																e.currentTarget.style.background = '#f5f5f5';
+															}
+														}}
+														onMouseLeave={(e) => {
+															if (selectedFeatureId !== feature.id) {
+																e.currentTarget.style.background = 'transparent';
+															}
+														}}
+														onClick={() => setSelectedFeatureId(feature.id)}
+													>
+														{feature.featureName}
+													</button>
+												</li>
+											))}
+										</ul>
+									)}
+								</div>
+								<div
+									className="flex h-full min-h-0 flex-auto flex-col"
+									style={{ height: '100%', minHeight: 0, overflow: 'auto' }}
+								>
 									<DataTable
 										data={traces}
 										columns={columns}
