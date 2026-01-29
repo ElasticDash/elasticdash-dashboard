@@ -4,7 +4,7 @@ import { useMemo, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { Paper, TextField, Button, Typography, Box, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { Paper, Button, Typography, Box, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import FusePageSimple from '@fuse/core/FusePageSimple';
 import { fetchTraces } from '@/services/traceListService';
 import TraceDetailDialog from '@/components/TraceDetailDialog';
@@ -190,10 +190,7 @@ export default function TraceListPage() {
 		<FusePageSimple
 			header={<TracesHeader />}
 			content={
-				<div
-					className="flex h-full min-h-0 w-full flex-col p-0"
-					style={{ height: '100vh', minHeight: 0 }}
-				>
+				<div className="flex h-full min-h-0 w-full flex-col p-0">
 					{/* Filter UI */}
 					<Paper
 						sx={{ p: 2, borderRadius: 0 }}
@@ -201,32 +198,6 @@ export default function TraceListPage() {
 						className="border-b-2 border-gray-300"
 					>
 						<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
-							<TextField
-								label="Name contains"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								size="small"
-								sx={{ minWidth: 200 }}
-								placeholder="e.g. chat"
-							/>
-							{/* <TextField
-								label="Start date"
-								type="date"
-								value={startDate}
-								onChange={(e) => setStartDate(e.target.value)}
-								size="small"
-								sx={{ minWidth: 160 }}
-								slotProps={{ inputLabel: { shrink: true } }}
-							/>
-							<TextField
-								label="End date"
-								type="date"
-								value={endDate}
-								onChange={(e) => setEndDate(e.target.value)}
-								size="small"
-								sx={{ minWidth: 160 }}
-								slotProps={{ inputLabel: { shrink: true } }}
-							/> */}
 							<FormControl
 								size="small"
 								sx={{ minWidth: 160 }}
@@ -240,12 +211,6 @@ export default function TraceListPage() {
 									<MenuItem value="development">Development</MenuItem>
 								</Select>
 							</FormControl>
-							<Button
-								variant="contained"
-								onClick={handleApplyFilter}
-							>
-								Apply Filter
-							</Button>
 							<FormControl
 								size="small"
 								sx={{ minWidth: 160 }}
@@ -350,24 +315,15 @@ export default function TraceListPage() {
 											pagination
 										}}
 										onPaginationChange={setPagination}
-										renderRowActions={({ row }) => (
-											<div
-												style={{
-													display: 'flex',
-													gap: 8,
-													flexGrow: 1,
-													justifyContent: 'flex-end'
-												}}
-											>
-												<Button
-													size="small"
-													variant="outlined"
-													onClick={() => handleOpenDialog(row.original.id)}
-												>
-													Detail
-												</Button>
-											</div>
-										)}
+										onRowClick={(row, event) => {
+											// Only trigger if not clicking on a button or inside a button
+											if (
+												event.target instanceof HTMLElement &&
+												!event.target.closest('button')
+											) {
+												handleOpenDialog(row.original.id);
+											}
+										}}
 									/>
 									{error && (
 										<Typography

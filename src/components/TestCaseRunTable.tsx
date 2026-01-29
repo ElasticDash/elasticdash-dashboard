@@ -9,7 +9,7 @@ import {
 	TestCaseRunRecord,
 	getMockPromptDriftData
 } from '@/services/testCaseRunRecordService';
-import { Paper, Typography, Button, Chip, Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { Paper, Typography, Chip, Box, FormControl, InputLabel, MenuItem, Select, Button } from '@mui/material';
 import TestCaseRunRecordDetailDialog from './TestCaseRunRecordDetailDialog';
 
 const TestCaseRunTable: React.FC = () => {
@@ -30,21 +30,22 @@ const TestCaseRunTable: React.FC = () => {
 		fetchTestCaseRunRecords()
 			.then((res) => {
 				// Add mock prompt drift record at the beginning
-				const mockRecord: TestCaseRunRecord = {
-					id: 999,
-					testCaseIds: [1],
-					times: 1,
-					status: 'suspicious',
-					totalRuns: 1,
-					successfulRuns: 1,
-					failedRuns: 0,
-					pendingRuns: 0,
-					runningRuns: 0,
-					createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-					startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-					completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
-				};
-				setRecords([mockRecord, ...res]);
+				// const mockRecord: TestCaseRunRecord = {
+				// 	id: 999,
+				// 	testCaseIds: [1],
+				// 	times: 1,
+				// 	status: 'suspicious',
+				// 	totalRuns: 1,
+				// 	successfulRuns: 1,
+				// 	failedRuns: 0,
+				// 	pendingRuns: 0,
+				// 	runningRuns: 0,
+				// 	createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+				// 	startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+				// 	completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
+				// };
+				// setRecords([mockRecord, ...res]);
+				setRecords(res);
 				setError(null);
 			})
 			.catch((err) => {
@@ -271,56 +272,7 @@ const TestCaseRunTable: React.FC = () => {
 				className="border-b-2 border-gray-300"
 			>
 				<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
-					{/* <TextField
-						label="Name contains"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						size="small"
-						sx={{ minWidth: 200 }}
-						placeholder="e.g. chat"
-					/> */}
-					{/* <TextField
-						label="Start date"
-						type="date"
-						value={startDate}
-						onChange={(e) => setStartDate(e.target.value)}
-						size="small"
-						sx={{ minWidth: 160 }}
-						slotProps={{ inputLabel: { shrink: true } }}
-					/>
-					<TextField
-						label="End date"
-						type="date"
-						value={endDate}
-						onChange={(e) => setEndDate(e.target.value)}
-						size="small"
-						sx={{ minWidth: 160 }}
-						slotProps={{ inputLabel: { shrink: true } }}
-					/> */}
-					{/* <Button
-						variant="contained"
-						onClick={handleApplyFilter}
-					>
-						Apply Filter
-					</Button> */}
-					<FormControl
-						size="small"
-						sx={{ minWidth: 160 }}
-					>
-						<InputLabel>Environment</InputLabel>
-						<Select
-							label="Environment"
-							defaultValue="development"
-							sx={{ minWidth: 160 }}
-						>
-							<MenuItem value="development">Development</MenuItem>
-						</Select>
-					</FormControl>
-					<Button variant="contained">Apply Filter</Button>
-					<FormControl
-						size="small"
-						sx={{ minWidth: 160 }}
-					>
+					<FormControl size="small" sx={{ minWidth: 160 }}>
 						<InputLabel>Auto Refresh</InputLabel>
 						<Select
 							value={autoRefresh}
@@ -331,17 +283,15 @@ const TestCaseRunTable: React.FC = () => {
 							<MenuItem value="60000">Once per minute</MenuItem>
 						</Select>
 					</FormControl>
-					<Button
-						variant="outlined"
-						onClick={handleManualRefresh}
-					>
+					<Button variant="outlined" onClick={handleManualRefresh}>
 						Refresh
 					</Button>
 				</Box>
 			</Paper>
 			<Paper
-				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+				className="shadow-1 flex w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
 				elevation={0}
+				style={{ minHeight: 0, position: 'relative', height: 'calc(100vh - 175px)', overflow: 'auto' }}
 			>
 				<DataTable
 					data={records}
@@ -349,18 +299,7 @@ const TestCaseRunTable: React.FC = () => {
 					state={{
 						isLoading: loading
 					}}
-					renderRowActions={({ row }) => (
-						<div style={{ display: 'flex', gap: 8 }}>
-							<Button
-								size="small"
-								variant="outlined"
-								color="primary"
-								onClick={() => handleOpenDialog(row.original.id)}
-							>
-								View Details
-							</Button>
-						</div>
-					)}
+					onRowClick={(row) => handleOpenDialog(row.original.id)}
 				/>
 				{error && (
 					<Typography
@@ -371,6 +310,30 @@ const TestCaseRunTable: React.FC = () => {
 					</Typography>
 				)}
 			</Paper>
+
+			{/* 
+			<Paper
+				className="shadow-1 flex w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
+				elevation={0}
+				style={{ minHeight: 0, position: 'relative', maxHeight: 'calc(100vh - 250px)', overflow: 'auto' }}
+			>
+				<div className="flex min-h-0 flex-auto flex-col" style={{ height: '100%' }}>
+					<DataTable
+						data={records}
+						columns={columns}
+						rowCount={total}
+						manualPagination
+						state={{
+							isLoading: loading,
+							pagination
+						}}
+						onPaginationChange={setPagination}
+						onRowClick={(row) => handleOpenDialog(row.original.id)}
+					/>
+				</div>
+			</Paper>
+
+			*/}
 			<TestCaseRunRecordDetailDialog
 				open={dialogOpen}
 				onClose={handleCloseDialog}

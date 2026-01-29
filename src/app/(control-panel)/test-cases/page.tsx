@@ -22,10 +22,7 @@ export default function TestCasesPanel() {
 				/>
 			}
 			content={
-				<div
-					className="flex h-full min-h-0 w-full flex-col p-0"
-					style={{ height: '100vh', minHeight: 0 }}
-				>
+				<div className="flex h-full min-h-0 w-full flex-col p-0">
 					<TestCaseTable
 						rowSelection={rowSelection}
 						onRowSelectionChange={setRowSelection}

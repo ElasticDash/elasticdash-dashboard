@@ -16,7 +16,6 @@ import {
 	DialogContent,
 	DialogContentText,
 	DialogActions,
-	TextField,
 	Select,
 	MenuItem,
 	FormControl,
@@ -267,65 +266,13 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		[]
 	);
 
-	if (loading) return <CircularProgress />;
 
 	if (error) return <Typography color="error">{error}</Typography>;
+
 
 	return (
 		<>
 			{/* Status Messages and Controls */}
-			{/* <Paper
-				sx={{ p: 2, borderRadius: 0 }}
-				elevation={1}
-				className="border-b-2 border-gray-300"
-			>
-				<Box className="flex items-center gap-3">
-					{bulkRunSuccess && (
-						<Alert
-							severity="success"
-							onClose={() => setBulkRunSuccess(null)}
-							sx={{ flex: 1 }}
-						>
-							{bulkRunSuccess}
-						</Alert>
-					)}
-					{bulkRunError && (
-						<Alert
-							severity="error"
-							onClose={() => setBulkRunError(null)}
-							sx={{ flex: 1 }}
-						>
-							{bulkRunError}
-						</Alert>
-					)}
-					<Button
-						variant="outlined"
-						color="secondary"
-						onClick={handleReset}
-						disabled={resetLoading || Object.keys(rowSelection).filter((key) => rowSelection[key]).length === 0}
-					>
-						{resetLoading ? 'Resetting...' : 'Reset Selected'}
-					</Button>
-					{resetSuccess && (
-						<Alert
-							severity="success"
-							onClose={() => setResetSuccess(null)}
-							sx={{ flex: 1 }}
-						>
-							{resetSuccess}
-						</Alert>
-					)}
-					{resetError && (
-						<Alert
-							severity="error"
-							onClose={() => setResetError(null)}
-							sx={{ flex: 1 }}
-						>
-							{resetError}
-						</Alert>
-					)}
-				</Box>
-			</Paper> */}
 			{/* Filter UI */}
 			<Paper
 				sx={{ p: 2, borderRadius: 0 }}
@@ -333,14 +280,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				className="border-b-2 border-gray-300"
 			>
 				<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
-					<TextField
-						label="Name contains"
-						value={searchName}
-						onChange={(e) => setSearchName(e.target.value)}
-						size="small"
-						sx={{ minWidth: 200 }}
-						placeholder="e.g. chat"
-					/>
 					<FormControl
 						size="small"
 						sx={{ minWidth: 160 }}
@@ -354,12 +293,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 							<MenuItem value="development">Development</MenuItem>
 						</Select>
 					</FormControl>
-					<Button
-						variant="contained"
-						onClick={handleSearch}
-					>
-						Apply Filter
-					</Button>
 					<FormControl
 						size="small"
 						sx={{ minWidth: 160 }}
@@ -387,7 +320,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			<Paper
 				className="shadow-1 flex h-full w-full flex-auto flex-col overflow-hidden rounded-t-lg rounded-b-none"
 				elevation={0}
-				style={{ minHeight: 0 }}
+				style={{ minHeight: 0, position: 'relative' }}
 			>
 				<div className="flex h-full min-h-0 flex-auto flex-col">
 					<DataTable
@@ -396,48 +329,60 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						rowCount={total}
 						state={{
 							rowSelection,
-							pagination
+							pagination,
+							isLoading: loading
 						}}
 						onRowSelectionChange={onRowSelectionChange}
 						onPaginationChange={setPagination}
 						manualPagination
-						renderRowActions={({ row }) => (
-							<div style={{ display: 'flex', gap: 8 }}>
-								<Button
-									size="small"
-									variant="contained"
-									color="primary"
-									onClick={() => {
-										setSelected(row.original);
-										setEditDialogOpen(true);
-									}}
+						onRowClick={(row) => {
+						setSelected(row.original);
+						setEditDialogOpen(true);
+					}}
+					// Only show Edit and Delete buttons
+					renderRowActions={({ row }) => (
+						<div style={{ display: 'flex', gap: 8 }}>
+							<Button
+								size="small"
+								variant="contained"
+								color="primary"
+								onClick={() => {
+									setSelected(row.original);
+									setEditDialogOpen(true);
+								}}
 								>
-									Edit
+								Edit
 								</Button>
 								<Button
-									size="small"
-									variant="outlined"
-									color="secondary"
-									onClick={() => {
-										handleAiCallDialog(row.original);
-									}}
+								size="small"
+								variant="outlined"
+								color="error"
+								onClick={() => {
+									setDeleteTarget(row.original);
+									setDeleteDialogOpen(true);
+								}}
 								>
-									Detail
+								Delete
 								</Button>
-								<Button
-									size="small"
-									variant="outlined"
-									color="error"
-									onClick={() => {
-										setDeleteTarget(row.original);
-										setDeleteDialogOpen(true);
-									}}
-								>
-									Delete
-								</Button>
-							</div>
-						)}
-					/>
+						</div>
+					)}
+				/>
+					{loading && (
+						<div style={{
+							position: 'absolute',
+							top: 0,
+							left: 0,
+							width: '100%',
+							height: '100%',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							zIndex: 2,
+							background: 'rgba(255,255,255,0.5)'
+						}}>
+							<CircularProgress />
+						</div>
+					)}
 				</div>
 			</Paper>
 			{/* Delete Confirmation Dialog */}

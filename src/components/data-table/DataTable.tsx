@@ -27,12 +27,17 @@ const tableIcons: Partial<MRT_Icons> = {
 	VisibilityOffIcon: () => <FuseSvgIcon>lucide:eye-off</FuseSvgIcon>
 };
 
-function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowActions?: any }) {
-	const { columns, data = [], renderRowActions, ...rest } = props;
+function DataTable<TData>(
+	props: MaterialReactTableProps<TData> & {
+		renderRowActions?: any;
+		onRowClick?: (row: any, event: React.MouseEvent) => void;
+	}
+) {
+	const { columns, data = [], renderRowActions, onRowClick, ...rest } = props;
 	const isMobile = useThemeMediaQuery((theme) => theme.breakpoints.down('lg'));
 	const defaults = useMemo(
-		() =>
-			_.defaults(rest, {
+		() => {
+			const base = _.defaults(rest, {
 				initialState: {
 					density: 'compact',
 					showColumnFilters: false,
@@ -52,7 +57,7 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 				enableGrouping: true,
 				enableColumnPinning: true,
 				enableFacetedValues: true,
-				enableRowActions: true, // Enable default row actions
+				enableRowActions: !!renderRowActions, // Only show Actions column if renderRowActions is provided
 				enableRowSelection: true, // Enable default row selection
 				enablePagination: true,
 				enableBottomToolbar: true,
@@ -75,6 +80,7 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 				// enableStickyFooter: true,
 				paginationDisplayMode: 'pages',
 				positionToolbarAlertBanner: 'top',
+				positionPagination: 'bottom',
 				muiPaginationProps: {
 					color: 'secondary',
 					rowsPerPageOptions: [10, 20, 30],
@@ -83,10 +89,10 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 					showRowsPerPage: false
 				},
 				// muiSearchTextFieldProps: {
-				// 	placeholder: 'Search',
-				// 	sx: { minWidth: '300px' },
-				// 	variant: 'outlined',
-				// 	size: 'small'
+				//  placeholder: 'Search',
+				//  sx: { minWidth: '300px' },
+				//  variant: 'outlined',
+				//  size: 'small'
 				// },
 				muiFilterTextFieldProps: {
 					variant: 'outlined',
@@ -110,63 +116,76 @@ function DataTable<TData>(props: MaterialReactTableProps<TData> & { renderRowAct
 				muiSelectCheckboxProps: {
 					size: 'small'
 				},
-				muiTableBodyRowProps: ({ row, table }) => {
-					const { density } = table.getState();
-
-					if (density === 'compact') {
-						return {
-							sx: {
-								backgroundColor: 'initial',
-								opacity: 1,
-								boxShadow: 'none',
-								height: row.getIsPinned() ? `${37}px` : undefined
-							}
-						};
-					}
-
-					return {
-						sx: {
-							backgroundColor: 'initial',
-							opacity: 1,
-							boxShadow: 'none',
-							// Set a fixed height for pinned rows
-							height: row.getIsPinned() ? `${density === 'comfortable' ? 53 : 69}px` : undefined
-						}
-					};
-				},
-				muiTableHeadCellProps: ({ column }) => ({
-					sx: {
-						'& .Mui-TableHeadCell-Content-Labels': {
-							flex: 1,
-							justifyContent: 'space-between'
-						},
-						'& .Mui-TableHeadCell-Content-Actions': {
-							'& > button': {
-								marginX: '2px'
-							}
-						},
-						'& .MuiFormHelperText-root': {
-							textAlign: 'center',
-							marginX: 0,
-							color: (theme: Theme) => theme.vars.palette.text.disabled,
-							fontSize: 11
-						},
-						backgroundColor: (theme) =>
-							column.getIsPinned() ? theme.vars.palette.background.paper : 'inherit'
-					}
-				}),
-				mrtTheme: (theme) => ({
-					baseBackgroundColor: theme.palette.background.paper,
-					menuBackgroundColor: theme.palette.background.paper,
-					pinnedRowBackgroundColor: theme.palette.background.paper,
-					pinnedColumnBackgroundColor: theme.palette.background.paper
-				}),
-				renderTopToolbar: (_props) => <DataTableTopToolbar {..._props} />, 
+				renderTopToolbar: (_props) => <DataTableTopToolbar {..._props} />,
 				icons: tableIcons,
 				renderRowActions: renderRowActions
-			} as Partial<MaterialReactTableProps<TData>>),
+			} as Partial<MaterialReactTableProps<TData>>);
+			// Add row click handler if provided
+			base.muiTableBodyRowProps = (rowProps) => {
+				const { row, table } = rowProps;
+				const { density } = table.getState();
+				const baseProps =
+					density === 'compact'
+						? {
+								sx: {
+									backgroundColor: 'initial',
+									opacity: 1,
+									boxShadow: 'none',
+									height: row.getIsPinned() ? `${37}px` : undefined,
+									cursor: onRowClick ? 'pointer' : undefined
+								}
+							}
+						: {
+								sx: {
+									backgroundColor: 'initial',
+									opacity: 1,
+									boxShadow: 'none',
+									height: row.getIsPinned() ? `${density === 'comfortable' ? 53 : 69}px` : undefined,
+									cursor: onRowClick ? 'pointer' : undefined
+								}
+							};
+
+				if (onRowClick) {
+					return {
+						...baseProps,
+						onClick: (event: React.MouseEvent) => {
+							onRowClick(row, event);
+						}
+					};
+				}
+
+				return baseProps;
+			};
+			base.muiTableHeadCellProps = ({ column }) => ({
+				sx: {
+					'& .Mui-TableHeadCell-Content-Labels': {
+						flex: 1,
+						justifyContent: 'space-between'
+					},
+					'& .Mui-TableHeadCell-Content-Actions': {
+						'& > button': {
+							marginX: '2px'
+						}
+					},
+					'& .MuiFormHelperText-root': {
+						textAlign: 'center',
+						marginX: 0,
+						color: (theme: Theme) => theme.vars.palette.text.disabled,
+						fontSize: 11
+					},
+					backgroundColor: (theme) => (column.getIsPinned() ? theme.vars.palette.background.paper : 'inherit')
+				}
+			});
+			base.mrtTheme = (theme) => ({
+				baseBackgroundColor: theme.palette.background.paper,
+				menuBackgroundColor: theme.palette.background.paper,
+				pinnedRowBackgroundColor: theme.palette.background.paper,
+				pinnedColumnBackgroundColor: theme.palette.background.paper
+			});
+			return base;
+		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[rest, renderRowActions]
+		[rest, renderRowActions, onRowClick]
 	);
 
 	const tableOptions = useMemo(
