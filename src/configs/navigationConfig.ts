@@ -14,229 +14,257 @@ i18n.addResourceBundle('ar', 'navigation', ar);
  */
 const navigationConfig: FuseNavItemType[] = [
 	{
-		id: 'apps',
-		title: 'Applications',
-		subtitle: 'Custom made application designs',
-		type: 'group',
-		icon: 'lucide:box',
-		translate: 'APPLICATIONS',
-		children: [
-			{
-				id: 'apps.test-results',
-				title: 'Test Results',
-				type: 'item',
-				icon: 'lucide:activity',
-				url: '/test-results'
-			},
-			{
-				id: 'apps.test-cases',
-				title: 'Test Cases',
-				type: 'item',
-				icon: 'lucide:activity',
-				url: '/test-cases'
-			},
-			{
-				id: 'apps.traces',
-				title: 'Traces',
-				type: 'item',
-				icon: 'lucide:activity',
-				url: '/traces'
-			},
-			{
-				id: 'apps.account-settings',
-				title: 'Account Settings',
-				type: 'item',
-				icon: 'lucide:settings',
-				url: '/apps/account-settings'
-			}
-			// {
-			// 	id: 'apps.ai-image-generator',
-			// 	title: 'AI Image Generator',
-			// 	type: 'item',
-			// 	icon: 'lucide:image',
-			// 	url: '/apps/ai-image-generator',
-			// 	badge: {
-			// 		title: 'NEW'
-			// 	}
-			// },
-			// {
-			// 	id: 'apps.academy',
-			// 	title: 'Academy',
-			// 	type: 'item',
-			// 	icon: 'lucide:graduation-cap',
-			// 	url: '/apps/academy',
-			// 	translate: 'ACADEMY'
-			// },
-			// {
-			// 	id: 'apps.calendar',
-			// 	title: 'Calendar',
-			// 	subtitle: '3 upcoming events',
-			// 	type: 'item',
-			// 	icon: 'lucide:calendar',
-			// 	url: '/apps/calendar',
-			// 	translate: 'CALENDAR'
-			// },
-			// {
-			// 	id: 'apps.messenger',
-			// 	title: 'Messenger',
-			// 	type: 'item',
-			// 	icon: 'lucide:message-square',
-			// 	url: '/apps/messenger',
-			// 	translate: 'MESSENGER'
-			// },
-			// {
-			// 	id: 'apps.contacts',
-			// 	title: 'Contacts',
-			// 	type: 'item',
-			// 	icon: 'lucide:users',
-			// 	url: '/apps/contacts',
-			// 	translate: 'CONTACTS'
-			// },
-			// {
-			// 	id: 'apps.ecommerce',
-			// 	title: 'ECommerce',
-			// 	type: 'collapse',
-			// 	icon: 'lucide:shopping-cart',
-			// 	translate: 'ECOMMERCE',
-			// 	url: '/apps/e-commerce/products',
-			// 	children: [
-			// 		{
-			// 			id: 'e-commerce-products',
-			// 			title: 'Products',
-			// 			type: 'item',
-			// 			url: '/apps/e-commerce/products',
-			// 			end: true
-			// 		},
-			// 		{
-			// 			id: 'e-commerce-product-detail',
-			// 			title: 'Product Detail',
-			// 			type: 'item',
-			// 			url: '/apps/e-commerce/products/1/a-walk-amongst-friends-canvas-print'
-			// 		},
-			// 		{
-			// 			id: 'e-commerce-new-product',
-			// 			title: 'New Product',
-			// 			type: 'item',
-			// 			url: '/apps/e-commerce/products/new'
-			// 		},
-			// 		{
-			// 			id: 'e-commerce-orders',
-			// 			title: 'Orders',
-			// 			type: 'item',
-			// 			url: '/apps/e-commerce/orders',
-			// 			end: true
-			// 		},
-			// 		{
-			// 			id: 'e-commerce-order-detail',
-			// 			title: 'Order Detail',
-			// 			type: 'item',
-			// 			url: '/apps/e-commerce/orders/1'
-			// 		}
-			// 	]
-			// },
-			// {
-			// 	id: 'apps.file-manager',
-			// 	title: 'File Manager',
-			// 	type: 'item',
-			// 	icon: 'lucide:cloud',
-			// 	url: '/apps/file-manager',
-			// 	end: true,
-			// 	translate: 'FILE_MANAGER'
-			// },
-			// {
-			// 	id: 'apps.help-center',
-			// 	title: 'Help Center',
-			// 	type: 'collapse',
-			// 	icon: 'lucide:info',
-			// 	url: '/apps/help-center',
-			// 	children: [
-			// 		{
-			// 			id: 'apps.help-center.home',
-			// 			title: 'Home',
-			// 			type: 'item',
-			// 			url: '/apps/help-center',
-			// 			end: true
-			// 		},
-			// 		{
-			// 			id: 'apps.help-center.faqs',
-			// 			title: 'FAQs',
-			// 			type: 'item',
-			// 			url: '/apps/help-center/faqs'
-			// 		},
-			// 		{
-			// 			id: 'apps.help-center.guides',
-			// 			title: 'Guides',
-			// 			type: 'item',
-			// 			url: '/apps/help-center/guides'
-			// 		},
-			// 		{
-			// 			id: 'apps.help-center.support',
-			// 			title: 'Support',
-			// 			type: 'item',
-			// 			url: '/apps/help-center/support'
-			// 		}
-			// 	]
-			// },
-			// {
-			// 	id: 'apps.mailbox',
-			// 	title: 'Mailbox',
-			// 	type: 'item',
-			// 	icon: 'lucide:mail',
-			// 	url: '/apps/mailbox/folders/inbox',
-			// 	translate: 'MAIL',
-			// 	badge: {
-			// 		title: '27',
-			// 		classes: 'px-8 bg-pink-600 text-white rounded-full'
-			// 	}
-			// },
-			// {
-			// 	id: 'apps.notes',
-			// 	title: 'Notes',
-			// 	type: 'item',
-			// 	icon: 'lucide:square-pen',
-			// 	url: '/apps/notes',
-			// 	translate: 'NOTES'
-			// },
-			// {
-			// 	id: 'apps.scrumboard',
-			// 	title: 'Scrumboard',
-			// 	type: 'item',
-			// 	icon: 'lucide:columns-3',
-			// 	url: '/apps/scrumboard',
-			// 	translate: 'SCRUMBOARD'
-			// },
-			// {
-			// 	id: 'apps.tasks',
-			// 	title: 'Tasks',
-			// 	subtitle: '12 remaining tasks',
-			// 	type: 'item',
-			// 	icon: 'lucide:circle-check',
-			// 	url: '/apps/tasks',
-			// 	translate: 'TASKS'
-			// },
-			// {
-			// 	id: 'apps.profile',
-			// 	title: 'Profile',
-			// 	type: 'item',
-			// 	icon: 'lucide:circle-user',
-			// 	url: '/apps/profile'
-			// },
-			// {
-			// 	id: 'apps.notifications',
-			// 	title: 'Notifications',
-			// 	type: 'item',
-			// 	icon: 'lucide:bell',
-			// 	url: '/apps/notifications'
-			// },
-			// {
-			// 	...SettingsAppNavigation,
-			// 	type: 'item',
-			// 	badge: {
-			// 		title: 'NEW'
-			// 	}
-			// }
-		]
+		id: 'apps.test-results',
+		title: 'Test Results',
+		type: 'item',
+		icon: 'lucide:chart-bar', // Results: bar chart
+		url: '/test-results'
 	},
+	{
+		id: 'apps.test-cases',
+		title: 'Test Cases',
+		type: 'item',
+		icon: 'lucide:list-checks', // Cases: checklist
+		url: '/test-cases'
+	},
+	{
+		id: 'apps.traces',
+		title: 'Traces',
+		type: 'item',
+		icon: 'lucide:git-branch', // Traces: branch/trace
+		url: '/traces'
+	},
+	{
+		id: 'apps.account-settings',
+		title: 'Account Settings',
+		type: 'item',
+		icon: 'lucide:settings',
+		url: '/apps/account-settings'
+	}
+	// {
+	// 	id: 'apps',
+	// 	title: 'Applications',
+	// 	subtitle: 'Custom made application designs',
+	// 	type: 'group',
+	// 	icon: 'lucide:box',
+	// 	translate: 'APPLICATIONS',
+	// 	children: [
+	// 		{
+	// 			id: 'apps.test-results',
+	// 			title: 'Test Results',
+	// 			type: 'item',
+	// 			icon: 'lucide:chart-bar', // Results: bar chart
+	// 			url: '/test-results'
+	// 		},
+	// 		{
+	// 			id: 'apps.test-cases',
+	// 			title: 'Test Cases',
+	// 			type: 'item',
+	// 			icon: 'lucide:list-checks', // Cases: checklist
+	// 			url: '/test-cases'
+	// 		},
+	// 		{
+	// 			id: 'apps.traces',
+	// 			title: 'Traces',
+	// 			type: 'item',
+	// 			icon: 'lucide:git-branch', // Traces: branch/trace
+	// 			url: '/traces'
+	// 		},
+	// 		{
+	// 			id: 'apps.account-settings',
+	// 			title: 'Account Settings',
+	// 			type: 'item',
+	// 			icon: 'lucide:settings',
+	// 			url: '/apps/account-settings'
+	// 		}
+	// {
+	// 	id: 'apps.ai-image-generator',
+	// 	title: 'AI Image Generator',
+	// 	type: 'item',
+	// 	icon: 'lucide:image',
+	// 	url: '/apps/ai-image-generator',
+	// 	badge: {
+	// 		title: 'NEW'
+	// 	}
+	// },
+	// {
+	// 	id: 'apps.academy',
+	// 	title: 'Academy',
+	// 	type: 'item',
+	// 	icon: 'lucide:graduation-cap',
+	// 	url: '/apps/academy',
+	// 	translate: 'ACADEMY'
+	// },
+	// {
+	// 	id: 'apps.calendar',
+	// 	title: 'Calendar',
+	// 	subtitle: '3 upcoming events',
+	// 	type: 'item',
+	// 	icon: 'lucide:calendar',
+	// 	url: '/apps/calendar',
+	// 	translate: 'CALENDAR'
+	// },
+	// {
+	// 	id: 'apps.messenger',
+	// 	title: 'Messenger',
+	// 	type: 'item',
+	// 	icon: 'lucide:message-square',
+	// 	url: '/apps/messenger',
+	// 	translate: 'MESSENGER'
+	// },
+	// {
+	// 	id: 'apps.contacts',
+	// 	title: 'Contacts',
+	// 	type: 'item',
+	// 	icon: 'lucide:users',
+	// 	url: '/apps/contacts',
+	// 	translate: 'CONTACTS'
+	// },
+	// {
+	// 	id: 'apps.ecommerce',
+	// 	title: 'ECommerce',
+	// 	type: 'collapse',
+	// 	icon: 'lucide:shopping-cart',
+	// 	translate: 'ECOMMERCE',
+	// 	url: '/apps/e-commerce/products',
+	// 	children: [
+	// 		{
+	// 			id: 'e-commerce-products',
+	// 			title: 'Products',
+	// 			type: 'item',
+	// 			url: '/apps/e-commerce/products',
+	// 			end: true
+	// 		},
+	// 		{
+	// 			id: 'e-commerce-product-detail',
+	// 			title: 'Product Detail',
+	// 			type: 'item',
+	// 			url: '/apps/e-commerce/products/1/a-walk-amongst-friends-canvas-print'
+	// 		},
+	// 		{
+	// 			id: 'e-commerce-new-product',
+	// 			title: 'New Product',
+	// 			type: 'item',
+	// 			url: '/apps/e-commerce/products/new'
+	// 		},
+	// 		{
+	// 			id: 'e-commerce-orders',
+	// 			title: 'Orders',
+	// 			type: 'item',
+	// 			url: '/apps/e-commerce/orders',
+	// 			end: true
+	// 		},
+	// 		{
+	// 			id: 'e-commerce-order-detail',
+	// 			title: 'Order Detail',
+	// 			type: 'item',
+	// 			url: '/apps/e-commerce/orders/1'
+	// 		}
+	// 	]
+	// },
+	// {
+	// 	id: 'apps.file-manager',
+	// 	title: 'File Manager',
+	// 	type: 'item',
+	// 	icon: 'lucide:cloud',
+	// 	url: '/apps/file-manager',
+	// 	end: true,
+	// 	translate: 'FILE_MANAGER'
+	// },
+	// {
+	// 	id: 'apps.help-center',
+	// 	title: 'Help Center',
+	// 	type: 'collapse',
+	// 	icon: 'lucide:info',
+	// 	url: '/apps/help-center',
+	// 	children: [
+	// 		{
+	// 			id: 'apps.help-center.home',
+	// 			title: 'Home',
+	// 			type: 'item',
+	// 			url: '/apps/help-center',
+	// 			end: true
+	// 		},
+	// 		{
+	// 			id: 'apps.help-center.faqs',
+	// 			title: 'FAQs',
+	// 			type: 'item',
+	// 			url: '/apps/help-center/faqs'
+	// 		},
+	// 		{
+	// 			id: 'apps.help-center.guides',
+	// 			title: 'Guides',
+	// 			type: 'item',
+	// 			url: '/apps/help-center/guides'
+	// 		},
+	// 		{
+	// 			id: 'apps.help-center.support',
+	// 			title: 'Support',
+	// 			type: 'item',
+	// 			url: '/apps/help-center/support'
+	// 		}
+	// 	]
+	// },
+	// {
+	// 	id: 'apps.mailbox',
+	// 	title: 'Mailbox',
+	// 	type: 'item',
+	// 	icon: 'lucide:mail',
+	// 	url: '/apps/mailbox/folders/inbox',
+	// 	translate: 'MAIL',
+	// 	badge: {
+	// 		title: '27',
+	// 		classes: 'px-8 bg-pink-600 text-white rounded-full'
+	// 	}
+	// },
+	// {
+	// 	id: 'apps.notes',
+	// 	title: 'Notes',
+	// 	type: 'item',
+	// 	icon: 'lucide:square-pen',
+	// 	url: '/apps/notes',
+	// 	translate: 'NOTES'
+	// },
+	// {
+	// 	id: 'apps.scrumboard',
+	// 	title: 'Scrumboard',
+	// 	type: 'item',
+	// 	icon: 'lucide:columns-3',
+	// 	url: '/apps/scrumboard',
+	// 	translate: 'SCRUMBOARD'
+	// },
+	// {
+	// 	id: 'apps.tasks',
+	// 	title: 'Tasks',
+	// 	subtitle: '12 remaining tasks',
+	// 	type: 'item',
+	// 	icon: 'lucide:circle-check',
+	// 	url: '/apps/tasks',
+	// 	translate: 'TASKS'
+	// },
+	// {
+	// 	id: 'apps.profile',
+	// 	title: 'Profile',
+	// 	type: 'item',
+	// 	icon: 'lucide:circle-user',
+	// 	url: '/apps/profile'
+	// },
+	// {
+	// 	id: 'apps.notifications',
+	// 	title: 'Notifications',
+	// 	type: 'item',
+	// 	icon: 'lucide:bell',
+	// 	url: '/apps/notifications'
+	// },
+	// {
+	// 	...SettingsAppNavigation,
+	// 	type: 'item',
+	// 	badge: {
+	// 		title: 'NEW'
+	// 	}
+	// }
+	// 	]
+	// },
 	// {
 	// 	id: 'dashboards',
 	// 	title: 'Dashboards',

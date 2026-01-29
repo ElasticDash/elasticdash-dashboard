@@ -61,7 +61,7 @@ function CompactInvoicePageView() {
 								<div className="w-24 place-self-center">
 									<img
 										className="w-24"
-										src="/assets/images/logo/logo.svg"
+										src="/assets/images/logo/elasticdash/logo.svg"
 										alt="logo"
 									/>
 								</div>
@@ -216,7 +216,7 @@ function CompactInvoicePageView() {
 							<div className="mt-4 flex items-start">
 								<img
 									className="mt-2 w-9 shrink-0"
-									src="/assets/images/logo/logo.svg"
+									src="/assets/images/logo/elasticdash/logo.svg"
 									alt="logo"
 								/>
 								<Typography

@@ -5,7 +5,7 @@ function ResetPasswordPageTitle() {
 		<div className="w-full">
 			<img
 				className="w-12"
-				src="/assets/images/logo/logo.svg"
+				src="/assets/images/logo/elasticdash/logo.svg"
 				alt="logo"
 			/>
 
