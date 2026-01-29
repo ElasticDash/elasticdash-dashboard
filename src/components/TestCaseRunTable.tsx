@@ -296,6 +296,8 @@ const TestCaseRunTable: React.FC = () => {
 				<DataTable
 					data={records}
 					columns={columns}
+					enableGlobalFilter={false}
+					enableColumnFilters={false}
 					state={{
 						isLoading: loading
 					}}

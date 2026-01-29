@@ -314,6 +314,8 @@ export default function TraceListPage() {
 											isLoading: loading,
 											pagination
 										}}
+										enableGlobalFilter={false}
+										enableColumnFilters={false}
 										onPaginationChange={setPagination}
 										onRowClick={(row, event) => {
 											// Only trigger if not clicking on a button or inside a button

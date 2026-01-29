@@ -137,8 +137,10 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		setRefreshKey((prev) => prev + 1);
 	};
 
-	// Search handler
-	const handleSearch = () => {
+
+	// DataTable search handler
+	const handleGlobalFilterChange = (value: string) => {
+		setSearchName(value);
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 		setFetchNeeded(true);
 	};
@@ -330,43 +332,46 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						state={{
 							rowSelection,
 							pagination,
-							isLoading: loading
+							isLoading: loading,
+							globalFilter: searchName
 						}}
 						onRowSelectionChange={onRowSelectionChange}
 						onPaginationChange={setPagination}
+						enableColumnFilters={false}
 						manualPagination
+						onGlobalFilterChange={handleGlobalFilterChange}
 						onRowClick={(row) => {
-						setSelected(row.original);
-						setEditDialogOpen(true);
-					}}
-					// Only show Edit and Delete buttons
-					renderRowActions={({ row }) => (
-						<div style={{ display: 'flex', gap: 8 }}>
-							<Button
-								size="small"
-								variant="contained"
-								color="primary"
-								onClick={() => {
-									setSelected(row.original);
-									setEditDialogOpen(true);
-								}}
+							setSelected(row.original);
+							setEditDialogOpen(true);
+						}}
+						// Only show Edit and Delete buttons
+						renderRowActions={({ row }) => (
+							<div style={{ display: 'flex', gap: 8 }}>
+								<Button
+									size="small"
+									variant="contained"
+									color="primary"
+									onClick={() => {
+										setSelected(row.original);
+										setEditDialogOpen(true);
+									}}
 								>
-								Edit
+									Edit
 								</Button>
 								<Button
-								size="small"
-								variant="outlined"
-								color="error"
-								onClick={() => {
-									setDeleteTarget(row.original);
-									setDeleteDialogOpen(true);
-								}}
+									size="small"
+									variant="outlined"
+									color="error"
+									onClick={() => {
+										setDeleteTarget(row.original);
+										setDeleteDialogOpen(true);
+									}}
 								>
-								Delete
+									Delete
 								</Button>
-						</div>
-					)}
-				/>
+							</div>
+						)}
+					/>
 					{loading && (
 						<div style={{
 							position: 'absolute',
