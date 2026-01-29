@@ -13,6 +13,11 @@ export interface TestCaseRunRecord {
 	failedRuns: number;
 	pendingRuns: number;
 	runningRuns: number;
+	totalAiCalls?: number;
+	successfulAiCalls?: number;
+	failedAiCalls?: number;
+	pendingAiCalls?: number;
+	runningAiCalls?: number;
 	createdAt: string;
 	startedAt: string;
 	completedAt: string | null;
@@ -32,6 +37,7 @@ export interface TestCaseRunInRecord {
 	startedAt: string;
 	completedAt: string | null;
 	createdAt: string;
+	isRerun?: boolean;
 }
 
 /**

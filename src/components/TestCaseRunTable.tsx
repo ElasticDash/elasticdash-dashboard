@@ -44,7 +44,7 @@ const TestCaseRunTable: React.FC = () => {
 				// 	startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
 				// 	completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
 				// };
-				// setRecords([mockRecord, ...res]);
+				// setRecords([...res]);
 				setRecords(res);
 				setError(null);
 			})
@@ -88,21 +88,26 @@ const TestCaseRunTable: React.FC = () => {
 			fetchTestCaseRunRecords()
 				.then((res) => {
 					// Add mock prompt drift record at the beginning
-					const mockRecord: TestCaseRunRecord = {
-						id: 999,
-						testCaseIds: [1],
-						times: 1,
-						status: 'suspicious',
-						totalRuns: 1,
-						successfulRuns: 1,
-						failedRuns: 0,
-						pendingRuns: 0,
-						runningRuns: 0,
-						createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-						startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-						completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
-					};
-					setRecords([mockRecord, ...res]);
+					// const mockRecord: TestCaseRunRecord = {
+					// 	id: 999,
+					// 	testCaseIds: [1],
+					// 	times: 1,
+					// 	status: 'suspicious',
+					// 	totalRuns: 1,
+					// 	successfulRuns: 1,
+					// 	failedRuns: 0,
+					// 	pendingRuns: 0,
+					// 	runningRuns: 0,
+					// 	createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					// 	startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					// 	completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
+					// };
+					setRecords([...res]);
+
+					if (selectedRecordId) {
+						handleOpenDialog(selectedRecordId);
+					}
+
 					setError(null);
 				})
 				.catch((err) => {
@@ -120,21 +125,21 @@ const TestCaseRunTable: React.FC = () => {
 		fetchTestCaseRunRecords()
 			.then((res) => {
 				// Add mock prompt drift record at the beginning
-				const mockRecord: TestCaseRunRecord = {
-					id: 999,
-					testCaseIds: [1],
-					times: 1,
-					status: 'suspicious',
-					totalRuns: 1,
-					successfulRuns: 1,
-					failedRuns: 0,
-					pendingRuns: 0,
-					runningRuns: 0,
-					createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-					startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-					completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
-				};
-				setRecords([mockRecord, ...res]);
+				// const mockRecord: TestCaseRunRecord = {
+				// 	id: 999,
+				// 	testCaseIds: [1],
+				// 	times: 1,
+				// 	status: 'suspicious',
+				// 	totalRuns: 1,
+				// 	successfulRuns: 1,
+				// 	failedRuns: 0,
+				// 	pendingRuns: 0,
+				// 	runningRuns: 0,
+				// 	createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+				// 	startedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+				// 	completedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString()
+				// };
+				setRecords([...res]);
 				setError(null);
 			})
 			.catch((err) => {
@@ -153,6 +158,7 @@ const TestCaseRunTable: React.FC = () => {
 
 	const getProgressColor = (successfulRuns: number, totalRuns: number, status: string) => {
 		console.log('Calculating progress color:', { successfulRuns, totalRuns, status });
+
 		if (totalRuns === 0) return { bgcolor: '#9e9e9e', color: '#fff' }; // Gray for no data
 
 		const successRate = (successfulRuns / totalRuns) * 100;
@@ -188,31 +194,20 @@ const TestCaseRunTable: React.FC = () => {
 					</Typography>
 				)
 			},
-			// {
-			// 	accessorKey: 'testCaseIds',
-			// 	header: 'Test Cases',
-			// 	Cell: ({ row }) => <Typography>{row.original.testCaseIds.length} test case(s)</Typography>
-			// },
-			// {
-			// 	accessorKey: 'times',
-			// 	header: 'Runs Per Case',
-			// 	Cell: ({ row }) => <Typography>{row.original.times}×</Typography>
-			// },
 			{
 				accessorKey: 'status',
 				header: 'Status',
 				Cell: ({ row }) => {
 					const colors = getProgressColor(
-						row.original.successfulRuns,
-						row.original.totalRuns,
+						row.original.successfulAiCalls,
+						row.original.totalAiCalls,
 						row.original.status
 					);
-					const progressText = `${row.original.successfulRuns}/${row.original.totalRuns} successful`;
-					const failedText = row.original.failedRuns > 0 ? ` (${row.original.failedRuns} failed)` : '';
+					const progressText = `${row.original.successfulAiCalls}/${row.original.totalAiCalls} successful`;
 
 					return (
 						<Chip
-							label={progressText + failedText}
+							label={progressText}
 							size="small"
 							sx={{
 								backgroundColor: colors.bgcolor,
@@ -272,7 +267,10 @@ const TestCaseRunTable: React.FC = () => {
 				className="border-b-2 border-gray-300"
 			>
 				<Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', borderRadius: 0 }}>
-					<FormControl size="small" sx={{ minWidth: 160 }}>
+					<FormControl
+						size="small"
+						sx={{ minWidth: 160 }}
+					>
 						<InputLabel>Auto Refresh</InputLabel>
 						<Select
 							value={autoRefresh}
@@ -283,7 +281,10 @@ const TestCaseRunTable: React.FC = () => {
 							<MenuItem value="60000">Once per minute</MenuItem>
 						</Select>
 					</FormControl>
-					<Button variant="outlined" onClick={handleManualRefresh}>
+					<Button
+						variant="outlined"
+						onClick={handleManualRefresh}
+					>
 						Refresh
 					</Button>
 				</Box>
@@ -339,6 +340,7 @@ const TestCaseRunTable: React.FC = () => {
 			<TestCaseRunRecordDetailDialog
 				open={dialogOpen}
 				onClose={handleCloseDialog}
+				onRefresh={() => handleOpenDialog(recordDetail?.record?.id)}
 				recordDetail={recordDetail}
 				loading={detailLoading}
 				error={detailError}

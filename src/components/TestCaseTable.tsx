@@ -26,7 +26,6 @@ import AiCallDialog from './AiCallDialog';
 import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
 // import { runTestCase } from '@/services/testCaseRunService';
 import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
-import { resetTestCases } from '@/services/testCaseResetService';
 
 interface TestCaseTableProps {
 	rowSelection: MRT_RowSelectionState;
@@ -56,30 +55,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [bulkRunLoading, setBulkRunLoading] = useState(false);
 	const [bulkRunSuccess, setBulkRunSuccess] = useState<string | null>(null);
 	const [bulkRunError, setBulkRunError] = useState<string | null>(null);
-	const [resetLoading, setResetLoading] = useState(false);
-	const [resetSuccess, setResetSuccess] = useState<string | null>(null);
-	const [resetError, setResetError] = useState<string | null>(null);
-	const handleReset = async () => {
-		const selectedIds = Object.keys(rowSelection)
-			.filter((key) => rowSelection[key])
-			.map((key) => testCases[parseInt(key)].id);
-
-		if (selectedIds.length === 0) return;
-
-		setResetLoading(true);
-		setResetError(null);
-		setResetSuccess(null);
-		try {
-			await resetTestCases(selectedIds);
-			setResetSuccess(`Successfully reset ${selectedIds.length} test case(s).`);
-			onRowSelectionChange({});
-			setTimeout(() => setResetSuccess(null), 5000);
-		} catch (err: any) {
-			setResetError(err.message || 'Failed to reset test case(s)');
-		} finally {
-			setResetLoading(false);
-		}
-	};
 
 	// Pagination state
 	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -263,6 +238,11 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				accessorKey: 'name',
 				header: 'Name',
 				Cell: ({ row }) => <Typography>{row.original.name}</Typography>
+			},
+			{
+				accessorKey: 'count',
+				header: 'Steps',
+				Cell: ({ row }) => <Typography>{row.original.count}</Typography>
 			}
 		],
 		[]
@@ -342,7 +322,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						onGlobalFilterChange={handleGlobalFilterChange}
 						onRowClick={(row) => {
 							setSelected(row.original);
-							setEditDialogOpen(true);
+							handleAiCallDialog(row.original);
 						}}
 						// Only show Edit and Delete buttons
 						renderRowActions={({ row }) => (
@@ -351,18 +331,20 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 									size="small"
 									variant="contained"
 									color="primary"
-									onClick={() => {
+									onClick={(ev) => {
+										ev.stopPropagation();
 										setSelected(row.original);
 										setEditDialogOpen(true);
 									}}
 								>
-									Edit
+									Rename
 								</Button>
 								<Button
 									size="small"
 									variant="outlined"
 									color="error"
-									onClick={() => {
+									onClick={(ev) => {
+										ev.stopPropagation();
 										setDeleteTarget(row.original);
 										setDeleteDialogOpen(true);
 									}}

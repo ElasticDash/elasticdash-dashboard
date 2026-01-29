@@ -40,6 +40,7 @@ export interface AiCallRun {
 
 export interface TestCaseRunDetail {
 	run: TestCaseRun;
+	runs?: TestCaseRun[];
 	aiCalls: AiCallRun[];
 }
 
@@ -90,7 +91,7 @@ export async function fetchTestCaseRunDetail(runId: number): Promise<TestCaseRun
  * @returns Promise<any>
  */
 export async function runTestCase(id: number): Promise<any> {
-	const res = await api.post('testcases/run', { json: { id } }).json();
+	const res: any = await api.post('testcases/run', { json: { id } }).json();
 
 	if (!res.success) throw new Error(res.error || 'Failed to run test case');
 

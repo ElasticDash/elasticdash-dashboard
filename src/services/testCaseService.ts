@@ -44,6 +44,7 @@ export interface TestCase {
 	id: number;
 	name: string;
 	description: string;
+	count: number;
 	deleted: boolean;
 	createdAt: string;
 	createdBy: number;
@@ -71,7 +72,19 @@ export async function fetchTestCases(): Promise<TestCase[]> {
  * @returns Promise<{ testCase: TestCase, aiCalls: any[] }>
  */
 export async function fetchTestCaseDetailWithAiCalls(id: number): Promise<{ testCase: TestCase; aiCalls: any[] }> {
-	const res = await api.get(`testcases/detail/${id}`).json();
+	const res: any = await api.get(`testcases/detail/${id}`).json();
+
+	if (!res.success) throw new Error(res.error || 'Failed to fetch test case detail');
+
+	return res.result;
+}
+
+export async function humanApproveTestCaseRunAICall(testCaseRunAICallId: number, approved: boolean): Promise<any> {
+	const res: any = await api
+		.put(`testcases/runrecords/aicall/approve`, {
+			json: { testCaseRunAICallId, approved }
+		})
+		.json();
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch test case detail');
 

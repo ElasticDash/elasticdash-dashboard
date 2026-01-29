@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDatabaseConnection, updateDatabaseConnection } from './dbApi';
+import { fetchApiBaseUrl, updateApiBaseUrl } from '@/services/accountSettingsService';
+import { fetchLlmConfig, updateLlmConfig } from '@/services/llmSettingsService';
 import { Typography, Paper, Divider } from '@mui/material';
 import { Box, lighten } from '@mui/system';
 import EditableField from './components/EditableField';
@@ -11,31 +12,60 @@ import EditablePasswordField from './components/EditablePasswordField';
  * Account Settings Page
  */
 export default function AccountSettingsPage() {
-	const [dbConnectString, setDbConnectString] = useState('');
-	const [dbError, setDbError] = useState('');
-	const [dbSuccess, setDbSuccess] = useState('');
-	const [email, setEmail] = useState('user@example.com');
+	const [apiBaseUrl, setApiBaseUrl] = useState('');
+	const [apiBaseUrlError, setApiBaseUrlError] = useState('');
+	const [apiBaseUrlSuccess, setApiBaseUrlSuccess] = useState('');
 
+	const [llmProviderId, setLlmProviderId] = useState(1); // Only OpenAI for now
+	const [llmToken, setLlmToken] = useState('');
+	const [llmError, setLlmError] = useState('');
+	const [llmSuccess, setLlmSuccess] = useState('');
+	const [email, setEmail] = useState('user@example.com');
+	// Fetch LLM config
 	useEffect(() => {
-		getDatabaseConnection()
+		fetchLlmConfig()
 			.then((res) => {
-				console.log('res: ', res);
-				setDbConnectString(res?.result.connectionString || '');
+				setLlmProviderId(res?.result?.llmProviderId || 1);
+				setLlmToken(res?.result?.llmToken || '');
 			})
 			.catch((err) => {
-				setDbError(err.message || 'Failed to fetch database connection');
+				setLlmError(err.message || 'Failed to fetch LLM config');
 			});
 	}, []);
 
-	const handleDbConnectStringSave = async (value: string) => {
-		setDbError('');
-		setDbSuccess('');
+	const handleLlmSave = async (token: string) => {
+		setLlmError('');
+		setLlmSuccess('');
 		try {
-			await updateDatabaseConnection(value);
-			setDbConnectString(value);
-			setDbSuccess('Database connection updated successfully');
+			await updateLlmConfig({ llmProviderId: 1, llmToken: token });
+			setLlmToken(token);
+			setLlmSuccess('LLM token updated successfully');
 		} catch (err: any) {
-			setDbError(err.message || 'Failed to update database connection');
+			setLlmError(err.message || 'Failed to update LLM token');
+		}
+	};
+
+
+	useEffect(() => {
+		fetchApiBaseUrl()
+			.then((res) => {
+				setApiBaseUrl(res?.result || '');
+			})
+			.catch((err) => {
+				setApiBaseUrlError(err.message || 'Failed to fetch API base URL');
+			});
+	}, []);
+
+
+	const handleApiBaseUrlSave = async (value: string) => {
+		setApiBaseUrlError('');
+		setApiBaseUrlSuccess('');
+		try {
+			await updateApiBaseUrl(value);
+			setApiBaseUrl(value);
+			setApiBaseUrlSuccess('API base URL updated successfully');
+		} catch (err: any) {
+			setApiBaseUrlError(err.message || 'Failed to update API base URL');
 		}
 	};
 
@@ -56,7 +86,7 @@ export default function AccountSettingsPage() {
 				Account Settings
 			</Typography>
 
-			{/* Database Connect String Section */}
+			{/* API Base URL Section */}
 			<Paper
 				className="mb-6 p-6"
 				elevation={1}
@@ -71,15 +101,59 @@ export default function AccountSettingsPage() {
 					variant="h6"
 					className="mb-4 font-semibold"
 				>
-					Database Configuration
+					API Base URL
 				</Typography>
 				<Divider className="mb-4" />
 				<EditableField
-					label="Database Connect String"
-					value={dbConnectString}
-					onSave={handleDbConnectStringSave}
+					label="API Base URL"
+					value={apiBaseUrl}
+					onSave={handleApiBaseUrlSave}
 					multiline
 				/>
+				{apiBaseUrlError && (
+					<Typography color="error" className="mt-2">{apiBaseUrlError}</Typography>
+				)}
+				{apiBaseUrlSuccess && (
+					<Typography color="success.main" className="mt-2">{apiBaseUrlSuccess}</Typography>
+				)}
+			</Paper>
+
+			{/* LLM Provider & Token Section */}
+			<Paper
+				className="mb-6 p-6"
+				elevation={1}
+				sx={(theme) => ({
+					backgroundColor: lighten(theme.palette.background.default, 0.02),
+					...theme.applyStyles('light', {
+						backgroundColor: lighten(theme.palette.background.default, 0.4)
+					})
+				})}
+			>
+				<Typography
+					variant="h6"
+					className="mb-4 font-semibold"
+				>
+					LLM Provider & Token
+				</Typography>
+				<Divider className="mb-4" />
+				<EditableField
+					label="Provider"
+					value="OpenAI"
+					onSave={() => {}}
+					editable={false}
+				/>
+				<EditableField
+					label="OpenAI API Key"
+					value={llmToken}
+					onSave={handleLlmSave}
+					type="password"
+				/>
+				{llmError && (
+					<Typography color="error" className="mt-2">{llmError}</Typography>
+				)}
+				{llmSuccess && (
+					<Typography color="success.main" className="mt-2">{llmSuccess}</Typography>
+				)}
 			</Paper>
 
 			{/* User Details Section */}
