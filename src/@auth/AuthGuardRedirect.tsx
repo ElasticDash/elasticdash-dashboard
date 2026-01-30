@@ -27,7 +27,7 @@ function AuthGuardRedirect({ auth, children, loginRedirectUrl = '/' }: AuthGuard
 			// Guest-only route (e.g. login):
 			if (token) {
 				// If logged in, redirect to chat (or main) page
-				navigate('/apps/chat');
+				navigate('/test-results');
 				setAccessGranted(false);
 			} else {
 				// No token, allow access to guest page
@@ -39,6 +39,7 @@ function AuthGuardRedirect({ auth, children, loginRedirectUrl = '/' }: AuthGuard
 				setAccessGranted(true);
 			} else {
 				setAccessGranted(false);
+
 				if (pathname !== '/sign-in') {
 					navigate('/sign-in');
 				}
@@ -50,6 +51,7 @@ function AuthGuardRedirect({ auth, children, loginRedirectUrl = '/' }: AuthGuard
 		// Prevent hydration mismatch: render nothing until client-side
 		return null;
 	}
+
 	return accessGranted ? children : <FuseLoading />;
 }
 

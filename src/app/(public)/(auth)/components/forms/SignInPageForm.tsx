@@ -32,26 +32,25 @@ const defaultValues = {
 	remember: true
 };
 
-
-
 function SignInPageForm() {
-       const { control, formState, handleSubmit, reset } = useForm<FormType>({
-	       mode: 'onChange',
-	       defaultValues,
-	       resolver: zodResolver(schema)
-       });
+	const { control, formState, handleSubmit, reset } = useForm<FormType>({
+		mode: 'onChange',
+		defaultValues,
+		resolver: zodResolver(schema)
+	});
 
-       const { isValid, dirtyFields, errors } = formState;
-       const { handleLogin, loading, error } = useLogin();
-       const router = useRouter();
+	const { isValid, dirtyFields, errors } = formState;
+	const { handleLogin, loading, error } = useLogin();
+	const router = useRouter();
 
-       async function onSubmit(data: FormType) {
-	       const success = await handleLogin(data.email, data.password, !!data.remember);
-	       if (success) {
-		       reset(defaultValues);
-		       router.push('/apps/chat');
-	       }
-       }
+	async function onSubmit(data: FormType) {
+		const success = await handleLogin(data.email, data.password, !!data.remember);
+
+		if (success) {
+			reset(defaultValues);
+			router.push('/test-results');
+		}
+	}
 
 	return (
 		<form
@@ -61,7 +60,11 @@ function SignInPageForm() {
 			onSubmit={handleSubmit(onSubmit)}
 		>
 			{error && (
-				<Typography color="error" variant="body2" sx={{ mb: 1 }}>
+				<Typography
+					color="error"
+					variant="body2"
+					sx={{ mb: 1 }}
+				>
 					{error}
 				</Typography>
 			)}
