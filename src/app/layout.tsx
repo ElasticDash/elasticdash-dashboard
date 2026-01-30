@@ -14,7 +14,7 @@ export const metadata = await generateMetadata({
 	description: 'Automated testing to ensure consistent, reliable LLM behavior across updates, deployments, and real-world workflows.',
 	cardImage: '/card.png',
 	robots: 'follow, index',
-	favicon: '/favicon.ico',
+	favicon: '/assets/images/logo/logo.svg',
 	url: 'https://react-material.fusetheme.com'
 });
 
@@ -46,7 +46,7 @@ export default async function RootLayout({
 				/>
 				<link
 					rel="shortcut icon"
-					href="/favicon.ico"
+					href="/assets/images/logo/logo.svg"
 				/>
 				<noscript id="emotion-insertion-point" />
 			</head>
