@@ -91,6 +91,8 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 			case 'failed':
 			case 'error':
 				return 'error';
+			case 'benchmark':
+				return 'info';
 			default:
 				return 'default';
 		}
