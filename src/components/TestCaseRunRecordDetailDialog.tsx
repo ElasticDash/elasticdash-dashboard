@@ -46,6 +46,8 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 	const [aiCallsLoading, setAiCallsLoading] = useState(false);
 	const [allAiCalls, setAllAiCalls] = useState<any[]>([]);
 	const [resettingRunId, setResettingRunId] = useState<number | null>(null);
+	const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+	const [pendingReplaceRun, setPendingReplaceRun] = useState<any | null>(null);
 
 	// Helper function to prettify JSON
 	const prettifyJSON = (content: any): string => {
@@ -93,6 +95,10 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 	const getStatusLabel = (status: string, promptDriftDetected?: boolean, isRun?: boolean) => {
 		if (promptDriftDetected) {
 			return isRun ? 'Suspicious' : 'Prompt Drifted';
+		}
+
+		if (status === 'failed') {
+			return 'Mismatch';
 		}
 
 		return status.charAt(0).toUpperCase() + status.slice(1);
@@ -150,6 +156,24 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 		} catch (err: any) {
 			alert(err.message || 'Failed to update test case');
 		}
+	};
+
+	const handleReplaceClick = (run: any) => {
+		setPendingReplaceRun(run);
+		setConfirmReplaceOpen(true);
+	};
+
+	const handleConfirmReplace = async () => {
+		if (pendingReplaceRun) {
+			setConfirmReplaceOpen(false);
+			await handleTCUpdate(pendingReplaceRun);
+			setPendingReplaceRun(null);
+		}
+	};
+
+	const handleCancelReplace = () => {
+		setConfirmReplaceOpen(false);
+		setPendingReplaceRun(null);
 	};
 
 	// Get all runs as individual items in the list
@@ -310,185 +334,204 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 								<Typography sx={{ p: 2, color: 'text.secondary' }}>No test runs found.</Typography>
 							) : (
 								<List sx={{ p: 0 }}>
-									{runs.map((run, index) => (
-										<ListItem
-											disablePadding
-											key={run.id}
-											sx={{ alignItems: 'flex-start' }}
-										>
-											<Box
-												sx={{
-													display: 'flex',
-													flexDirection: 'column',
-													alignItems: 'center',
-													minWidth: 28,
-													pt: 1
-												}}
-											>
-												<FiberManualRecordIcon
-													fontSize="small"
-													color={selectedRun?.id === run.id ? 'primary' : 'disabled'}
-												/>
-												{index < runs.length - 1 && (
+									{runs.map((run, index) => {
+										const prev = runs[index - 1];
+										const showSeparator = index > 0 && prev && run.testCaseId !== prev.testCaseId;
+										return (
+											<React.Fragment key={run.id}>
+												{showSeparator && (
 													<MuiDivider
-														orientation="vertical"
-														flexItem
-														sx={{
-															height: 28,
-															borderRightWidth: 2,
-															borderColor: 'divider',
-															my: 0,
-															mx: 'auto'
-														}}
+														sx={{ my: 0.5, borderColor: 'primary.main', borderWidth: 2 }}
 													/>
 												)}
-											</Box>
-											<ListItemButton
-												selected={selectedRun?.id === run.id}
-												onClick={() => setSelectedRun(run)}
-												sx={{ pl: 1, alignItems: 'flex-start', flexDirection: 'column' }}
-											>
-												<Box
-													sx={{
-														width: '100%',
-														display: 'flex',
-														justifyContent: 'space-between',
-														alignItems: 'center'
-													}}
+												<ListItem
+													disablePadding
+													sx={{ alignItems: 'flex-start' }}
 												>
-													<Box>
-														<Typography
-															variant="body2"
-															fontWeight={600}
-															noWrap
-															sx={{
-																maxWidth: 120,
-																textOverflow: 'ellipsis',
-																overflow: 'hidden',
-																whiteSpace: 'nowrap'
-															}}
-														>
-															{run.testCaseName}
-														</Typography>
-														<Typography
-															variant="caption"
-															color="text.secondary"
-														>
-															Run #{run.id}
-														</Typography>
-													</Box>
 													<Box
 														sx={{
 															display: 'flex',
 															flexDirection: 'column',
-															gap: 0.5,
-															alignItems: 'flex-end'
+															alignItems: 'center',
+															minWidth: 28,
+															pt: 1
 														}}
 													>
-														{/* <Chip
-															label={getStatusLabel(
-																run.status,
-																run.promptDriftDetected,
-																true
-															)}
-															color={getStatusColor(run.status, run.promptDriftDetected)}
-															size="small"
-															sx={{
-																height: 18,
-																fontSize: '0.65rem',
-																...(run.promptDriftDetected && {
-																	backgroundColor: '#ffc107',
-																	color: '#000',
-																	fontWeight: 600
-																})
-															}}
+														<FiberManualRecordIcon
+															fontSize="small"
+															color={selectedRun?.id === run.id ? 'primary' : 'disabled'}
 														/>
-														{run.isRerun ? (
-															<Button
-																size="small"
-																variant="outlined"
-																color="secondary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleTCUpdate(run);
-																}}
-																disabled={resettingRunId === run.id}
-																sx={{
-																	fontSize: '0.65rem',
-																	padding: '2px 8px',
-																	minWidth: 'auto',
-																	height: 20
-																}}
-															>
-																Update Case
-															</Button>
-														) : (
-															<Button
-																size="small"
-																variant="outlined"
-																color="secondary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleResetTestCase(run);
-																}}
-																disabled={resettingRunId === run.id}
-																sx={{
-																	fontSize: '0.65rem',
-																	padding: '2px 8px',
-																	minWidth: 'auto',
-																	height: 20
-																}}
-															>
-																{resettingRunId === run.id ? 'Rerunning...' : 'Rerun'}
-															</Button>
-														)} */}
-														{run.isRerun ? (
-															<Button
-																size="small"
-																variant="outlined"
-																color="secondary"
-																onClick={(e) => {
-																	e.stopPropagation();
-																	handleTCUpdate(run);
-																}}
-																disabled={resettingRunId === run.id}
-																sx={{
-																	fontSize: '0.65rem',
-																	padding: '2px 8px',
-																	minWidth: 'auto',
-																	height: 20
-																}}
-															>
-																Replace
-															</Button>
-														) : (
-															<Chip
-																label={getStatusLabel(
-																	run.status,
-																	run.promptDriftDetected,
-																	true
-																)}
-																color={getStatusColor(
-																	run.status,
-																	run.promptDriftDetected
-																)}
-																size="small"
-																sx={{
-																	height: 18,
-																	fontSize: '0.65rem',
-																	...(run.promptDriftDetected && {
-																		backgroundColor: '#ffc107',
-																		color: '#000',
-																		fontWeight: 600
-																	})
-																}}
-															/>
-														)}
+														{(() => {
+															const next = runs[index + 1];
+															return (
+																index < runs.length - 1 &&
+																next &&
+																run.testCaseId === next.testCaseId && (
+																	<MuiDivider
+																		orientation="vertical"
+																		flexItem
+																		sx={{
+																			height: 28,
+																			borderRightWidth: 1,
+																			borderColor: 'grey.400',
+																			my: 0,
+																			mx: 'auto'
+																		}}
+																	/>
+																)
+															);
+														})()}
 													</Box>
-												</Box>
-											</ListItemButton>
-										</ListItem>
-									))}
+													<ListItemButton
+														selected={selectedRun?.id === run.id}
+														onClick={() => setSelectedRun(run)}
+														sx={{
+															pl: 1,
+															alignItems: 'flex-start',
+															flexDirection: 'column',
+															backgroundColor: run.isRerun &&
+																!['outdated', 'benchmark'].includes(
+																	run.status.toLowerCase()
+																) ? '#e3f2fd' : 'inherit'
+														}}
+													>
+														<Box
+															sx={{
+																width: '100%',
+																display: 'flex',
+																justifyContent: 'space-between',
+																alignItems: 'center'
+															}}
+														>
+															<Box>
+																<Typography
+																	variant="body2"
+																	fontWeight={600}
+																	noWrap
+																	sx={{
+																		maxWidth: 120,
+																		textOverflow: 'ellipsis',
+																		overflow: 'hidden',
+																		whiteSpace: 'nowrap'
+																	}}
+																>
+																	{run.testCaseName}
+																</Typography>
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
+																>
+																	Run #{run.id}
+																</Typography>
+															</Box>
+															<Box
+																sx={{
+																	display: 'flex',
+																	flexDirection: 'column',
+																	gap: 0.5,
+																	alignItems: 'flex-end'
+																}}
+															>
+																{run.isRerun &&
+																!['outdated', 'benchmark'].includes(
+																	run.status.toLowerCase()
+																) ? (
+																	<Button
+																		size="small"
+																		variant="outlined"
+																		color="secondary"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			handleReplaceClick(run);
+																		}}
+																		disabled={resettingRunId === run.id}
+																		sx={{
+																			fontSize: '0.65rem',
+																			padding: '2px 8px',
+																			minWidth: 'auto',
+																			height: 20
+																		}}
+																	>
+																		Replace
+																	</Button>
+																) : (
+																	<Chip
+																		label={getStatusLabel(
+																			run.status,
+																			run.promptDriftDetected,
+																			true
+																		)}
+																		color={getStatusColor(
+																			run.status,
+																			run.promptDriftDetected
+																		)}
+																		size="small"
+																		sx={{
+																			height: 18,
+																			fontSize: '0.65rem',
+																			...(run.promptDriftDetected && {
+																				backgroundColor: '#ffc107',
+																				color: '#000',
+																				fontWeight: 600
+																			})
+																		}}
+																	/>
+																)}
+																{/* Confirmation Dialog for Replace */}
+																<Dialog
+																	open={confirmReplaceOpen}
+																	onClose={handleCancelReplace}
+																	maxWidth="xs"
+																	fullWidth
+																>
+																	<DialogContent>
+																		<Typography
+																			variant="h6"
+																			gutterBottom
+																		>
+																			Replace Test Case Steps?
+																		</Typography>
+																		<Typography
+																			variant="body2"
+																			color="text.secondary"
+																			gutterBottom
+																		>
+																			This will replace all steps of the relevant
+																			test case with the steps from this run. This
+																			action cannot be undone.
+																		</Typography>
+																		<Box
+																			sx={{
+																				display: 'flex',
+																				justifyContent: 'flex-end',
+																				gap: 2,
+																				mt: 2
+																			}}
+																		>
+																			<Button
+																				onClick={handleCancelReplace}
+																				color="inherit"
+																				variant="outlined"
+																			>
+																				Cancel
+																			</Button>
+																			<Button
+																				onClick={handleConfirmReplace}
+																				color="error"
+																				variant="contained"
+																			>
+																				Replace
+																			</Button>
+																		</Box>
+																	</DialogContent>
+																</Dialog>
+															</Box>
+														</Box>
+													</ListItemButton>
+												</ListItem>
+											</React.Fragment>
+										);
+									})}
 								</List>
 							)}
 						</Box>
@@ -512,111 +555,137 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 									{selectedRun ? 'No AI calls found for this run.' : 'Select a run to view AI calls.'}
 								</Typography>
 							) : (
-								<List sx={{ p: 0 }}>
-									{allAiCalls.map((call, index) => (
-										<ListItem
-											disablePadding
-											key={call.id}
-											sx={{ alignItems: 'flex-start' }}
-										>
-											<Box
-												sx={{
-													display: 'flex',
-													flexDirection: 'column',
-													alignItems: 'center',
-													minWidth: 28,
-													pt: 1
-												}}
-											>
-												<FiberManualRecordIcon
-													fontSize="small"
-													color={selectedAiCall === call ? 'primary' : 'disabled'}
-												/>
-												{index < allAiCalls.length - 1 && (
-													<MuiDivider
-														orientation="vertical"
-														flexItem
-														sx={{
-															height: 28,
-															borderRightWidth: 2,
-															borderColor: 'divider',
-															my: 0,
-															mx: 'auto'
-														}}
-													/>
-												)}
-											</Box>
-											<ListItemButton
-												selected={selectedAiCall === call}
-												onClick={() => setSelectedAiCall(call)}
-												sx={{ pl: 1, alignItems: 'flex-start' }}
+								<Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+									<List sx={{ p: 0, flex: 1, overflowY: 'auto' }}>
+										{allAiCalls.map((call, index) => (
+											<ListItem
+												disablePadding
+												key={call.id}
+												sx={{ alignItems: 'flex-start' }}
 											>
 												<Box
 													sx={{
-														width: '100%',
 														display: 'flex',
-														justifyContent: 'space-between',
-														alignItems: 'center'
+														flexDirection: 'column',
+														alignItems: 'center',
+														minWidth: 28,
+														pt: 1
 													}}
 												>
-													<Box>
-														<Typography
-															variant="body2"
-															fontWeight={600}
-														>
-															AI Call #{call.stepOrder || index + 1}
-														</Typography>
-														{call.name && (
-															<Typography
-																variant="caption"
-																color="text.secondary"
-															>
-																{call.name}
-															</Typography>
-														)}
-													</Box>
-													<Chip
-														icon={
-															call.humanValidation !== undefined &&
-															call.humanValidation !== null ? (
-																<AccessibilityIcon
-																	fontSize="inherit"
-																	style={{ marginLeft: 2 }}
-																/>
-															) : undefined
-														}
-														label={
-															call.humanValidation !== undefined &&
-															call.humanValidation !== null
-																? call.humanValidation
-																	? 'Success'
-																	: 'Failure'
-																: getStatusLabel(call.runStatus || call.status)
-														}
-														color={
-															call.humanValidation !== undefined &&
-															call.humanValidation !== null
-																? call.humanValidation
-																	? 'success'
-																	: 'error'
-																: getStatusColor(call.runStatus || call.status)
-														}
-														size="small"
-														sx={{
-															height: 18,
-															fontSize: '0.65rem',
-															...(call.promptDriftDetected && {
-																backgroundColor: '#ffc107',
-																color: '#000',
-																fontWeight: 600
-															})
-														}}
+													<FiberManualRecordIcon
+														fontSize="small"
+														color={selectedAiCall === call ? 'primary' : 'disabled'}
 													/>
+													{index < allAiCalls.length - 1 && (
+														<MuiDivider
+															orientation="vertical"
+															flexItem
+															sx={{
+																height: 28,
+																borderRightWidth: 2,
+																borderColor: 'divider',
+																my: 0,
+																mx: 'auto'
+															}}
+														/>
+													)}
 												</Box>
-											</ListItemButton>
-										</ListItem>
-									))}
-								</List>
+												<ListItemButton
+													selected={selectedAiCall === call}
+													onClick={() => setSelectedAiCall(call)}
+													sx={{ pl: 1, alignItems: 'flex-start' }}
+												>
+													<Box
+														sx={{
+															width: '100%',
+															display: 'flex',
+															justifyContent: 'space-between',
+															alignItems: 'center'
+														}}
+													>
+														<Box>
+															<Typography
+																variant="body2"
+																fontWeight={600}
+															>
+																AI Call #{call.stepOrder || index + 1}
+															</Typography>
+															{call.name && (
+																<Typography
+																	variant="caption"
+																	color="text.secondary"
+																>
+																	{call.name}
+																</Typography>
+															)}
+														</Box>
+														<Chip
+															icon={
+																call.humanValidation !== undefined &&
+																call.humanValidation !== null ? (
+																	<AccessibilityIcon
+																		fontSize="inherit"
+																		style={{ marginLeft: 2 }}
+																	/>
+																) : undefined
+															}
+															label={
+																call.humanValidation !== undefined &&
+																call.humanValidation !== null
+																	? call.humanValidation
+																		? 'Success'
+																		: 'Mismatch'
+																	: getStatusLabel(call.runStatus || call.status)
+															}
+															color={
+																call.humanValidation !== undefined &&
+																call.humanValidation !== null
+																	? call.humanValidation
+																		? 'success'
+																		: 'error'
+																	: getStatusColor(call.runStatus || call.status)
+															}
+															size="small"
+															sx={{
+																height: 18,
+																fontSize: '0.65rem',
+																...(call.promptDriftDetected && {
+																	backgroundColor: '#ffc107',
+																	color: '#000',
+																	fontWeight: 600
+																})
+															}}
+														/>
+													</Box>
+												</ListItemButton>
+											</ListItem>
+										))}
+									</List>
+									{/* Footer for rerun reset */}
+									{!selectedRun?.isRerun && (
+										<Box
+											sx={{
+												p: 2,
+												borderTop: '1px solid',
+												borderColor: 'divider',
+												bgcolor: 'background.paper',
+												display: 'flex',
+												justifyContent: 'flex-end'
+											}}
+										>
+											<Button
+												variant="outlined"
+												color="secondary"
+												onClick={() => handleResetTestCase(selectedRun)}
+												disabled={resettingRunId === selectedRun.id}
+											>
+												{resettingRunId === selectedRun.id
+													? 'Rerunning...'
+													: 'Rerun This Test Case'}
+											</Button>
+										</Box>
+									)}
+								</Box>
 							)}
 						</Box>
 
@@ -663,7 +732,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 											{prettifyJSON(selectedAiCall.runOutput || selectedAiCall.output)}
 										</pre>
 
-										{selectedAiCall.expectedOutput && (
+										{selectedAiCall.expectedOutput && !selectedRun.isRerun && (
 											<>
 												<Typography
 													variant="h6"
@@ -773,7 +842,7 @@ Always maintain a professional and friendly tone.`}
 													size="small"
 													onClick={() => humanApproveAiCallHandler(false)}
 												>
-													Mark as Failure
+													Mark as Mismatch
 												</Button>
 												<Button
 													variant="contained"
