@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 function DashboardsPage() {
-	redirect(`/sessions`);
+	redirect(`/test-results`);
 	return null;
 }
 

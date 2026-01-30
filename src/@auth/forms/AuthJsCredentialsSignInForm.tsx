@@ -63,7 +63,7 @@ function AuthJsCredentialsSignInForm() {
 			return false;
 		}
 
-		redirect(`/sessions`);
+		redirect(`/test-results`);
 		return true;
 	}
 
