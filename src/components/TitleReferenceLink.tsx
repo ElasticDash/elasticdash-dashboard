@@ -3,7 +3,7 @@
 import { Tooltip, Typography } from '@mui/material';
 import Link from '@fuse/core/Link';
 import usePathname from '@fuse/hooks/usePathname';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 
 type TitleReferenceLinkProps = {
@@ -14,15 +14,24 @@ type TitleReferenceLinkProps = {
 function TitleReferenceLink(props: TitleReferenceLinkProps) {
 	const { children = '#', id = '' } = props;
 	const pathname = usePathname();
-	const href = `${window.location.origin}${pathname}#${id}`;
+	const [href, setHref] = useState('');
 	const [open, setOpen] = useState(false);
 
+	// Set href only on client
+	useEffect(() => {
+		if (typeof window !== 'undefined') {
+			setHref(`${window.location.origin}${pathname}#${id}`);
+		}
+	}, [pathname, id]);
+
 	function handleCopy() {
-		navigator.clipboard.writeText(href);
-		setOpen(true);
-		setTimeout(() => {
-			setOpen(false);
-		}, 800);
+		if (href) {
+			navigator.clipboard.writeText(href);
+			setOpen(true);
+			setTimeout(() => {
+				setOpen(false);
+			}, 800);
+		}
 	}
 
 	return (
