@@ -65,6 +65,10 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [autoRefresh, setAutoRefresh] = useState<'off' | '60000'>('off');
 	const [refreshKey, setRefreshKey] = useState(0);
 
+	// Dialog state for alerts
+	const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+	const [alertDialogMsg, setAlertDialogMsg] = useState('');
+
 	// Fetch test cases function
 	const loadTestCases = useCallback(() => {
 		const fetchCases = async () => {
@@ -149,7 +153,8 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			setTestCases((prev) => prev.map((tc) => (tc.id === selected.id ? { ...tc, ...updated } : tc)));
 			handleCloseEdit();
 		} catch (err: any) {
-			alert(err.message || 'Failed to update test case');
+			setAlertDialogMsg(err.message || 'Failed to update test case');
+			setAlertDialogOpen(true);
 		}
 	};
 
@@ -166,7 +171,9 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				handleCloseEdit();
 			}
 		} catch (err: any) {
-			alert(err.message || 'Failed to delete test case');
+			// alert(err.message || 'Failed to delete test case');
+			setAlertDialogMsg(err.message || 'Failed to delete test case');
+			setAlertDialogOpen(true);
 		}
 	};
 

@@ -49,6 +49,10 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 	const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
 	const [pendingReplaceRun, setPendingReplaceRun] = useState<any | null>(null);
 
+	// Dialog state for alerts
+	const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+	const [alertDialogMsg, setAlertDialogMsg] = useState('');
+
 	// Helper function to prettify JSON
 	const prettifyJSON = (content: any): string => {
 		if (content === null || content === undefined) {
@@ -112,11 +116,13 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 		try {
 			await resetTestCase(run.testCaseId, recordDetail.record.id);
 			// Optionally refresh the run list or show a success message
-			alert('Test case reset successfully');
+			setAlertDialogMsg('Test case rerun has started. Please come back later to check the results.');
+			setAlertDialogOpen(true);
 			setSelectedRun(null);
 			setSelectedRun(selectedRun); // Trigger re-fetch of AI calls
 		} catch (err: any) {
-			alert(err.message || 'Failed to reset test case');
+			setAlertDialogMsg(err.message || 'Failed to reset test case');
+			setAlertDialogOpen(true);
 		} finally {
 			setResettingRunId(null);
 		}
@@ -154,7 +160,8 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 
 			onRefresh();
 		} catch (err: any) {
-			alert(err.message || 'Failed to update test case');
+			setAlertDialogMsg(err.message || 'Failed to update test case');
+			setAlertDialogOpen(true);
 		}
 	};
 
@@ -244,25 +251,33 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 	}, [allAiCalls]);
 
 	function humanApproveAiCallHandler(approve: boolean) {
-		humanApproveTestCaseRunAICall(selectedAiCall.racId, approve).then(async () => {
-			// Update the selected AI call's humanValidation status
-			let detail;
+		humanApproveTestCaseRunAICall(selectedAiCall.racId, approve)
+			.then(async () => {
+				// Update the selected AI call's humanValidation status
+				let detail;
 
-			if (selectedRun.promptDriftDetected) {
-				detail = getMockTestCaseRunDetailWithPromptDrift(selectedRun.id);
-			} else {
-				detail = await fetchTestCaseRunDetail(selectedRun.id);
-			}
+				if (selectedRun.promptDriftDetected) {
+					detail = getMockTestCaseRunDetailWithPromptDrift(selectedRun.id);
+				} else {
+					detail = await fetchTestCaseRunDetail(selectedRun.id);
+				}
 
-			if (detail.aiCalls && detail.aiCalls.length > 0) {
-				setAllAiCalls(detail.aiCalls);
-				// Auto-select first AI call
-				setSelectedAiCall(detail.aiCalls[0]);
-			} else {
-				setAllAiCalls([]);
-				setSelectedAiCall(null);
-			}
-		});
+				if (detail.aiCalls && detail.aiCalls.length > 0) {
+					setAllAiCalls(detail.aiCalls);
+					// Auto-select first AI call
+					setSelectedAiCall(detail.aiCalls[0]);
+				} else {
+					setAllAiCalls([]);
+					setSelectedAiCall(null);
+				}
+
+				setAlertDialogMsg(approve ? 'Marked as Success' : 'Marked as Mismatch');
+				setAlertDialogOpen(true);
+			})
+			.catch((err) => {
+				setAlertDialogMsg(err?.message || 'Failed to update AI call status');
+				setAlertDialogOpen(true);
+			});
 	}
 
 	if (!open) return null;
@@ -317,6 +332,30 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 						<Typography color="error">{error}</Typography>
 					</Box>
 				)}
+
+				{/* Alert Dialog for error/success messages */}
+				<Dialog
+					open={alertDialogOpen}
+					onClose={() => setAlertDialogOpen(false)}
+				>
+					<DialogContent>
+						<Typography
+							variant="h6"
+							gutterBottom
+						>
+							Notice
+						</Typography>
+						<Typography>{alertDialogMsg}</Typography>
+					</DialogContent>
+					<Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+						<Button
+							onClick={() => setAlertDialogOpen(false)}
+							autoFocus
+						>
+							OK
+						</Button>
+					</Box>
+				</Dialog>
 
 				{!loading && !error && recordDetail && (
 					<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
@@ -389,10 +428,13 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 															pl: 1,
 															alignItems: 'flex-start',
 															flexDirection: 'column',
-															backgroundColor: run.isRerun &&
+															backgroundColor:
+																run.isRerun &&
 																!['outdated', 'benchmark'].includes(
 																	run.status.toLowerCase()
-																) ? '#e3f2fd' : 'inherit'
+																)
+																	? '#e3f2fd'
+																	: 'inherit'
 														}}
 													>
 														<Box

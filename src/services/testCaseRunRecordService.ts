@@ -140,7 +140,7 @@ export async function fetchTestCaseRunRecords(): Promise<TestCaseRunRecord[]> {
  * @returns Promise<TestCaseRunRecordDetail>
  */
 export async function fetchTestCaseRunRecordDetail(id: number): Promise<TestCaseRunRecordDetail> {
-	const res = (await api.get(`testcases/runrecords/${id}`).json()) as {
+	const res = (await api.get(`testcases/runrecords/detail/${id}`).json()) as {
 		success: boolean;
 		error?: string;
 		result: TestCaseRunRecordDetail;
