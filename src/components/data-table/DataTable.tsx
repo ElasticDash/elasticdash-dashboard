@@ -47,7 +47,7 @@ function DataTable<TData>(
 						right: ['mrt-row-actions']
 					},
 					pagination: {
-						pageSize: 15
+						pageSize: 13
 					},
 					enableFullScreenToggle: false
 				},

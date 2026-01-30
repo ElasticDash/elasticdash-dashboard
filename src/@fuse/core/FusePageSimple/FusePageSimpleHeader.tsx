@@ -17,7 +17,8 @@ function FusePageSimpleHeader(props: FusePageSimpleHeaderProps) {
 	const { header = null, className } = props;
 	return (
 		<div className={clsx('FusePageSimple-header', className)}>
-			<div className="container">{header}</div>
+			<div className="w-full">{header}</div>
+			{/* <div className="container">{header}</div> */}
 		</div>
 	);
 }

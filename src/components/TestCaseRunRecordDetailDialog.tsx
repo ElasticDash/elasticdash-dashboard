@@ -95,7 +95,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 			return isRun ? 'Suspicious' : 'Prompt Drifted';
 		}
 
-		return status;
+		return status.charAt(0).toUpperCase() + status.slice(1);
 	};
 
 	// Handle reset test case
@@ -360,6 +360,13 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 														<Typography
 															variant="body2"
 															fontWeight={600}
+															noWrap
+															sx={{
+																maxWidth: 120,
+																textOverflow: 'ellipsis',
+																overflow: 'hidden',
+																whiteSpace: 'nowrap'
+															}}
 														>
 															{run.testCaseName}
 														</Typography>
@@ -378,7 +385,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 															alignItems: 'flex-end'
 														}}
 													>
-														<Chip
+														{/* <Chip
 															label={getStatusLabel(
 																run.status,
 																run.promptDriftDetected,
@@ -434,6 +441,48 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 															>
 																{resettingRunId === run.id ? 'Rerunning...' : 'Rerun'}
 															</Button>
+														)} */}
+														{run.isRerun ? (
+															<Button
+																size="small"
+																variant="outlined"
+																color="secondary"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	handleTCUpdate(run);
+																}}
+																disabled={resettingRunId === run.id}
+																sx={{
+																	fontSize: '0.65rem',
+																	padding: '2px 8px',
+																	minWidth: 'auto',
+																	height: 20
+																}}
+															>
+																Replace
+															</Button>
+														) : (
+															<Chip
+																label={getStatusLabel(
+																	run.status,
+																	run.promptDriftDetected,
+																	true
+																)}
+																color={getStatusColor(
+																	run.status,
+																	run.promptDriftDetected
+																)}
+																size="small"
+																sx={{
+																	height: 18,
+																	fontSize: '0.65rem',
+																	...(run.promptDriftDetected && {
+																		backgroundColor: '#ffc107',
+																		color: '#000',
+																		fontWeight: 600
+																	})
+																}}
+															/>
 														)}
 													</Box>
 												</Box>
@@ -540,12 +589,9 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 															call.humanValidation !== undefined &&
 															call.humanValidation !== null
 																? call.humanValidation
-																	? 'Completed'
+																	? 'Success'
 																	: 'Failure'
-																: getStatusLabel(
-																		call.runStatus || call.status,
-																		call.promptDriftDetected
-																	)
+																: getStatusLabel(call.runStatus || call.status)
 														}
 														color={
 															call.humanValidation !== undefined &&
@@ -553,10 +599,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 																? call.humanValidation
 																	? 'success'
 																	: 'error'
-																: getStatusColor(
-																		call.runStatus || call.status,
-																		call.promptDriftDetected
-																	)
+																: getStatusColor(call.runStatus || call.status)
 														}
 														size="small"
 														sx={{
@@ -653,11 +696,13 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 												</Typography>
 												<pre
 													style={{
-														background: '#ffebee',
-														padding: '16px',
-														borderRadius: '4px',
-														overflow: 'auto',
-														fontSize: '14px',
+														margin: 0,
+														fontSize: 16,
+														background: 'none',
+														border: 'none',
+														padding: 0,
+														whiteSpace: 'pre-wrap',
+														wordBreak: 'break-word',
 														color: '#c62828'
 													}}
 												>
@@ -721,87 +766,24 @@ Always maintain a professional and friendly tone.`}
 										</>
 									) : (
 										<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-											{selectedAiCall.humanValidation !== undefined &&
-											selectedAiCall.humanValidation !== null ? (
-												selectedAiCall.humanValidation === true ? (
-													<>
-														<Button
-															variant="contained"
-															color="error"
-															size="small"
-															onClick={() => humanApproveAiCallHandler(false)}
-														>
-															Mark as Failure
-														</Button>
-														<Button
-															variant="contained"
-															color="success"
-															size="small"
-															onClick={() => humanApproveAiCallHandler(true)}
-														>
-															Approved as Success
-														</Button>
-													</>
-												) : (
-													<>
-														<Button
-															variant="contained"
-															color="error"
-															size="small"
-															onClick={() => humanApproveAiCallHandler(false)}
-														>
-															Approved as Failure
-														</Button>
-														<Button
-															variant="contained"
-															color="success"
-															size="small"
-															onClick={() => humanApproveAiCallHandler(true)}
-														>
-															Mark as Success
-														</Button>
-													</>
-												)
-											) : (selectedAiCall.runStatus || selectedAiCall.status)?.toLowerCase() ===
-											  'completed' ? (
-												<>
-													<Button
-														variant="contained"
-														color="error"
-														size="small"
-														onClick={() => humanApproveAiCallHandler(false)}
-													>
-														Mark as Failure
-													</Button>
-													<Button
-														variant="contained"
-														color="success"
-														size="small"
-														onClick={() => humanApproveAiCallHandler(true)}
-													>
-														Approve as Success
-													</Button>
-												</>
-											) : (
-												<>
-													<Button
-														variant="contained"
-														color="error"
-														size="small"
-														onClick={() => humanApproveAiCallHandler(false)}
-													>
-														Approve as Failure
-													</Button>
-													<Button
-														variant="contained"
-														color="success"
-														size="small"
-														onClick={() => humanApproveAiCallHandler(true)}
-													>
-														Mark as Success
-													</Button>
-												</>
-											)}
+											<>
+												<Button
+													variant="contained"
+													color="error"
+													size="small"
+													onClick={() => humanApproveAiCallHandler(false)}
+												>
+													Mark as Failure
+												</Button>
+												<Button
+													variant="contained"
+													color="success"
+													size="small"
+													onClick={() => humanApproveAiCallHandler(true)}
+												>
+													Mark as Success
+												</Button>
+											</>
 										</Box>
 									)}
 								</>

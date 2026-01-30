@@ -5,7 +5,7 @@ import {
 	Typography,
 	IconButton,
 	DialogContent,
-	Button,
+	// Button,
 	CircularProgress,
 	List,
 	ListItem,
@@ -154,14 +154,7 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 					>
 						Trace Detail: {traceId}
 					</Typography>
-					<Button
-						onClick={handleCreateTestCase}
-						variant="outlined"
-						disabled={testCaseLoading || !traceDetail}
-						sx={{ mr: 2 }}
-					>
-						{testCaseLoading ? 'Creating...' : 'Create Test Case'}
-					</Button>
+
 					<IconButton
 						edge="end"
 						color="inherit"

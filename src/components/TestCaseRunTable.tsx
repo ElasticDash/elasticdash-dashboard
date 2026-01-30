@@ -203,7 +203,10 @@ const TestCaseRunTable: React.FC = () => {
 						row.original.totalAiCalls,
 						row.original.status
 					);
-					const progressText = `${row.original.successfulAiCalls}/${row.original.totalAiCalls} successful`;
+					const progressText =
+						row.original.status.toLowerCase() !== 'running'
+							? `${row.original.successfulAiCalls}/${row.original.totalAiCalls} successful`
+							: 'In Progress';
 
 					return (
 						<Chip

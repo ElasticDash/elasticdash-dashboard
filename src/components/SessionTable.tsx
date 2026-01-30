@@ -17,7 +17,7 @@ const SessionTable: React.FC = () => {
 	// Pagination state
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
-		pageSize: 10
+		pageSize: 13
 	});
 
 	// Dialog state

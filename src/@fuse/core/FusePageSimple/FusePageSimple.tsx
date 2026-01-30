@@ -264,7 +264,8 @@ function FusePageSimple(props: FusePageSimpleProps) {
 									scrollToTopOnRouteChange
 									{...contentScrollbarsProps}
 								>
-									<div className="container">{content}</div>
+									{/* <div className="container">{content}</div> */}
+									<div className="w-full h-full">{content}</div>
 								</FuseScrollbars>
 							)}
 						</div>

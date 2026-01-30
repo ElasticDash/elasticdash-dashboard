@@ -57,7 +57,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [bulkRunError, setBulkRunError] = useState<string | null>(null);
 
 	// Pagination state
-	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 13 });
 	const [total, setTotal] = useState(0);
 
 	// Search and refresh state

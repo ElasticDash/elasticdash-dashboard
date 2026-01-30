@@ -131,3 +131,30 @@ Tables styles
 @import './tables.css';
 
 @import './tiptap.css';
+
+/* Force all MUI success color usages to have white text on green background */
+.MuiChip-colorSuccess,
+.MuiButton-colorSuccess,
+.MuiAlert-standardSuccess,
+.MuiAlert-filledSuccess,
+.MuiAlert-outlinedSuccess,
+.MuiBadge-colorSuccess,
+.MuiTypography-colorSuccess,
+.MuiSvgIcon-colorSuccess,
+.MuiAvatar-colorSuccess,
+.MuiLinearProgress-colorSuccess,
+.MuiSwitch-colorSuccess.Mui-checked,
+.MuiCheckbox-colorSuccess.Mui-checked,
+.MuiRadio-colorSuccess.Mui-checked,
+.MuiSlider-colorSuccess .MuiSlider-thumb,
+.MuiSlider-colorSuccess .MuiSlider-track,
+.MuiSlider-colorSuccess .MuiSlider-rail {
+    color: #fff !important;
+    background-color: #2e7d32 !important;
+    border-color: #2e7d32 !important;
+    fill: #fff !important;
+}
+/* Force MUI success chip to have white text on green background */
+.MuiChip-colorSuccess {
+    color: #fff !important;
+}

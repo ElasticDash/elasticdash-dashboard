@@ -9,6 +9,7 @@ import FusePageSimple from '@fuse/core/FusePageSimple';
 import { fetchTraces } from '@/services/traceListService';
 import TraceDetailDialog from '@/components/TraceDetailDialog';
 import TracesHeader from '@/components/TracesHeader';
+import { createTestCaseFromTrace } from '@/services/traceDetailService';
 
 interface Trace {
 	id: string;
@@ -24,9 +25,6 @@ export default function TraceListPage() {
 	const [count, setCount] = useState(0);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState('');
-	const [name, setName] = useState('');
-	const [startDate, setStartDate] = useState('');
-	const [endDate, setEndDate] = useState('');
 	const [filter, setFilter] = useState('');
 
 	// Auto-refresh state
@@ -44,12 +42,15 @@ export default function TraceListPage() {
 	// Pagination state
 	const [pagination, setPagination] = useState({
 		pageIndex: 0,
-		pageSize: 10
+		pageSize: 13
 	});
 
 	// Dialog state
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+	const [testCaseLoading, setTestCaseLoading] = useState(false);
+	const [testCaseError, setTestCaseError] = useState<string | null>(null);
+	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 
 	// Fetch features for sidebar
 	useEffect(() => {
@@ -124,18 +125,25 @@ export default function TraceListPage() {
 		console.log('Current features:', features);
 	}, [features]);
 
-	const handleApplyFilter = () => {
-		const filterParts = [];
+	const handleCreateTestCase = async (traceId: string) => {
+		if (!traceId) return;
 
-		if (name) filterParts.push(`name LIKE '%${name.replace(/'/g, "''")}%'`);
+		setTestCaseLoading(true);
+		setTestCaseError(null);
+		setTestCaseSuccess(null);
+		try {
+			const res = await createTestCaseFromTrace({ traceId });
 
-		if (startDate) filterParts.push(`timestamp >= '${startDate}'`);
-
-		if (endDate) filterParts.push(`timestamp <= '${endDate}'`);
-
-		setFilter(filterParts.join(' AND '));
-		// Reset to first page when filters change
-		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+			if (!res.success) {
+				setTestCaseError(res.error || 'Failed to create test case from trace');
+			} else {
+				setTestCaseSuccess('Test case created successfully!');
+			}
+		} catch (err: any) {
+			setTestCaseError(err.message || 'Failed to create test case from trace');
+		} finally {
+			setTestCaseLoading(false);
+		}
 	};
 
 	const handleOpenDialog = (traceId: string) => {
@@ -326,7 +334,44 @@ export default function TraceListPage() {
 												handleOpenDialog(row.original.id);
 											}
 										}}
+										renderRowActions={({ row }) => (
+											<div style={{ display: 'flex', gap: 8 }}>
+												<Button
+													size="small"
+													variant="outlined"
+													color="primary"
+													onClick={() => handleOpenDialog(row.original.id)}
+												>
+													View Detail
+												</Button>
+												<Button
+													size="small"
+													variant="contained"
+													color="success"
+													disabled={testCaseLoading}
+													onClick={() => handleCreateTestCase(row.original.id)}
+												>
+													{testCaseLoading ? 'Creating...' : 'Create Test Case'}
+												</Button>
+											</div>
+										)}
 									/>
+									{testCaseError && (
+										<Typography
+											color="error"
+											className="p-4"
+										>
+											{testCaseError}
+										</Typography>
+									)}
+									{testCaseSuccess && (
+										<Typography
+											color="success.main"
+											className="p-4"
+										>
+											{testCaseSuccess}
+										</Typography>
+									)}
 									{error && (
 										<Typography
 											color="error"
