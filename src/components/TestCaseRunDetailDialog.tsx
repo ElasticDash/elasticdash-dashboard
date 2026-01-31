@@ -290,11 +290,12 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 																>
 																	Failure Reason
 																</Typography>
-																<Paper sx={{ p: 1, background: '#f7f7f7' }}>
+																<Paper sx={{ p: 1, background: '#f7f7f7', mb: 2 }}>
 																	<p
 																		style={{
 																			margin: 0,
 																			fontSize: 13,
+																			whiteSpace: 'pre-wrap',
 																		}}
 																	>
 																		{aiCall.failureReason}
