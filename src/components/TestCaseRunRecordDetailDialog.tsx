@@ -11,7 +11,8 @@ import {
 	List,
 	ListItem,
 	ListItemButton,
-	Button
+	Button,
+	Paper
 } from '@mui/material';
 import React, { useState, useMemo, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
@@ -755,7 +756,16 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 												>
 													Failure Reason
 												</Typography>
-												{prettifyJSON(selectedAiCall.failureReason)}
+												<Paper sx={{ p: 1, background: '#f7f7f7' }}>
+													<p
+														style={{
+															margin: 0,
+															fontSize: 13,
+														}}
+													>
+														{selectedAiCall.failureReason}
+													</p>
+												</Paper>
 											</>
 										)}
 									</Box>
