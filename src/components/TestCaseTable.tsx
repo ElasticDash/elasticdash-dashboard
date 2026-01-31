@@ -26,6 +26,7 @@ import AiCallDialog from './AiCallDialog';
 import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
 // import { runTestCase } from '@/services/testCaseRunService';
 import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
+import { useSearchParams } from 'next/navigation';
 
 interface TestCaseTableProps {
 	rowSelection: MRT_RowSelectionState;
@@ -40,6 +41,8 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	bulkRunTrigger,
 	bulkRunTimes
 }) => {
+	const searchParams = useSearchParams();
+	const params = new URLSearchParams(searchParams.toString());
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<TestCase | null>(null);
 	const [fetchNeeded, setFetchNeeded] = useState(true);
@@ -68,6 +71,15 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	// Dialog state for alerts
 	const [alertDialogOpen, setAlertDialogOpen] = useState(false);
 	const [alertDialogMsg, setAlertDialogMsg] = useState('');
+
+	useEffect(() => {
+		console.log('init is triggered');
+		const paramestCaseId = params.get('testCaseId');
+
+		if (paramestCaseId && !isNaN(parseInt(paramestCaseId))) {
+			handleAiCallDialog({ id: parseInt(paramestCaseId) } as TestCase);
+		}
+	}, []);
 
 	// Fetch test cases function
 	const loadTestCases = useCallback(() => {
@@ -116,7 +128,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		setRefreshKey((prev) => prev + 1);
 	};
 
-
 	// DataTable search handler
 	const handleGlobalFilterChange = (value: string) => {
 		setSearchName(value);
@@ -135,14 +146,24 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
 			setAiDialogOpen(true);
+			params.set('testCaseId', tc.id.toString());
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 		} catch (err: any) {
 			console.error('Failed to fetch test case detail:', err);
+			setAlertDialogMsg(err.message || 'Failed to fetch test case detail');
+			setAlertDialogOpen(true);
+			setAiCalls([]);
+			setAiDialogOpen(false);
+			params.delete('testCaseId');
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 		}
 	};
 
 	const handleCloseAiDialog = () => {
 		setAiDialogOpen(false);
 		setSelected(null);
+		params.delete('testCaseId');
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const handleSave = async (updated: Partial<TestCase>) => {
@@ -255,9 +276,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		[]
 	);
 
-
 	if (error) return <Typography color="error">{error}</Typography>;
-
 
 	return (
 		<>
@@ -362,18 +381,20 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						)}
 					/>
 					{loading && (
-						<div style={{
-							position: 'absolute',
-							top: 0,
-							left: 0,
-							width: '100%',
-							height: '100%',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							zIndex: 2,
-							background: 'rgba(255,255,255,0.5)'
-						}}>
+						<div
+							style={{
+								position: 'absolute',
+								top: 0,
+								left: 0,
+								width: '100%',
+								height: '100%',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								zIndex: 2,
+								background: 'rgba(255,255,255,0.5)'
+							}}
+						>
 							<CircularProgress />
 						</div>
 					)}
