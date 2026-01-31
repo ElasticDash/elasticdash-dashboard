@@ -338,14 +338,6 @@ export default function TraceListPage() {
 											<div style={{ display: 'flex', gap: 8 }}>
 												<Button
 													size="small"
-													variant="outlined"
-													color="primary"
-													onClick={() => handleOpenDialog(row.original.id)}
-												>
-													View Detail
-												</Button>
-												<Button
-													size="small"
 													variant="contained"
 													color="success"
 													disabled={testCaseLoading}

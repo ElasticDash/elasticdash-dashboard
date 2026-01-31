@@ -23,6 +23,7 @@ import { resetTestCase } from '@/services/testCaseResetService';
 import { acceptTestCaseRerun } from '@/services/testCaseRerunAcceptService';
 import { humanApproveTestCaseRunAICall } from '@/services/testCaseService';
 import AccessibilityIcon from '@mui/icons-material/Accessibility';
+import { prettifyJSON } from '@/utils/prettifyJSON';
 
 interface TestCaseRunRecordDetailDialogProps {
 	open: boolean;
@@ -52,28 +53,6 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 	// Dialog state for alerts
 	const [alertDialogOpen, setAlertDialogOpen] = useState(false);
 	const [alertDialogMsg, setAlertDialogMsg] = useState('');
-
-	// Helper function to prettify JSON
-	const prettifyJSON = (content: any): string => {
-		if (content === null || content === undefined) {
-			return '';
-		}
-
-		if (typeof content === 'string') {
-			try {
-				const parsed = JSON.parse(content);
-				return JSON.stringify(parsed, null, 2);
-			} catch {
-				return content;
-			}
-		}
-
-		try {
-			return JSON.stringify(content, null, 2);
-		} catch {
-			return String(content);
-		}
-	};
 
 	const getStatusColor = (status: string, promptDriftDetected?: boolean) => {
 		// Prompt drift gets yellow/warning regardless of status
@@ -744,18 +723,8 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 										>
 											Input
 										</Typography>
-										<pre
-											style={{
-												background: '#f5f5f5',
-												padding: '16px',
-												borderRadius: '4px',
-												overflow: 'auto',
-												fontSize: '14px',
-												marginBottom: '24px'
-											}}
-										>
-											{prettifyJSON(selectedAiCall.runInput || selectedAiCall.input)}
-										</pre>
+
+										{prettifyJSON(selectedAiCall.runInput || selectedAiCall.input)}
 
 										<Typography
 											variant="h6"
@@ -763,18 +732,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 										>
 											Output
 										</Typography>
-										<pre
-											style={{
-												background: '#f5f5f5',
-												padding: '16px',
-												borderRadius: '4px',
-												overflow: 'auto',
-												fontSize: '14px',
-												marginBottom: '24px'
-											}}
-										>
-											{prettifyJSON(selectedAiCall.runOutput || selectedAiCall.output)}
-										</pre>
+										{prettifyJSON(selectedAiCall.runOutput || selectedAiCall.output)}
 
 										{selectedAiCall.expectedOutput && !selectedRun.isRerun && (
 											<>
@@ -784,21 +742,11 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 												>
 													Expected Output
 												</Typography>
-												<pre
-													style={{
-														background: '#f5f5f5',
-														padding: '16px',
-														borderRadius: '4px',
-														overflow: 'auto',
-														fontSize: '14px'
-													}}
-												>
-													{prettifyJSON(selectedAiCall.expectedOutput)}
-												</pre>
+												{prettifyJSON(selectedAiCall.expectedOutput)}
 											</>
 										)}
 
-										{selectedAiCall.failureReason && (
+										{selectedAiCall.failureReason && !selectedRun.isRerun && (
 											<>
 												<Typography
 													variant="h6"
@@ -807,98 +755,31 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 												>
 													Failure Reason
 												</Typography>
-												<pre
-													style={{
-														margin: 0,
-														fontSize: 16,
-														background: 'none',
-														border: 'none',
-														padding: 0,
-														whiteSpace: 'pre-wrap',
-														wordBreak: 'break-word',
-														color: '#c62828'
-													}}
-												>
-													{selectedAiCall.failureReason}
-												</pre>
-											</>
-										)}
-
-										{selectedAiCall.promptDriftDetected && (
-											<>
-												<Typography
-													variant="h6"
-													gutterBottom
-													sx={{ mt: 2, color: 'warning.main' }}
-												>
-													Detected Prompt
-												</Typography>
-												<pre
-													style={{
-														background: '#fffbf0',
-														padding: '16px',
-														borderRadius: '4px',
-														overflow: 'auto',
-														fontSize: '14px',
-														color: '#333',
-														border: '1px solid #ffc107'
-													}}
-												>
-													{`You are a helpful AI assistant. Your task is to analyze user input and provide accurate, concise responses.
-
-When the user asks a question:
-1. Break down the question into key components
-2. Research relevant information from your knowledge base
-3. Formulate a clear, structured response
-4. Provide examples when appropriate
-
-Always maintain a professional and friendly tone.`}
-												</pre>
+												{prettifyJSON(selectedAiCall.failureReason)}
 											</>
 										)}
 									</Box>
 
-									{selectedAiCall.promptDriftDetected ? (
+									<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
 										<>
-											<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-												<Button
-													variant="outlined"
-													color="secondary"
-													size="small"
-												>
-													Ignore
-												</Button>
-												<Button
-													variant="contained"
-													color="primary"
-													size="small"
-												>
-													Apply New Prompt
-												</Button>
-											</Box>
+											<Button
+												variant="contained"
+												color="error"
+												size="small"
+												onClick={() => humanApproveAiCallHandler(false)}
+											>
+												Mark as Mismatch
+											</Button>
+											<Button
+												variant="contained"
+												color="success"
+												size="small"
+												onClick={() => humanApproveAiCallHandler(true)}
+											>
+												Mark as Success
+											</Button>
 										</>
-									) : (
-										<Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-											<>
-												<Button
-													variant="contained"
-													color="error"
-													size="small"
-													onClick={() => humanApproveAiCallHandler(false)}
-												>
-													Mark as Mismatch
-												</Button>
-												<Button
-													variant="contained"
-													color="success"
-													size="small"
-													onClick={() => humanApproveAiCallHandler(true)}
-												>
-													Mark as Success
-												</Button>
-											</>
-										</Box>
-									)}
+									</Box>
 								</>
 							) : (
 								<Typography color="text.secondary">
