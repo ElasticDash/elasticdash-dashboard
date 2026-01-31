@@ -10,7 +10,7 @@ function TestCaseRecordsHeader() {
 			<PageBreadcrumb className="mb-2" />
 			<div className="flex min-w-0 flex-auto flex-col gap-2 sm:flex-row sm:items-center">
 				<SharedHeader
-					title="Test Results"
+					title="Test Case Records"
 					subtitle="View test case run records and their execution results"
 					icon="lucide:clipboard-list"
 				/>
