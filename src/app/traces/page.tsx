@@ -55,6 +55,23 @@ export default function TraceListPage() {
 	const [testCaseError, setTestCaseError] = useState<string | null>(null);
 	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 
+	useEffect(() => {
+		console.log('init is triggered');
+		const paramTraceId = params.get('traceId');
+		const paramFeatureId = params.get('featureId');
+		console.log('paramTraceId:', paramTraceId);
+		console.log('paramFeatureId:', paramFeatureId);
+
+		if (paramFeatureId && parseInt(paramFeatureId, 10) !== selectedFeatureId) {
+			setSelectedFeatureId(parseInt(paramFeatureId, 10));
+		}
+
+		if (paramTraceId && paramTraceId !== selectedTraceId) {
+			setSelectedTraceId(paramTraceId);
+			setDialogOpen(true);
+		}
+	}, []);
+
 	// Fetch features for sidebar
 	useEffect(() => {
 		const fetchFeatures = async () => {
@@ -126,9 +143,6 @@ export default function TraceListPage() {
 
 		if (selectedTraceId && (!paramTraceId || paramTraceId !== selectedTraceId)) {
 			params.set('traceId', selectedTraceId);
-		} else if (paramTraceId && paramTraceId !== selectedTraceId) {
-			setSelectedTraceId(paramTraceId);
-			setDialogOpen(true);
 		}
 	}, [selectedTraceId]);
 
@@ -181,9 +195,10 @@ export default function TraceListPage() {
 	};
 
 	const handleCloseDialog = () => {
-		params.delete('traceId');
 		setDialogOpen(false);
 		setSelectedTraceId(null);
+		params.delete('traceId');
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const columns = useMemo<MRT_ColumnDef<Trace>[]>(

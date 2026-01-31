@@ -6,13 +6,15 @@ import DataTable from 'src/components/data-table/DataTable';
 import {
 	fetchTestCaseRunRecords,
 	fetchTestCaseRunRecordDetail,
-	TestCaseRunRecord,
-	getMockPromptDriftData
+	TestCaseRunRecord
 } from '@/services/testCaseRunRecordService';
 import { Paper, Typography, Chip, Box, FormControl, InputLabel, MenuItem, Select, Button } from '@mui/material';
 import TestCaseRunRecordDetailDialog from './TestCaseRunRecordDetailDialog';
+import { useSearchParams } from 'next/navigation';
 
 const TestCaseRunTable: React.FC = () => {
+	const searchParams = useSearchParams();
+	const params = new URLSearchParams(searchParams.toString());
 	const [records, setRecords] = useState<TestCaseRunRecord[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -20,12 +22,21 @@ const TestCaseRunTable: React.FC = () => {
 	// Dialog state
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
+
 	const [recordDetail, setRecordDetail] = useState<any | null>(null);
 	const [detailLoading, setDetailLoading] = useState(false);
 	const [detailError, setDetailError] = useState<string | null>(null);
 	const [autoRefresh, setAutoRefresh] = useState<'off' | '60000'>('off');
 
 	useEffect(() => {
+		console.log('init is triggered');
+		const paramTestCaseId = params.get('testCaseId');
+		console.log('paramTestCaseId:', paramTestCaseId);
+
+		if (paramTestCaseId && !isNaN(parseInt(paramTestCaseId)) && parseInt(paramTestCaseId) !== selectedRecordId) {
+			handleOpenDialog(parseInt(paramTestCaseId));
+		}
+
 		setLoading(true);
 		fetchTestCaseRunRecords()
 			.then((res) => {
@@ -63,17 +74,18 @@ const TestCaseRunTable: React.FC = () => {
 
 		try {
 			// Use mock data for the prompt drift example (ID 999)
-			let res;
-
-			if (recordId === 999) {
-				res = getMockPromptDriftData();
-			} else {
-				res = await fetchTestCaseRunRecordDetail(recordId);
-			}
+			const res = await fetchTestCaseRunRecordDetail(recordId);
+			params.set('testCaseId', recordId.toString());
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 
 			setRecordDetail(res);
 		} catch (err: any) {
 			setDetailError(err.message || 'Failed to fetch test case run record detail');
+			setRecordDetail(null);
+			setDialogOpen(false);
+			setSelectedRecordId(null);
+			params.delete('testCaseId');
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 		} finally {
 			setDetailLoading(false);
 		}
@@ -154,6 +166,8 @@ const TestCaseRunTable: React.FC = () => {
 		setRecordDetail(null);
 		setDetailError(null);
 		setDetailLoading(false);
+		params.delete('testCaseId');
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const getProgressColor = (successfulRuns: number, totalRuns: number, status: string) => {
