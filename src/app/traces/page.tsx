@@ -10,6 +10,7 @@ import { fetchTraces } from '@/services/traceListService';
 import TraceDetailDialog from '@/components/TraceDetailDialog';
 import TracesHeader from '@/components/TracesHeader';
 import { createTestCaseFromTrace } from '@/services/traceDetailService';
+import { useSearchParams } from 'next/navigation';
 
 interface Trace {
 	id: string;
@@ -21,6 +22,8 @@ interface Trace {
 }
 
 export default function TraceListPage() {
+	const searchParams = useSearchParams();
+	const params = new URLSearchParams(searchParams.toString());
 	const [traces, setTraces] = useState<Trace[]>([]);
 	const [count, setCount] = useState(0);
 	const [loading, setLoading] = useState(false);
@@ -67,9 +70,17 @@ export default function TraceListPage() {
 				console.log('Fetched features:', res.data);
 				const featureList = res.data?.result || [];
 				setFeatures(featureList);
+				const params = new URLSearchParams(searchParams.toString());
+				const paramFeatureId = params.get('featureId');
 
 				if (featureList.length > 0) {
-					setSelectedFeatureId(featureList[0].id);
+					if (paramFeatureId && featureList.some((f) => f.id.toString() === paramFeatureId)) {
+						setSelectedFeatureId(parseInt(paramFeatureId, 10));
+					} else {
+						setSelectedFeatureId(featureList[0].id);
+						params.set('featureId', featureList[0].id.toString());
+						window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+					}
 				}
 			} catch (err: any) {
 				setFeaturesError(err?.message || 'Failed to fetch features');
@@ -103,7 +114,23 @@ export default function TraceListPage() {
 	// Fetch traces when dependencies change
 	useEffect(() => {
 		loadTraces();
+
+		if (selectedFeatureId && params.get('featureId') !== selectedFeatureId.toString()) {
+			params.set('featureId', selectedFeatureId.toString());
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+		}
 	}, [loadTraces, refreshKey]);
+
+	useEffect(() => {
+		const paramTraceId = params.get('traceId');
+
+		if (selectedTraceId && (!paramTraceId || paramTraceId !== selectedTraceId)) {
+			params.set('traceId', selectedTraceId);
+		} else if (paramTraceId && paramTraceId !== selectedTraceId) {
+			setSelectedTraceId(paramTraceId);
+			setDialogOpen(true);
+		}
+	}, [selectedTraceId]);
 
 	// Auto-refresh interval
 	useEffect(() => {
@@ -149,9 +176,12 @@ export default function TraceListPage() {
 	const handleOpenDialog = (traceId: string) => {
 		setSelectedTraceId(traceId);
 		setDialogOpen(true);
+		params.set('traceId', traceId);
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const handleCloseDialog = () => {
+		params.delete('traceId');
 		setDialogOpen(false);
 		setSelectedTraceId(null);
 	};
