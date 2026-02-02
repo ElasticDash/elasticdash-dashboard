@@ -3,10 +3,9 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { fetchSessions, SessionListItem } from '@/services/sessionService';
-import { fetchSessionDetail } from '@/services/sessionDetailService';
+import { fetchSessions, SessionListItem, fetchSessionDetail } from '@/services/sessionService';
 import SessionDetailDialog from './SessionDetailDialog';
-import { Paper, Typography, Button, CircularProgress } from '@mui/material';
+import { Paper, Typography, Button } from '@mui/material';
 
 const SessionTable: React.FC = () => {
 	const [sessions, setSessions] = useState<SessionListItem[]>([]);
@@ -31,7 +30,7 @@ const SessionTable: React.FC = () => {
 		setLoading(true);
 		const offset = pagination.pageIndex * pagination.pageSize;
 		fetchSessions({ limit: pagination.pageSize, offset, filter: null })
-			.then((res) => {
+			.then((res: any) => {
 				setSessions(res.data);
 				setCount(res.total);
 				setError(null);

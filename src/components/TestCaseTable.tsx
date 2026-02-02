@@ -4,28 +4,22 @@ import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { type MRT_ColumnDef, type MRT_RowSelectionState } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { fetchTestCaseDetailWithAiCalls, fetchTestCasesPaged, TestCase } from '@/services/testCaseService';
-// import { fetchTestCaseDetail } from '@/services/testCaseDetailService';
 import {
 	Paper,
 	Typography,
 	CircularProgress,
 	Button,
 	Box,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogContentText,
-	DialogActions,
 	Select,
 	MenuItem,
 	FormControl,
 	InputLabel
 } from '@mui/material';
+import DeleteTestCaseDialog from './DeleteTestCaseDialog';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
-import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
-// import { runTestCase } from '@/services/testCaseRunService';
-import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
+import { updateTestCase, deleteTestCase, createTestCaseRunRecord } from '@/services/testCaseService';
+import { useSearchParams } from 'next/navigation';
 
 interface TestCaseTableProps {
 	rowSelection: MRT_RowSelectionState;
@@ -40,6 +34,8 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	bulkRunTrigger,
 	bulkRunTimes
 }) => {
+	const searchParams = useSearchParams();
+	const params = new URLSearchParams(searchParams.toString());
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [deleteTarget, setDeleteTarget] = useState<TestCase | null>(null);
 	const [fetchNeeded, setFetchNeeded] = useState(true);
@@ -68,6 +64,15 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	// Dialog state for alerts
 	const [alertDialogOpen, setAlertDialogOpen] = useState(false);
 	const [alertDialogMsg, setAlertDialogMsg] = useState('');
+
+	useEffect(() => {
+		console.log('init is triggered');
+		const paramestCaseId = params.get('testCaseId');
+
+		if (paramestCaseId && !isNaN(parseInt(paramestCaseId))) {
+			handleAiCallDialog({ id: parseInt(paramestCaseId) } as TestCase);
+		}
+	}, []);
 
 	// Fetch test cases function
 	const loadTestCases = useCallback(() => {
@@ -116,7 +121,6 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		setRefreshKey((prev) => prev + 1);
 	};
 
-
 	// DataTable search handler
 	const handleGlobalFilterChange = (value: string) => {
 		setSearchName(value);
@@ -135,14 +139,24 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
 			setAiDialogOpen(true);
+			params.set('testCaseId', tc.id.toString());
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 		} catch (err: any) {
 			console.error('Failed to fetch test case detail:', err);
+			setAlertDialogMsg(err.message || 'Failed to fetch test case detail');
+			setAlertDialogOpen(true);
+			setAiCalls([]);
+			setAiDialogOpen(false);
+			params.delete('testCaseId');
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 		}
 	};
 
 	const handleCloseAiDialog = () => {
 		setAiDialogOpen(false);
 		setSelected(null);
+		params.delete('testCaseId');
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const handleSave = async (updated: Partial<TestCase>) => {
@@ -255,9 +269,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		[]
 	);
 
-
 	if (error) return <Typography color="error">{error}</Typography>;
-
 
 	return (
 		<>
@@ -362,56 +374,34 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						)}
 					/>
 					{loading && (
-						<div style={{
-							position: 'absolute',
-							top: 0,
-							left: 0,
-							width: '100%',
-							height: '100%',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							zIndex: 2,
-							background: 'rgba(255,255,255,0.5)'
-						}}>
+						<div
+							style={{
+								position: 'absolute',
+								top: 0,
+								left: 0,
+								width: '100%',
+								height: '100%',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'center',
+								zIndex: 2,
+								background: 'rgba(255,255,255,0.5)'
+							}}
+						>
 							<CircularProgress />
 						</div>
 					)}
 				</div>
 			</Paper>
 			{/* Delete Confirmation Dialog */}
-			<Dialog
+			<DeleteTestCaseDialog
 				open={deleteDialogOpen}
 				onClose={() => {
 					setDeleteDialogOpen(false);
 					setDeleteTarget(null);
 				}}
-			>
-				<DialogTitle>Delete Test Case</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						Are you sure you want to delete this test case? This action cannot be undone.
-					</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button
-						onClick={() => {
-							setDeleteDialogOpen(false);
-							setDeleteTarget(null);
-						}}
-					>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleDelete}
-						color="error"
-						variant="contained"
-						autoFocus
-					>
-						Delete
-					</Button>
-				</DialogActions>
-			</Dialog>
+				onDelete={handleDelete}
+			/>
 			{/* Edit Dialog */}
 			<TestCaseDetailDialog
 				open={editDialogOpen}

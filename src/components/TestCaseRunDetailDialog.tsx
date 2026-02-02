@@ -14,7 +14,8 @@ import {
 import React, { useEffect, useState } from 'react';
 import { FormControlLabel, Switch } from '@mui/material';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
-import { TestCaseRunDetail } from '@/services/testCaseRunService';
+import { TestCaseRunDetail } from '@/services/testCaseService';
+import { prettifyJSON } from '@/utils/prettifyJSON';
 
 interface TestCaseRunDetailDialogProps {
 	open: boolean;
@@ -261,16 +262,7 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 															Input
 														</Typography>
 														<Paper sx={{ p: 1, mb: 1, background: '#f7f7f7' }}>
-															<pre
-																style={{
-																	margin: 0,
-																	fontSize: 13,
-																	whiteSpace: 'pre-wrap',
-																	wordBreak: 'break-all'
-																}}
-															>
-																{JSON.stringify(aiCall.input, null, 2)}
-															</pre>
+															{prettifyJSON(aiCall.input)}
 														</Paper>
 														<Typography
 															variant="subtitle2"
@@ -279,18 +271,7 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 															Output
 														</Typography>
 														<Paper sx={{ p: 1, mb: 1, background: '#f7f7f7' }}>
-															<pre
-																style={{
-																	margin: 0,
-																	fontSize: 13,
-																	whiteSpace: 'pre-wrap',
-																	wordBreak: 'break-all'
-																}}
-															>
-																{typeof aiCall.runOutput === 'string'
-																	? aiCall.runOutput
-																	: JSON.stringify(aiCall.runOutput, null, 2)}
-															</pre>
+															{prettifyJSON(aiCall.runOutput)}
 														</Paper>
 														<Typography
 															variant="subtitle2"
@@ -299,18 +280,7 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 															Expected Output
 														</Typography>
 														<Paper sx={{ p: 1, background: '#f7f7f7' }}>
-															<pre
-																style={{
-																	margin: 0,
-																	fontSize: 13,
-																	whiteSpace: 'pre-wrap',
-																	wordBreak: 'break-all'
-																}}
-															>
-																{typeof aiCall.expectedOutput === 'string'
-																	? aiCall.expectedOutput
-																	: JSON.stringify(aiCall.expectedOutput, null, 2)}
-															</pre>
+															{prettifyJSON(aiCall.expectedOutput)}
 														</Paper>
 														{aiCall.failureReason && (
 															<>
@@ -320,11 +290,12 @@ const TestCaseRunDetailDialog: React.FC<TestCaseRunDetailDialogProps> = ({
 																>
 																	Failure Reason
 																</Typography>
-																<Paper sx={{ p: 1, background: '#f7f7f7' }}>
+																<Paper sx={{ p: 1, background: '#f7f7f7', mb: 2 }}>
 																	<p
 																		style={{
 																			margin: 0,
 																			fontSize: 13,
+																			whiteSpace: 'pre-wrap',
 																		}}
 																	>
 																		{aiCall.failureReason}

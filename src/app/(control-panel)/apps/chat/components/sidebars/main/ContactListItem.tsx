@@ -28,7 +28,7 @@ function ContactListItem(props: ContactListItemProps) {
 		if (chat) {
 			navigate(`/apps/messenger/${chat.id}`);
 		} else {
-			createChat({ contactIds: [item.id, user.id] }).then((res) => {
+			createChat({ contactIds: [item.id, user.id] }).then((res: any) => {
 				navigate(`/apps/messenger/${res.id}`);
 			});
 		}

@@ -24,7 +24,7 @@ function SignInPageView() {
 							color: 'primary.dark'
 						}}
 					>
-						You are browsing <b>Fuse React Demo</b>. Click on the "Sign in" button to access the Demo and
+						You are browsing <b>ElasticDash Dashboard</b>. Click on the "Sign in" button to access the Demo and
 						Documentation.
 					</Box>
 				</div>

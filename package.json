@@ -80,6 +80,7 @@
     "react-hook-form": "7.56.0",
     "react-i18next": "15.4.1",
     "react-imask": "7.6.1",
+    "react-json-view": "^1.21.3",
     "react-markdown": "^10.1.0",
     "react-number-format": "5.4.4",
     "react-popper": "2.3.0",

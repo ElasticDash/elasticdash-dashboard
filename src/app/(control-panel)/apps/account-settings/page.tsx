@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchApiBaseUrl, updateApiBaseUrl } from '@/services/accountSettingsService';
+import {
+	fetchApiBaseUrl,
+	fetchOauthToken,
+	updateApiBaseUrl,
+	updateOauthToken
+} from '@/services/accountSettingsService';
 import { fetchLlmConfig, updateLlmConfig } from '@/services/llmSettingsService';
 import { Typography, Paper, Divider } from '@mui/material';
 import { Box, lighten } from '@mui/system';
@@ -16,6 +21,10 @@ export default function AccountSettingsPage() {
 	const [apiBaseUrlError, setApiBaseUrlError] = useState('');
 	const [apiBaseUrlSuccess, setApiBaseUrlSuccess] = useState('');
 
+	const [oauthToken, setOauthToken] = useState('');
+	const [oauthTokenError, setOauthTokenError] = useState('');
+	const [oauthTokenSuccess, setOauthTokenSuccess] = useState('');
+
 	const [llmProviderId, setLlmProviderId] = useState(1); // Only OpenAI for now
 	const [llmToken, setLlmToken] = useState('');
 	const [llmError, setLlmError] = useState('');
@@ -24,7 +33,7 @@ export default function AccountSettingsPage() {
 	// Fetch LLM config
 	useEffect(() => {
 		fetchLlmConfig()
-			.then((res) => {
+			.then((res: any) => {
 				setLlmProviderId(res?.result?.llmProviderId || 1);
 				setLlmToken(res?.result?.llmToken || '');
 			})
@@ -45,17 +54,23 @@ export default function AccountSettingsPage() {
 		}
 	};
 
-
 	useEffect(() => {
 		fetchApiBaseUrl()
-			.then((res) => {
+			.then((res: any) => {
 				setApiBaseUrl(res?.result || '');
 			})
 			.catch((err) => {
 				setApiBaseUrlError(err.message || 'Failed to fetch API base URL');
 			});
-	}, []);
 
+		fetchOauthToken()
+			.then((res: any) => {
+				setOauthToken(res?.result || '');
+			})
+			.catch((err) => {
+				setOauthTokenError(err.message || 'Failed to fetch OAuth token');
+			});
+	}, []);
 
 	const handleApiBaseUrlSave = async (value: string) => {
 		setApiBaseUrlError('');
@@ -69,16 +84,26 @@ export default function AccountSettingsPage() {
 		}
 	};
 
+	const handleOauthTokenSave = async (value: string) => {
+		setOauthToken(value);
+		console.log('OAuth token saved:', value);
+		try {
+			await updateOauthToken(value);
+			setOauthToken(value);
+			setOauthTokenSuccess('OAuth token updated successfully');
+		} catch (err: any) {
+			setOauthTokenError(err.message || 'Failed to update OAuth token');
+		}
+	};
+
 	const handleEmailSave = (value: string) => {
 		setEmail(value);
 		console.log('Email saved:', value);
 		// TODO: Add API call to save to backend
 	};
 
-
-
 	return (
-		<Box className="flex flex-col w-full p-6 sm:p-8 md:p-12">
+		<Box className="flex w-full flex-col p-6 sm:p-8 md:p-12">
 			<Typography
 				variant="h4"
 				className="mb-8 font-bold"
@@ -111,10 +136,62 @@ export default function AccountSettingsPage() {
 					multiline
 				/>
 				{apiBaseUrlError && (
-					<Typography color="error" className="mt-2">{apiBaseUrlError}</Typography>
+					<Typography
+						color="error"
+						className="mt-2"
+					>
+						{apiBaseUrlError}
+					</Typography>
 				)}
 				{apiBaseUrlSuccess && (
-					<Typography color="success.main" className="mt-2">{apiBaseUrlSuccess}</Typography>
+					<Typography
+						color="success.main"
+						className="mt-2"
+					>
+						{apiBaseUrlSuccess}
+					</Typography>
+				)}
+			</Paper>
+
+			{/* OAuth Token Section */}
+			<Paper
+				className="mb-6 p-6"
+				elevation={1}
+				sx={(theme) => ({
+					backgroundColor: lighten(theme.palette.background.default, 0.02),
+					...theme.applyStyles('light', {
+						backgroundColor: lighten(theme.palette.background.default, 0.4)
+					})
+				})}
+			>
+				<Typography
+					variant="h6"
+					className="mb-4 font-semibold"
+				>
+					OAuth Token
+				</Typography>
+				<Divider className="mb-4" />
+				<EditableField
+					label="OAuth Token"
+					value={oauthToken}
+					onSave={handleOauthTokenSave}
+					type="password"
+				/>
+				{oauthTokenError && (
+					<Typography
+						color="error"
+						className="mt-2"
+					>
+						{oauthTokenError}
+					</Typography>
+				)}
+				{oauthTokenSuccess && (
+					<Typography
+						color="success.main"
+						className="mt-2"
+					>
+						{oauthTokenSuccess}
+					</Typography>
 				)}
 			</Paper>
 
@@ -149,10 +226,20 @@ export default function AccountSettingsPage() {
 					type="password"
 				/>
 				{llmError && (
-					<Typography color="error" className="mt-2">{llmError}</Typography>
+					<Typography
+						color="error"
+						className="mt-2"
+					>
+						{llmError}
+					</Typography>
 				)}
 				{llmSuccess && (
-					<Typography color="success.main" className="mt-2">{llmSuccess}</Typography>
+					<Typography
+						color="success.main"
+						className="mt-2"
+					>
+						{llmSuccess}
+					</Typography>
 				)}
 			</Paper>
 

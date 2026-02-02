@@ -1,3 +1,4 @@
+// src/services/traceService.ts
 import { api } from '@/utils/api';
 export interface CreateTestCaseFromTraceParams {
 	traceId: string;
@@ -58,4 +59,13 @@ export async function fetchTraceDetail({ id }: TraceDetailParams): Promise<Trace
 	if (!res.success) throw new Error(res.error || 'Failed to fetch trace detail');
 
 	return res.result;
+}
+
+export async function fetchTraces({ limit = 20, offset = 0, filter = '' }) {
+	const res = await api
+		.post('traces/list', {
+			json: { limit, offset, filter }
+		})
+		.json();
+	return res;
 }

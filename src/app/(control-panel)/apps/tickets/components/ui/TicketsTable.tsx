@@ -53,7 +53,7 @@ function TicketsTable() {
 	const fetchTickets = () => {
 		setLoading(true);
 		getUnhelpfulFeedbacks()
-			.then((res) => {
+			.then((res: any) => {
 				setTickets(Array.isArray(res) ? res : res?.result || []);
 				setError('');
 			})

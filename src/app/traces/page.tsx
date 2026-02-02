@@ -1,15 +1,19 @@
 'use client';
 
 import { useMemo, useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Button, Typography, Box, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import FusePageSimple from '@fuse/core/FusePageSimple';
-import { fetchTraces } from '@/services/traceListService';
 import TraceDetailDialog from '@/components/TraceDetailDialog';
 import TracesHeader from '@/components/TracesHeader';
-import { createTestCaseFromTrace } from '@/services/traceDetailService';
+import { useSearchParams } from 'next/navigation';
+import { createTestCaseFromTrace, fetchTraces } from '@/services/traceService';
+import { fetchFeatures, deleteFeature, updateFeature } from '@/services/featureService';
+import DeleteFeatureDialog from '@/components/DeleteFeatureDialog';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import Menu from '@mui/material/Menu';
+import RenameFeatureDialog from '@/components/RenameFeatureDialog';
 
 interface Trace {
 	id: string;
@@ -21,6 +25,8 @@ interface Trace {
 }
 
 export default function TraceListPage() {
+	const searchParams = useSearchParams();
+	const params = new URLSearchParams(searchParams.toString());
 	const [traces, setTraces] = useState<Trace[]>([]);
 	const [count, setCount] = useState(0);
 	const [loading, setLoading] = useState(false);
@@ -32,7 +38,14 @@ export default function TraceListPage() {
 	const [refreshKey, setRefreshKey] = useState(0);
 
 	// Feature sidebar state
-	const [features, setFeatures] = useState<{ id: number; featureName: string }[]>([]);
+	const [features, setFeatures] = useState<{ id: number; featureName: string; displayedName?: string }[]>([]);
+	// Rename feature dialog state
+	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+	const [featureToRename, setFeatureToRename] = useState<{ id: number; displayedName?: string } | null>(null);
+	const [renameLoading, setRenameLoading] = useState(false);
+	const [renameError, setRenameError] = useState<string | null>(null);
+	const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+	const [menuFeatureId, setMenuFeatureId] = useState<number | null>(null);
 	const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
 	const [featuresLoading, setFeaturesLoading] = useState(false);
 	const [featuresError, setFeaturesError] = useState<string | null>(null);
@@ -52,32 +65,60 @@ export default function TraceListPage() {
 	const [testCaseError, setTestCaseError] = useState<string | null>(null);
 	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 
-	// Fetch features for sidebar
-	useEffect(() => {
-		const fetchFeatures = async () => {
-			setFeaturesLoading(true);
-			setFeaturesError(null);
-			try {
-				const res = await axios.get(process.env.NEXT_PUBLIC_BASE_URL + '/features/list', {
-					params: { testProjectId },
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-					}
-				});
-				console.log('Fetched features:', res.data);
-				const featureList = res.data?.result || [];
-				setFeatures(featureList);
+	// Delete feature dialog state
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [featureToDelete, setFeatureToDelete] = useState<{ id: number; featureName: string } | null>(null);
+	const [deleteLoading, setDeleteLoading] = useState(false);
+	const [deleteError, setDeleteError] = useState<string | null>(null);
 
-				if (featureList.length > 0) {
+	useEffect(() => {
+		console.log('init is triggered');
+		const paramTraceId = params.get('traceId');
+		const paramFeatureId = params.get('featureId');
+		console.log('paramTraceId:', paramTraceId);
+		console.log('paramFeatureId:', paramFeatureId);
+
+		if (paramFeatureId && parseInt(paramFeatureId, 10) !== selectedFeatureId) {
+			setSelectedFeatureId(parseInt(paramFeatureId, 10));
+		}
+
+		if (paramTraceId && paramTraceId !== selectedTraceId) {
+			setSelectedTraceId(paramTraceId);
+			setDialogOpen(true);
+		}
+	}, []);
+
+	// Fetch features for sidebar
+	const fetchFeaturesHandler = async () => {
+		setFeaturesLoading(true);
+		setFeaturesError(null);
+		try {
+			const res = await fetchFeatures();
+			const featureList = res || [];
+			setFeatures(featureList);
+			const params = new URLSearchParams(searchParams.toString());
+			const paramFeatureId = params.get('featureId');
+
+			if (featureList.length > 0) {
+				if (paramFeatureId && featureList.some((f) => f.id.toString() === paramFeatureId)) {
+					setSelectedFeatureId(parseInt(paramFeatureId, 10));
+				} else {
 					setSelectedFeatureId(featureList[0].id);
+					params.set('featureId', featureList[0].id.toString());
+					window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 				}
-			} catch (err: any) {
-				setFeaturesError(err?.message || 'Failed to fetch features');
-			} finally {
-				setFeaturesLoading(false);
+			} else {
+				setSelectedFeatureId(null);
 			}
-		};
-		fetchFeatures();
+		} catch (err: any) {
+			setFeaturesError(err?.message || 'Failed to fetch features');
+		} finally {
+			setFeaturesLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		fetchFeaturesHandler();
 	}, [testProjectId]);
 
 	// Fetch traces function
@@ -92,7 +133,7 @@ export default function TraceListPage() {
 			: `metadata['feature_id'] = '${selectedFeatureId}'`;
 
 		fetchTraces({ limit: pagination.pageSize, offset, filter: featureFilter })
-			.then((res) => {
+			.then((res: any) => {
 				setTraces(res.result.data.data || []);
 				setCount(res.result.total || 0);
 			})
@@ -103,7 +144,20 @@ export default function TraceListPage() {
 	// Fetch traces when dependencies change
 	useEffect(() => {
 		loadTraces();
+
+		if (selectedFeatureId && params.get('featureId') !== selectedFeatureId.toString()) {
+			params.set('featureId', selectedFeatureId.toString());
+			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+		}
 	}, [loadTraces, refreshKey]);
+
+	useEffect(() => {
+		const paramTraceId = params.get('traceId');
+
+		if (selectedTraceId && (!paramTraceId || paramTraceId !== selectedTraceId)) {
+			params.set('traceId', selectedTraceId);
+		}
+	}, [selectedTraceId]);
 
 	// Auto-refresh interval
 	useEffect(() => {
@@ -149,11 +203,15 @@ export default function TraceListPage() {
 	const handleOpenDialog = (traceId: string) => {
 		setSelectedTraceId(traceId);
 		setDialogOpen(true);
+		params.set('traceId', traceId);
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const handleCloseDialog = () => {
 		setDialogOpen(false);
 		setSelectedTraceId(null);
+		params.delete('traceId');
+		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
 
 	const columns = useMemo<MRT_ColumnDef<Trace>[]>(
@@ -273,42 +331,115 @@ export default function TraceListPage() {
 											{features.map((feature) => (
 												<li
 													key={feature.id}
-													style={{ marginBottom: 4 }}
+													className={
+														'list-item' +
+														(selectedFeatureId === feature.id ? ' active' : '')
+													}
+													style={{
+														display: 'flex',
+														alignItems: 'center',
+														position: 'relative'
+													}}
 												>
 													<button
+														className={'detail-btn'}
+														onClick={() => setSelectedFeatureId(feature.id)}
 														style={{
-															width: '100%',
+															flex: 1,
 															textAlign: 'left',
 															padding: '10px 12px',
-															background:
-																selectedFeatureId === feature.id
-																	? '#e0e7ff'
-																	: 'transparent',
 															border: 'none',
 															borderRadius: 6,
 															cursor: 'pointer',
 															fontWeight: 400,
 															transition: 'all 0.2s ease'
 														}}
-														onMouseEnter={(e) => {
-															if (selectedFeatureId !== feature.id) {
-																e.currentTarget.style.background = '#f5f5f5';
-															}
-														}}
-														onMouseLeave={(e) => {
-															if (selectedFeatureId !== feature.id) {
-																e.currentTarget.style.background = 'transparent';
-															}
-														}}
-														onClick={() => setSelectedFeatureId(feature.id)}
 													>
-														{feature.featureName}
+														{feature.displayedName || feature.featureName}
 													</button>
+													<Button
+														size="small"
+														style={{ minWidth: 0, padding: 4 }}
+														onClick={(e) => {
+															setMenuAnchorEl(e.currentTarget);
+															setMenuFeatureId(feature.id);
+														}}
+													>
+														<MoreVertIcon />
+													</Button>
 												</li>
 											))}
 										</ul>
 									)}
+									<Menu
+										anchorEl={menuAnchorEl}
+										open={Boolean(menuAnchorEl)}
+										onClose={() => {
+											setMenuAnchorEl(null);
+											setMenuFeatureId(null);
+										}}
+									>
+										<MenuItem
+											onClick={() => {
+												const feature = features.find((f) => f.id === menuFeatureId);
+												setFeatureToRename(
+													feature
+														? {
+																id: feature.id,
+																displayedName:
+																	feature.displayedName || feature.featureName
+															}
+														: null
+												);
+												setRenameDialogOpen(true);
+												setMenuAnchorEl(null);
+												setMenuFeatureId(null);
+											}}
+										>
+											Rename
+										</MenuItem>
+										<MenuItem
+											onClick={() => {
+												const feature = features.find((f) => f.id === menuFeatureId);
+												setFeatureToDelete(feature || null);
+												setDeleteDialogOpen(true);
+												setMenuAnchorEl(null);
+												setMenuFeatureId(null);
+											}}
+											style={{ color: '#d32f2f' }}
+										>
+											Delete
+										</MenuItem>
+									</Menu>
 								</div>
+								<RenameFeatureDialog
+									open={renameDialogOpen}
+									initialName={featureToRename?.displayedName || ''}
+									onClose={() => {
+										setRenameDialogOpen(false);
+										setFeatureToRename(null);
+										setRenameError(null);
+									}}
+									onConfirm={async (newName) => {
+										if (!featureToRename) return;
+
+										setRenameLoading(true);
+										setRenameError(null);
+										try {
+											await updateFeature(featureToRename.id.toString(), newName);
+											setRenameDialogOpen(false);
+											setFeatureToRename(null);
+											setRenameError(null);
+											await fetchFeaturesHandler();
+										} catch (err: any) {
+											setRenameError(err.message || 'Failed to rename feature');
+										} finally {
+											setRenameLoading(false);
+										}
+									}}
+									loading={renameLoading}
+									error={renameError}
+								/>
 								<div
 									className="flex h-full min-h-0 flex-auto flex-col"
 									style={{ height: '100%', minHeight: 0, overflow: 'auto' }}
@@ -336,14 +467,6 @@ export default function TraceListPage() {
 										}}
 										renderRowActions={({ row }) => (
 											<div style={{ display: 'flex', gap: 8 }}>
-												<Button
-													size="small"
-													variant="outlined"
-													color="primary"
-													onClick={() => handleOpenDialog(row.original.id)}
-												>
-													View Detail
-												</Button>
 												<Button
 													size="small"
 													variant="contained"
@@ -387,6 +510,50 @@ export default function TraceListPage() {
 								onClose={handleCloseDialog}
 								traceId={selectedTraceId}
 							/>
+							<DeleteFeatureDialog
+								open={deleteDialogOpen}
+								onClose={() => {
+									setDeleteDialogOpen(false);
+									setFeatureToDelete(null);
+									setDeleteError(null);
+								}}
+								onConfirm={async () => {
+									if (!featureToDelete) return;
+
+									setDeleteLoading(true);
+									setDeleteError(null);
+									try {
+										await deleteFeature(featureToDelete.id.toString());
+										setDeleteDialogOpen(false);
+										setFeatureToDelete(null);
+										setDeleteError(null);
+										await fetchFeaturesHandler();
+
+										// If the deleted feature was selected, select the first feature if available
+										if (features.length > 0 && selectedFeatureId === featureToDelete.id) {
+											setSelectedFeatureId(features[0].id);
+										} else if (features.length === 0) {
+											setSelectedFeatureId(null);
+										}
+
+										// Refresh traces
+										setRefreshKey((prev) => prev + 1);
+									} catch (err: any) {
+										setDeleteError(err.message || 'Failed to delete feature');
+									} finally {
+										setDeleteLoading(false);
+									}
+								}}
+								featureName={featureToDelete?.featureName}
+							/>
+							{deleteError && (
+								<Typography
+									color="error"
+									className="p-4"
+								>
+									{deleteError}
+								</Typography>
+							)}
 						</>
 					)}
 				</div>

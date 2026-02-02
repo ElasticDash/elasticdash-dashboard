@@ -15,6 +15,7 @@ import {
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
+import { prettifyJSON } from '@/utils/prettifyJSON';
 
 interface AiCallDialogProps {
 	open: boolean;
@@ -24,31 +25,6 @@ interface AiCallDialogProps {
 
 const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) => {
 	const [selectedCall, setSelectedCall] = useState<any | null>(null);
-
-	// Helper function to prettify JSON content
-	const prettifyJSON = (content: any): string => {
-		if (content === null || content === undefined) {
-			return '';
-		}
-
-		// If it's already a string, try to parse and re-stringify it
-		if (typeof content === 'string') {
-			try {
-				const parsed = JSON.parse(content);
-				return JSON.stringify(parsed, null, 2);
-			} catch {
-				// If parsing fails, return the original string
-				return content;
-			}
-		}
-
-		// If it's an object, stringify it with formatting
-		try {
-			return JSON.stringify(content, null, 2);
-		} catch {
-			return String(content);
-		}
-	};
 
 	// Auto-select first AI call when dialog opens
 	useEffect(() => {
@@ -115,9 +91,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 						}}
 					>
 						{aiCalls.length === 0 ? (
-							<Typography sx={{ p: 2, color: 'text.secondary' }}>
-								No AI calls found.
-							</Typography>
+							<Typography sx={{ p: 2, color: 'text.secondary' }}>No AI calls found.</Typography>
 						) : (
 							<List sx={{ p: 0 }}>
 								{aiCalls.map((call: any, index: number) => (
@@ -189,18 +163,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 								>
 									Input
 								</Typography>
-								<pre
-									style={{
-										background: '#f5f5f5',
-										padding: '16px',
-										borderRadius: '4px',
-										overflow: 'auto',
-										fontSize: '14px',
-										marginBottom: '24px'
-									}}
-								>
-									{prettifyJSON(selectedCall.input)}
-								</pre>
+								{prettifyJSON(selectedCall.input)}
 
 								<Typography
 									variant="h6"
@@ -208,17 +171,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 								>
 									Output
 								</Typography>
-								<pre
-									style={{
-										background: '#f5f5f5',
-										padding: '16px',
-										borderRadius: '4px',
-										overflow: 'auto',
-										fontSize: '14px'
-									}}
-								>
-									{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
-								</pre>
+								{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
 							</>
 						) : (
 							<Typography color="text.secondary">
