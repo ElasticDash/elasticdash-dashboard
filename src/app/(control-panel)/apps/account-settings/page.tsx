@@ -33,7 +33,7 @@ export default function AccountSettingsPage() {
 	// Fetch LLM config
 	useEffect(() => {
 		fetchLlmConfig()
-			.then((res) => {
+			.then((res: any) => {
 				setLlmProviderId(res?.result?.llmProviderId || 1);
 				setLlmToken(res?.result?.llmToken || '');
 			})
@@ -56,7 +56,7 @@ export default function AccountSettingsPage() {
 
 	useEffect(() => {
 		fetchApiBaseUrl()
-			.then((res) => {
+			.then((res: any) => {
 				setApiBaseUrl(res?.result || '');
 			})
 			.catch((err) => {
@@ -64,7 +64,7 @@ export default function AccountSettingsPage() {
 			});
 
 		fetchOauthToken()
-			.then((res) => {
+			.then((res: any) => {
 				setOauthToken(res?.result || '');
 			})
 			.catch((err) => {

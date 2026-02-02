@@ -14,7 +14,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { FormControlLabel, Switch } from '@mui/material';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
-import { TestCaseRunDetail } from '@/services/testCaseRunService';
+import { TestCaseRunDetail } from '@/services/testCaseService';
 import { prettifyJSON } from '@/utils/prettifyJSON';
 
 interface TestCaseRunDetailDialogProps {

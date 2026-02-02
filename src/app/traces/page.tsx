@@ -6,11 +6,10 @@ import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { Paper, Button, Typography, Box, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import FusePageSimple from '@fuse/core/FusePageSimple';
-import { fetchTraces } from '@/services/traceListService';
 import TraceDetailDialog from '@/components/TraceDetailDialog';
 import TracesHeader from '@/components/TracesHeader';
-import { createTestCaseFromTrace } from '@/services/traceDetailService';
 import { useSearchParams } from 'next/navigation';
+import { createTestCaseFromTrace, fetchTraces } from '@/services/traceService';
 
 interface Trace {
 	id: string;
@@ -120,7 +119,7 @@ export default function TraceListPage() {
 			: `metadata['feature_id'] = '${selectedFeatureId}'`;
 
 		fetchTraces({ limit: pagination.pageSize, offset, filter: featureFilter })
-			.then((res) => {
+			.then((res: any) => {
 				setTraces(res.result.data.data || []);
 				setCount(res.result.total || 0);
 			})

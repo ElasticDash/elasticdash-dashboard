@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
-import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceDetailService';
+import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceService';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
 import { prettifyJSON } from '@/utils/prettifyJSON';
@@ -46,7 +46,7 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 			setSelectedObservation(null);
 
 			fetchTraceDetail({ id: traceId })
-				.then((res) => {
+				.then((res: any) => {
 					console.log('Fetched trace detail:', res);
 					setTraceDetail(res);
 

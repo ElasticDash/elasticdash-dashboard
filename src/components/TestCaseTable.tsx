@@ -4,7 +4,6 @@ import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { type MRT_ColumnDef, type MRT_RowSelectionState } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
 import { fetchTestCaseDetailWithAiCalls, fetchTestCasesPaged, TestCase } from '@/services/testCaseService';
-// import { fetchTestCaseDetail } from '@/services/testCaseDetailService';
 import {
 	Paper,
 	Typography,
@@ -23,9 +22,7 @@ import {
 } from '@mui/material';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
-import { updateTestCase, deleteTestCase } from '@/services/testCaseMutationService';
-// import { runTestCase } from '@/services/testCaseRunService';
-import { createTestCaseRunRecord } from '@/services/testCaseRunRecordService';
+import { updateTestCase, deleteTestCase, createTestCaseRunRecord } from '@/services/testCaseService';
 import { useSearchParams } from 'next/navigation';
 
 interface TestCaseTableProps {

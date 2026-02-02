@@ -77,7 +77,7 @@ function BoardAddList() {
 			boardId,
 			title: data.title
 		};
-		createList(payload).then((res) => {
+		createList(payload).then((res: any) => {
 			const newList = res as ScrumboardList;
 			updateBoard({
 				...board,

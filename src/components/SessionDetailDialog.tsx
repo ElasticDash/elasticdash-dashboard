@@ -3,7 +3,7 @@ import React from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 
 import { useState } from 'react';
-import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceDetailService';
+import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceService';
 import TraceObservationStepper from './TraceObservationStepper';
 
 interface SessionDetailDialogProps {

@@ -3,11 +3,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { type MRT_ColumnDef } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import {
-	fetchTestCaseRunRecords,
-	fetchTestCaseRunRecordDetail,
-	TestCaseRunRecord
-} from '@/services/testCaseRunRecordService';
+import { fetchTestCaseRunRecords, fetchTestCaseRunRecordDetail, TestCaseRunRecord } from '@/services/testCaseService';
 import { Paper, Typography, Chip, Box, FormControl, InputLabel, MenuItem, Select, Button } from '@mui/material';
 import TestCaseRunRecordDetailDialog from './TestCaseRunRecordDetailDialog';
 import { useSearchParams } from 'next/navigation';
@@ -39,7 +35,7 @@ const TestCaseRunTable: React.FC = () => {
 
 		setLoading(true);
 		fetchTestCaseRunRecords()
-			.then((res) => {
+			.then((res: any) => {
 				// Add mock prompt drift record at the beginning
 				// const mockRecord: TestCaseRunRecord = {
 				// 	id: 999,
@@ -98,7 +94,7 @@ const TestCaseRunTable: React.FC = () => {
 		const interval = setInterval(() => {
 			setLoading(true);
 			fetchTestCaseRunRecords()
-				.then((res) => {
+				.then((res: any) => {
 					// Add mock prompt drift record at the beginning
 					// const mockRecord: TestCaseRunRecord = {
 					// 	id: 999,
@@ -135,7 +131,7 @@ const TestCaseRunTable: React.FC = () => {
 	const handleManualRefresh = () => {
 		setLoading(true);
 		fetchTestCaseRunRecords()
-			.then((res) => {
+			.then((res: any) => {
 				// Add mock prompt drift record at the beginning
 				// const mockRecord: TestCaseRunRecord = {
 				// 	id: 999,

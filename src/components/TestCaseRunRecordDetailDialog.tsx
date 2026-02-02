@@ -16,12 +16,15 @@ import {
 } from '@mui/material';
 import React, { useState, useMemo, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
-import { TestCaseRunRecordDetail } from '@/services/testCaseRunRecordService';
-import { fetchTestCaseRunDetail, getMockTestCaseRunDetailWithPromptDrift } from '@/services/testCaseRunService';
+import {
+	acceptTestCaseRerun,
+	resetTestCase,
+	TestCaseRunRecordDetail,
+	fetchTestCaseRunDetail,
+	getMockTestCaseRunDetailWithPromptDrift
+} from '@/services/testCaseService';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
-import { resetTestCase } from '@/services/testCaseResetService';
-import { acceptTestCaseRerun } from '@/services/testCaseRerunAcceptService';
 import { humanApproveTestCaseRunAICall } from '@/services/testCaseService';
 import AccessibilityIcon from '@mui/icons-material/Accessibility';
 import { prettifyJSON } from '@/utils/prettifyJSON';
@@ -761,7 +764,7 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 														style={{
 															margin: 0,
 															fontSize: 13,
-															whiteSpace: 'pre-wrap',
+															whiteSpace: 'pre-wrap'
 														}}
 													>
 														{selectedAiCall.failureReason}
