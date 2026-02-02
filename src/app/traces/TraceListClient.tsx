@@ -320,13 +320,13 @@ export default function TraceListClient() {
 											{features.map((feature) => (
 												<li
 													key={feature.id}
-													className="list-item"
+													className={
+														'list-item' +
+														(selectedFeatureId === feature.id ? ' active' : '')
+													}
 												>
 													<button
-														className={
-															'detail-btn' +
-															(selectedFeatureId === feature.id ? ' active' : '')
-														}
+														className={'detail-btn'}
 														onClick={() => setSelectedFeatureId(feature.id)}
 													>
 														{feature.displayedName || feature.featureName}
