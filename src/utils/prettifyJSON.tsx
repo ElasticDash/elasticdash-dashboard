@@ -1,5 +1,6 @@
 import { JSX } from 'react';
-import ReactJson from 'react-json-view';
+import loadable from '@loadable/component';
+const ReactJson = loadable(() => import('react-json-view'));
 
 /**
  * Helper function to prettify JSON content for display in UI.
