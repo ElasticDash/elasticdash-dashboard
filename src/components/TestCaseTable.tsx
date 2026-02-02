@@ -10,16 +10,12 @@ import {
 	CircularProgress,
 	Button,
 	Box,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogContentText,
-	DialogActions,
 	Select,
 	MenuItem,
 	FormControl,
 	InputLabel
 } from '@mui/material';
+import DeleteTestCaseDialog from './DeleteTestCaseDialog';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
 import AiCallDialog from './AiCallDialog';
 import { updateTestCase, deleteTestCase, createTestCaseRunRecord } from '@/services/testCaseService';
@@ -398,38 +394,14 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				</div>
 			</Paper>
 			{/* Delete Confirmation Dialog */}
-			<Dialog
+			<DeleteTestCaseDialog
 				open={deleteDialogOpen}
 				onClose={() => {
 					setDeleteDialogOpen(false);
 					setDeleteTarget(null);
 				}}
-			>
-				<DialogTitle>Delete Test Case</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						Are you sure you want to delete this test case? This action cannot be undone.
-					</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button
-						onClick={() => {
-							setDeleteDialogOpen(false);
-							setDeleteTarget(null);
-						}}
-					>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleDelete}
-						color="error"
-						variant="contained"
-						autoFocus
-					>
-						Delete
-					</Button>
-				</DialogActions>
-			</Dialog>
+				onDelete={handleDelete}
+			/>
 			{/* Edit Dialog */}
 			<TestCaseDetailDialog
 				open={editDialogOpen}
