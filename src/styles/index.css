@@ -162,3 +162,47 @@ Tables styles
 .MuiDialog-root .MuiBackdrop-root {
     background-color: rgba(0, 0, 0, 0.2) !important;
 }
+
+.feature-sidebar {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    height: 100%;
+    padding: 16px;
+    background: #fafafa;
+}
+
+.feature-sidebar-title {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.list-item {
+    margin-bottom: 4px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.detail-btn {
+    flex: 1;
+    text-align: left;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+.list-item:hover,
+.list-item.active {
+    background-color: #e0e7ff;
+}
+
+.menu-btn {
+    min-width: 0;
+    padding: 4px;
+}
