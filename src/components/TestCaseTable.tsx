@@ -137,7 +137,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 
 	const handleCloseEdit = () => {
 		setEditDialogOpen(false);
-		setSelected(null);
+		setSelected(null); 
 	};
 
 	const handleAiCallDialog = async (tc: TestCase) => {
