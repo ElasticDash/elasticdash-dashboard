@@ -11,28 +11,27 @@ import {
 	ListItem,
 	ListItemButton,
 	Box,
-	CircularProgress,
-	Chip,
-	Paper
+	Button
 } from '@mui/material';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
 import { prettifyJSON } from '@/utils/prettifyJSON';
-import { TestCaseDraft, fetchTestCaseDrafts } from '@/services/testCaseService';
+import { resetTestCase } from '@/services/testCaseService';
 
 interface AiCallDialogProps {
 	open: boolean;
 	onClose: () => void;
 	aiCalls: any[];
 	testCaseId?: number;
+	rerun?: any;
 }
 
-const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, testCaseId }) => {
+const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, testCaseId, rerun }) => {
 	const [selectedCall, setSelectedCall] = useState<any | null>(null);
-	const [drafts, setDrafts] = useState<TestCaseDraft[]>([]);
-	const [loadingDrafts, setLoadingDrafts] = useState(false);
-	const [selectedDraftId, setSelectedDraftId] = useState<number | null>(null);
+	const [showRerun, setShowRerun] = useState<boolean>(false);
+	const [rerunning, setRerunning] = useState(false);
+	const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
 	// Auto-select first AI call when dialog opens
 	useEffect(() => {
@@ -41,39 +40,21 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 		}
 	}, [open, aiCalls]);
 
-	// Fetch drafts when dialog opens and testCaseId is available
 	useEffect(() => {
-		if (open && testCaseId) {
-			loadDrafts();
-		} else {
-			setDrafts([]);
-			setSelectedDraftId(null);
+		if (rerun && showRerun && rerun.aiCalls && rerun.aiCalls.length > 0) {
+			setSelectedCall(rerun.aiCalls[0]);
+		} else if (!showRerun && aiCalls && aiCalls.length > 0) {
+			setSelectedCall(aiCalls[0]);
 		}
-	}, [open, testCaseId]);
+	}, [showRerun]);
 
 	// Reset state when dialog closes
 	useEffect(() => {
 		if (!open) {
 			setSelectedCall(null);
-			setDrafts([]);
-			setSelectedDraftId(null);
+			setShowRerun(false);
 		}
 	}, [open]);
-
-	const loadDrafts = async () => {
-		if (!testCaseId) return;
-
-		setLoadingDrafts(true);
-		try {
-			const result = await fetchTestCaseDrafts({ testCaseId });
-			setDrafts(result || []);
-		} catch (error) {
-			console.error('Failed to fetch drafts:', error);
-			setDrafts([]);
-		} finally {
-			setLoadingDrafts(false);
-		}
-	};
 
 	const getStatusColor = (status: string) => {
 		switch (status?.toLowerCase()) {
@@ -88,6 +69,23 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 				return 'error';
 			default:
 				return 'default';
+		}
+	};
+
+	const handleRerun = async () => {
+		if (!testCaseId) return;
+
+		setRerunning(true);
+		setAlertMessage(null);
+		try {
+			// Call resetTestCase without testCaseRunRecordId (pass undefined or 0)
+			await resetTestCase(testCaseId, -1);
+			setAlertMessage('Test case rerun has started. Please come back later to check the results.');
+		} catch (err: any) {
+			console.error('Failed to rerun test case:', err);
+			setAlertMessage(err.message || 'Failed to rerun test case');
+		} finally {
+			setRerunning(false);
 		}
 	};
 
@@ -132,101 +130,20 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 			>
 				<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
 					{/* Leftmost sidebar - Drafts list */}
-					{testCaseId && drafts.length > 0 && (
+					{testCaseId && rerun && (
 						<Box
 							sx={{
-								width: 280,
+								width: 240,
 								borderRight: '1px solid',
 								borderColor: 'divider',
 								overflowY: 'auto',
 								bgcolor: 'background.default'
 							}}
 						>
-							<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-								<Typography
-									variant="subtitle1"
-									sx={{ fontWeight: 600 }}
-								>
-									Drafts ({drafts.length})
-								</Typography>
-							</Box>
-
-							{loadingDrafts ? (
-								<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-									<CircularProgress size={24} />
-								</Box>
-							) : drafts.length > 0 ? (
-								<Box sx={{ p: 2 }}>
-									{drafts.map((draft) => (
-										<Paper
-											key={draft.id}
-											sx={{
-												p: 1.5,
-												mb: 1.5,
-												cursor: 'pointer',
-												border:
-													selectedDraftId === draft.id
-														? '2px solid #1976d2'
-														: '1px solid #e0e0e0',
-												'&:hover': {
-													backgroundColor: '#f5f5f5'
-												}
-											}}
-											onClick={() => setSelectedDraftId(draft.id)}
-										>
-											<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-												<Typography
-													variant="body2"
-													sx={{ fontWeight: 600 }}
-												>
-													Draft #{draft.id}
-												</Typography>
-												<Chip
-													label={draft.status}
-													color={getStatusColor(draft.status)}
-													size="small"
-												/>
-											</Box>
-											<Typography
-												variant="caption"
-												color="text.secondary"
-											>
-												{new Date(draft.createdAt).toLocaleString()}
-											</Typography>
-										</Paper>
-									))}
-								</Box>
-							) : (
-								<Box sx={{ p: 2 }}>
-									<Typography
-										variant="body2"
-										color="text.secondary"
-									>
-										No drafts found
-									</Typography>
-								</Box>
-							)}
-						</Box>
-					)}
-
-					{/* Middle sidebar - AI Calls list */}
-					<Box
-						sx={{
-							width: 300,
-							borderRight: '1px solid',
-							borderColor: 'divider',
-							overflowY: 'auto',
-							bgcolor: 'background.default'
-						}}
-					>
-						{aiCalls.length === 0 ? (
-							<Typography sx={{ p: 2, color: 'text.secondary' }}>No AI calls found.</Typography>
-						) : (
 							<List sx={{ p: 0 }}>
-								{aiCalls.map((call: any, index: number) => (
+								<React.Fragment>
 									<ListItem
 										disablePadding
-										key={call.id || index}
 										sx={{ alignItems: 'flex-start' }}
 									>
 										<Box
@@ -240,45 +157,279 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 										>
 											<FiberManualRecordIcon
 												fontSize="small"
-												color={selectedCall === call ? 'primary' : 'disabled'}
+												color={!showRerun ? 'primary' : 'disabled'}
 											/>
-											{index < aiCalls.length - 1 && (
-												<MuiDivider
-													orientation="vertical"
-													flexItem
-													sx={{
-														height: 28,
-														borderRightWidth: 2,
-														borderColor: 'divider',
-														my: 0,
-														mx: 'auto'
-													}}
-												/>
-											)}
+											<MuiDivider
+												orientation="vertical"
+												flexItem
+												sx={{
+													height: 28,
+													borderRightWidth: 1,
+													borderColor: 'grey.400',
+													my: 0,
+													mx: 'auto'
+												}}
+											/>
 										</Box>
 										<ListItemButton
-											selected={selectedCall === call}
-											onClick={() => setSelectedCall(call)}
-											sx={{ pl: 1, alignItems: 'flex-start' }}
+											selected={!showRerun}
+											onClick={() => setShowRerun(false)}
+											sx={{
+												pl: 1,
+												alignItems: 'flex-start',
+												flexDirection: 'column'
+											}}
 										>
-											<Box sx={{ width: '100%' }}>
-												<Typography
-													variant="body2"
-													fontWeight={600}
-												>
-													AI Call #{call.stepOrder ?? index + 1}
-												</Typography>
-												<Typography
-													variant="caption"
-													color="text.secondary"
-												>
-													ID: {call.id}
-												</Typography>
+											<Box
+												sx={{
+													width: '100%',
+													display: 'flex',
+													justifyContent: 'space-between',
+													alignItems: 'center'
+												}}
+											>
+												<Box>
+													<Typography
+														variant="body2"
+														fontWeight={600}
+														noWrap
+														sx={{
+															maxWidth: 120,
+															textOverflow: 'ellipsis',
+															overflow: 'hidden',
+															whiteSpace: 'nowrap'
+														}}
+													>
+														Original Test Case
+													</Typography>
+												</Box>
 											</Box>
 										</ListItemButton>
 									</ListItem>
-								))}
+									<ListItem
+										disablePadding
+										sx={{ alignItems: 'flex-start' }}
+									>
+										<Box
+											sx={{
+												display: 'flex',
+												flexDirection: 'column',
+												alignItems: 'center',
+												minWidth: 28,
+												pt: 1
+											}}
+										>
+											<FiberManualRecordIcon
+												fontSize="small"
+												color={showRerun ? 'primary' : 'disabled'}
+											/>
+										</Box>
+										<ListItemButton
+											selected={showRerun}
+											onClick={() => setShowRerun(true)}
+											sx={{
+												pl: 1,
+												alignItems: 'flex-start',
+												flexDirection: 'column'
+											}}
+										>
+											<Box
+												sx={{
+													width: '100%',
+													display: 'flex',
+													justifyContent: 'space-between',
+													alignItems: 'center'
+												}}
+											>
+												<Box>
+													<Typography
+														variant="body2"
+														fontWeight={600}
+														noWrap
+														sx={{
+															maxWidth: 120,
+															textOverflow: 'ellipsis',
+															overflow: 'hidden',
+															whiteSpace: 'nowrap'
+														}}
+													>
+														Rerun Result
+													</Typography>
+												</Box>
+											</Box>
+										</ListItemButton>
+									</ListItem>
+								</React.Fragment>
 							</List>
+						</Box>
+					)}
+
+					{/* Middle sidebar - AI Calls list */}
+					<Box
+						sx={{
+							width: 300,
+							borderRight: '1px solid',
+							borderColor: 'divider',
+							display: 'flex',
+							flexDirection: 'column',
+							bgcolor: 'background.default'
+						}}
+					>
+						<Box sx={{ flex: 1, overflowY: 'auto' }}>
+							{showRerun && rerun ? (
+								<List sx={{ p: 0 }}>
+									{(rerun.aiCalls || []).map((call: any, index: number) => (
+										<ListItem
+											disablePadding
+											key={call.id || index}
+											sx={{ alignItems: 'flex-start' }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={selectedCall === call ? 'primary' : 'disabled'}
+												/>
+												{index < (rerun.aiCalls || []).length - 1 && (
+													<MuiDivider
+														orientation="vertical"
+														flexItem
+														sx={{
+															height: 28,
+															borderRightWidth: 2,
+															borderColor: 'divider',
+															my: 0,
+															mx: 'auto'
+														}}
+													/>
+												)}
+											</Box>
+											<ListItemButton
+												selected={selectedCall === call}
+												onClick={() => setSelectedCall(call)}
+												sx={{ pl: 1, alignItems: 'flex-start' }}
+											>
+												<Box sx={{ width: '100%' }}>
+													<Typography
+														variant="body2"
+														fontWeight={600}
+													>
+														AI Call #{call.stepOrder ?? index + 1}
+													</Typography>
+													<Typography
+														variant="caption"
+														color="text.secondary"
+													>
+														ID: {call.id}
+													</Typography>
+												</Box>
+											</ListItemButton>
+										</ListItem>
+									))}
+								</List>
+							) : aiCalls.length === 0 ? (
+								<Typography sx={{ p: 2, color: 'text.secondary' }}>No AI calls found.</Typography>
+							) : (
+								<List sx={{ p: 0 }}>
+									{aiCalls.map((call: any, index: number) => (
+										<ListItem
+											disablePadding
+											key={call.id || index}
+											sx={{ alignItems: 'flex-start' }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={selectedCall === call ? 'primary' : 'disabled'}
+												/>
+												{index < aiCalls.length - 1 && (
+													<MuiDivider
+														orientation="vertical"
+														flexItem
+														sx={{
+															height: 28,
+															borderRightWidth: 2,
+															borderColor: 'divider',
+															my: 0,
+															mx: 'auto'
+														}}
+													/>
+												)}
+											</Box>
+											<ListItemButton
+												selected={selectedCall === call}
+												onClick={() => setSelectedCall(call)}
+												sx={{ pl: 1, alignItems: 'flex-start' }}
+											>
+												<Box sx={{ width: '100%' }}>
+													<Typography
+														variant="body2"
+														fontWeight={600}
+													>
+														AI Call #{call.stepOrder ?? index + 1}
+													</Typography>
+													<Typography
+														variant="caption"
+														color="text.secondary"
+													>
+														ID: {call.id}
+													</Typography>
+												</Box>
+											</ListItemButton>
+										</ListItem>
+									))}
+								</List>
+							)}
+						</Box>
+
+						{/* Footer with Rerun button */}
+						{testCaseId && (
+							<Box
+								sx={{
+									p: 2,
+									borderTop: '1px solid',
+									borderColor: 'divider',
+									bgcolor: 'background.paper'
+								}}
+							>
+								{alertMessage && (
+									<Typography
+										variant="body2"
+										color={
+											alertMessage.includes('success') || alertMessage.includes('started')
+												? 'success.main'
+												: 'error.main'
+										}
+										sx={{ mb: 1 }}
+									>
+										{alertMessage}
+									</Typography>
+								)}
+								<Button
+									variant="outlined"
+									color="secondary"
+									onClick={handleRerun}
+									disabled={rerunning}
+									fullWidth
+								>
+									{rerunning ? 'Rerunning...' : 'Rerun Test Case'}
+								</Button>
+							</Box>
 						)}
 					</Box>
 

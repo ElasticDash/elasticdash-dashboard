@@ -44,6 +44,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [error, setError] = useState<string | null>(null);
 	const [selected, setSelected] = useState<TestCase | null>(null);
 	const [aiCalls, setAiCalls] = useState<any[]>([]);
+	const [rerun, setRerun] = useState<any>(null);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [aiDialogOpen, setAiDialogOpen] = useState(false);
 	const [selectedTestCaseId, setSelectedTestCaseId] = useState<number | null>(null);
@@ -140,6 +141,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
 			setSelectedTestCaseId(tc.id);
+			setRerun(res.rerun || null);
 			setAiDialogOpen(true);
 			params.set('testCaseId', tc.id.toString());
 			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -420,6 +422,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				onClose={handleCloseAiDialog}
 				aiCalls={aiCalls}
 				testCaseId={selectedTestCaseId || undefined}
+				rerun={rerun}
 			/>
 		</>
 	);

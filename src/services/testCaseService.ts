@@ -200,7 +200,7 @@ export async function fetchTestCases(): Promise<TestCase[]> {
  * @param id - test case id
  * @returns Promise<{ testCase: TestCase, aiCalls: any[] }>
  */
-export async function fetchTestCaseDetailWithAiCalls(id: number): Promise<{ testCase: TestCase; aiCalls: any[] }> {
+export async function fetchTestCaseDetailWithAiCalls(id: number): Promise<{ testCase: TestCase; aiCalls: any[], rerun?: any }> {
 	const res: any = await api.get(`testcases/detail/${id}`).json();
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch test case detail');
