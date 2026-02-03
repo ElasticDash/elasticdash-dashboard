@@ -11,7 +11,10 @@ import {
 	ListItem,
 	ListItemButton,
 	Box,
-	Button
+	Button,
+	DialogTitle,
+	DialogActions,
+	TextField
 } from '@mui/material';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -32,6 +35,13 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 	const [showRerun, setShowRerun] = useState<boolean>(false);
 	const [rerunning, setRerunning] = useState(false);
 	const [alertMessage, setAlertMessage] = useState<string | null>(null);
+	
+	// Dialog states
+	const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
+	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+	const [abortConfirmOpen, setAbortConfirmOpen] = useState(false);
+	const [newTestCaseName, setNewTestCaseName] = useState('');
+	const [actionLoading, setActionLoading] = useState(false);
 
 	// Auto-select first AI call when dialog opens
 	useEffect(() => {
@@ -86,6 +96,55 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 			setAlertMessage(err.message || 'Failed to rerun test case');
 		} finally {
 			setRerunning(false);
+		}
+	};
+
+	const handleUpdateTestCase = async () => {
+		setActionLoading(true);
+		try {
+			// TODO: Call API to update test case
+			console.log('Updating test case', testCaseId);
+			setAlertMessage('Test case updated successfully');
+			setUpdateConfirmOpen(false);
+		} catch (err: any) {
+			console.error('Failed to update test case:', err);
+			setAlertMessage(err.message || 'Failed to update test case');
+		} finally {
+			setActionLoading(false);
+		}
+	};
+
+	const handleCreateNewTestCase = async () => {
+		if (!newTestCaseName.trim()) return;
+
+		setActionLoading(true);
+		try {
+			// TODO: Call API to create new test case
+			console.log('Creating new test case:', newTestCaseName);
+			setAlertMessage('New test case created successfully');
+			setCreateDialogOpen(false);
+			setNewTestCaseName('');
+		} catch (err: any) {
+			console.error('Failed to create test case:', err);
+			setAlertMessage(err.message || 'Failed to create new test case');
+		} finally {
+			setActionLoading(false);
+		}
+	};
+
+	const handleAbortRerun = async () => {
+		setActionLoading(true);
+		try {
+			// TODO: Call API to abort/remove rerun result
+			console.log('Aborting rerun');
+			setAlertMessage('Rerun result removed successfully');
+			setAbortConfirmOpen(false);
+			setShowRerun(false);
+		} catch (err: any) {
+			console.error('Failed to abort rerun:', err);
+			setAlertMessage(err.message || 'Failed to remove rerun result');
+		} finally {
+			setActionLoading(false);
 		}
 	};
 
@@ -434,33 +493,172 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 					</Box>
 
 					{/* Right content - AI Call details */}
-					<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-						{selectedCall ? (
-							<>
-								<Typography
-									variant="h6"
-									gutterBottom
-								>
-									Input
-								</Typography>
-								{prettifyJSON(selectedCall.input)}
+					<Box 
+						sx={{ 
+							flex: 1, 
+							display: 'flex', 
+							flexDirection: 'column',
+							overflow: 'hidden'
+						}}
+					>
+						<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+							{selectedCall ? (
+								<>
+									<Typography
+										variant="h6"
+										gutterBottom
+									>
+										Input
+									</Typography>
+									{prettifyJSON(selectedCall.input)}
 
-								<Typography
-									variant="h6"
-									gutterBottom
-								>
-									Output
+									<Typography
+										variant="h6"
+										gutterBottom
+									>
+										Output
+									</Typography>
+									{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
+								</>
+							) : (
+								<Typography color="text.secondary">
+									Select an AI call from the list to view details
 								</Typography>
-								{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
-							</>
-						) : (
-							<Typography color="text.secondary">
-								Select an AI call from the list to view details
-							</Typography>
+							)}
+						</Box>
+
+						{/* Footer with action buttons - only show when rerun data exists */}
+						{showRerun && rerun && (
+							<Box
+								sx={{
+									p: 2,
+									borderTop: '1px solid',
+									borderColor: 'divider',
+									bgcolor: 'background.paper',
+									display: 'flex',
+									gap: 2,
+									justifyContent: 'flex-end'
+								}}
+							>
+								<Button
+									variant="contained"
+									color="primary"
+									onClick={() => setUpdateConfirmOpen(true)}
+									disabled={actionLoading}
+								>
+									Update Test Case
+								</Button>
+								<Button
+									variant="outlined"
+									color="primary"
+									onClick={() => setCreateDialogOpen(true)}
+									disabled={actionLoading}
+								>
+									Create New Test Case
+								</Button>
+								<Button
+									variant="outlined"
+									color="error"
+									onClick={() => setAbortConfirmOpen(true)}
+									disabled={actionLoading}
+								>
+									Abort
+								</Button>
+							</Box>
 						)}
 					</Box>
 				</Box>
 			</DialogContent>
+
+			{/* Update Confirmation Dialog */}
+			<Dialog
+				open={updateConfirmOpen}
+				onClose={() => setUpdateConfirmOpen(false)}
+			>
+				<DialogTitle>Update Test Case</DialogTitle>
+				<DialogContent>
+					<Typography>
+						The original test case will be updated with this new one. This action cannot be undone. Do you want to continue?
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setUpdateConfirmOpen(false)}>Cancel</Button>
+					<Button
+						variant="contained"
+						color="primary"
+						onClick={handleUpdateTestCase}
+						disabled={actionLoading}
+					>
+						{actionLoading ? 'Updating...' : 'Confirm'}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Create New Test Case Dialog */}
+			<Dialog
+				open={createDialogOpen}
+				onClose={() => {
+					setCreateDialogOpen(false);
+					setNewTestCaseName('');
+				}}
+			>
+				<DialogTitle>Create New Test Case</DialogTitle>
+				<DialogContent>
+					<TextField
+						autoFocus
+						margin="dense"
+						label="Test Case Name"
+						type="text"
+						fullWidth
+						variant="outlined"
+						value={newTestCaseName}
+						onChange={(e) => setNewTestCaseName(e.target.value)}
+						onKeyPress={(e) => {
+							if (e.key === 'Enter' && newTestCaseName.trim()) {
+								handleCreateNewTestCase();
+							}
+						}}
+					/>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => {
+						setCreateDialogOpen(false);
+						setNewTestCaseName('');
+					}}>Cancel</Button>
+					<Button
+						variant="contained"
+						color="primary"
+						onClick={handleCreateNewTestCase}
+						disabled={!newTestCaseName.trim() || actionLoading}
+					>
+						{actionLoading ? 'Creating...' : 'Create'}
+					</Button>
+				</DialogActions>
+			</Dialog>
+
+			{/* Abort Confirmation Dialog */}
+			<Dialog
+				open={abortConfirmOpen}
+				onClose={() => setAbortConfirmOpen(false)}
+			>
+				<DialogTitle>Remove Rerun Result</DialogTitle>
+				<DialogContent>
+					<Typography>
+						Are you sure you want to remove this rerun result? This action cannot be undone.
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setAbortConfirmOpen(false)}>Cancel</Button>
+					<Button
+						variant="contained"
+						color="error"
+						onClick={handleAbortRerun}
+						disabled={actionLoading}
+					>
+						{actionLoading ? 'Removing...' : 'Confirm'}
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</Dialog>
 	);
 };
