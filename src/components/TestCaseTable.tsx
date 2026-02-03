@@ -44,8 +44,10 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [error, setError] = useState<string | null>(null);
 	const [selected, setSelected] = useState<TestCase | null>(null);
 	const [aiCalls, setAiCalls] = useState<any[]>([]);
+	const [rerun, setRerun] = useState<any>(null);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [aiDialogOpen, setAiDialogOpen] = useState(false);
+	const [selectedTestCaseId, setSelectedTestCaseId] = useState<number | null>(null);
 
 	// Bulk run state
 	const [bulkRunLoading, setBulkRunLoading] = useState(false);
@@ -121,6 +123,11 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		setRefreshKey((prev) => prev + 1);
 	};
 
+	const handleManualRefreshTestCase = () => {
+		handleManualRefresh();
+		handleAiCallDialog({ id: selectedTestCaseId! } as TestCase);
+	};
+
 	// DataTable search handler
 	const handleGlobalFilterChange = (value: string) => {
 		setSearchName(value);
@@ -138,6 +145,8 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			const res = await fetchTestCaseDetailWithAiCalls(tc.id);
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
+			setSelectedTestCaseId(tc.id);
+			setRerun(res.rerun || null);
 			setAiDialogOpen(true);
 			params.set('testCaseId', tc.id.toString());
 			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -146,6 +155,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			setAlertDialogMsg(err.message || 'Failed to fetch test case detail');
 			setAlertDialogOpen(true);
 			setAiCalls([]);
+			setSelectedTestCaseId(null);
 			setAiDialogOpen(false);
 			params.delete('testCaseId');
 			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -155,6 +165,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const handleCloseAiDialog = () => {
 		setAiDialogOpen(false);
 		setSelected(null);
+		setSelectedTestCaseId(null);
 		params.delete('testCaseId');
 		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
@@ -414,7 +425,10 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			<AiCallDialog
 				open={aiDialogOpen}
 				onClose={handleCloseAiDialog}
+				onNeedRefresh={handleManualRefreshTestCase}
 				aiCalls={aiCalls}
+				testCaseId={selectedTestCaseId || undefined}
+				rerun={rerun}
 			/>
 		</>
 	);

@@ -200,7 +200,7 @@ export async function fetchTestCases(): Promise<TestCase[]> {
  * @param id - test case id
  * @returns Promise<{ testCase: TestCase, aiCalls: any[] }>
  */
-export async function fetchTestCaseDetailWithAiCalls(id: number): Promise<{ testCase: TestCase; aiCalls: any[] }> {
+export async function fetchTestCaseDetailWithAiCalls(id: number): Promise<{ testCase: TestCase; aiCalls: any[], rerun?: any }> {
 	const res: any = await api.get(`testcases/detail/${id}`).json();
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch test case detail');
@@ -269,6 +269,40 @@ export async function acceptTestCaseRerun(testCaseRunId: number): Promise<any> {
 	return res.result;
 }
 
+/**
+ * Reject a rerun for a test case run record
+ * @param testCaseRunId - The ID of the test case run to reject
+ * @returns Promise<any>
+ */
+export async function rejectTestCaseRerun(testCaseRunId: number): Promise<any> {
+	const res: any = await api
+		.post('testcases/rerun/reject', {
+			json: { testCaseRunId }
+		})
+		.json();
+
+	if (!res.success) throw new Error(res.error || 'Failed to reject test case rerun');
+
+	return res.result;
+}
+
+/**
+ * Create a new test case with a rerun
+ * @param testCaseRunId - The ID of the test case run to create from
+ * @param name - The name of the new test case
+ * @returns Promise<any>
+ */
+export async function createNewTestCaseWithRerun(testCaseRunId: number, name: string): Promise<any> {
+	const res: any = await api
+		.post('testcases/rerun/createtestcase', {
+			json: { testCaseRunId, name }
+		})
+		.json();
+
+	if (!res.success) throw new Error(res.error || 'Failed to create new test case with rerun');
+
+	return res.result;
+}
 
 export async function resetTestCase(testCaseId: number, testCaseRunRecordId: number): Promise<any> {
 	if (!testCaseId) return;
@@ -410,7 +444,6 @@ export function getMockPromptDriftData(): TestCaseRunRecordDetail {
 	};
 }
 
-
 export async function createTestCaseRun(params: CreateTestCaseRunParams): Promise<TestCaseRun> {
 	const { testCaseId, createdBy } = params;
 	const res = (await api
@@ -503,4 +536,54 @@ export function getMockTestCaseRunDetailWithPromptDrift(runId: number): TestCase
 			}
 		]
 	};
+}
+
+/**
+ * Test Case Draft interface
+ */
+export interface TestCaseDraft {
+	id: number;
+	testCaseId: number;
+	testCaseRunRecordId?: number;
+	status: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+/**
+ * Fetch test case drafts by testCaseId or testCaseRunRecordId
+ * @param params - Either { testCaseId: number } or { testCaseRunRecordId: number }
+ * @returns Promise<TestCaseDraft[]>
+ */
+export async function fetchTestCaseDrafts(params: {
+	testCaseId?: number;
+	testCaseRunRecordId?: number;
+}): Promise<TestCaseDraft[]> {
+	const { testCaseId, testCaseRunRecordId } = params;
+
+	if (!testCaseId && !testCaseRunRecordId) {
+		throw new Error('Either testCaseId or testCaseRunRecordId is required');
+	}
+
+	const queryParams = new URLSearchParams();
+
+	if (testCaseId) {
+		queryParams.append('testCaseId', testCaseId.toString());
+	}
+
+	if (testCaseRunRecordId) {
+		queryParams.append('testCaseRunRecordId', testCaseRunRecordId.toString());
+	}
+
+	const res = (await api.get(`testcases/drafts/list?${queryParams.toString()}`).json()) as {
+		success: boolean;
+		error?: string;
+		result: TestCaseDraft[];
+	};
+
+	if (!res.success) {
+		throw new Error(res.error || 'Failed to fetch test case drafts');
+	}
+
+	return res.result;
 }

@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
-import { fetchTraceDetail, createTestCaseFromTrace } from '@/services/traceService';
+import { fetchTraceDetail } from '@/services/traceService';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
 import { prettifyJSON } from '@/utils/prettifyJSON';
@@ -29,7 +29,6 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 	const [traceDetail, setTraceDetail] = useState<any | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [testCaseLoading, setTestCaseLoading] = useState(false);
 	const [testCaseError, setTestCaseError] = useState<string | null>(null);
 	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 	const [selectedObservation, setSelectedObservation] = useState<any | null>(null);
@@ -79,28 +78,6 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 	useEffect(() => {
 		console.log('selectedObservation: ', selectedObservation);
 	}, [selectedObservation]);
-
-	const handleCreateTestCase = async () => {
-		if (!traceId) return;
-
-		setTestCaseLoading(true);
-		setTestCaseError(null);
-		setTestCaseSuccess(null);
-
-		try {
-			const res = await createTestCaseFromTrace({ traceId });
-
-			if (!res.success) {
-				setTestCaseError(res.error || 'Failed to create test case from trace');
-			} else {
-				setTestCaseSuccess('Test case created successfully!');
-			}
-		} catch (err: any) {
-			setTestCaseError(err.message || 'Failed to create test case from trace');
-		} finally {
-			setTestCaseLoading(false);
-		}
-	};
 
 	if (!open) return null;
 

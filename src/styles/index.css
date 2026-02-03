@@ -163,6 +163,13 @@ Tables styles
     background-color: rgba(0, 0, 0, 0.2) !important;
 }
 
+/* Set minimum width for dialogs on desktop */
+@media (min-width: 600px) {
+    .MuiDialog-paper {
+        min-width: 500px;
+    }
+}
+
 .feature-sidebar {
     width: 300px;
     min-width: 300px;

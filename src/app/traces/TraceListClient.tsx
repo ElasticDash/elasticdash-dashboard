@@ -14,6 +14,7 @@ import DeleteFeatureDialog from '@/components/DeleteFeatureDialog';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Menu from '@mui/material/Menu';
 import RenameFeatureDialog from '@/components/RenameFeatureDialog';
+import CreateTestCaseDialog from '@/components/CreateTestCaseDialog';
 
 const TraceDetailDialog = dynamic(() => import('@/components/TraceDetailDialog'), { ssr: false });
 
@@ -72,6 +73,10 @@ export default function TraceListClient() {
 	const [featureToDelete, setFeatureToDelete] = useState<{ id: number; featureName: string } | null>(null);
 	const [deleteLoading, setDeleteLoading] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
+
+	// Create test case dialog state
+	const [createTestCaseDialogOpen, setCreateTestCaseDialogOpen] = useState(false);
+	const [selectedTraceForTestCase, setSelectedTraceForTestCase] = useState<string | null>(null);
 
 	useEffect(() => {
 		console.log('init is triggered');
@@ -181,14 +186,14 @@ export default function TraceListClient() {
 		console.log('Current features:', features);
 	}, [features]);
 
-	const handleCreateTestCase = async (traceId: string) => {
+	const handleCreateTestCase = async (traceId: string, name: string) => {
 		if (!traceId) return;
 
 		setTestCaseLoading(true);
 		setTestCaseError(null);
 		setTestCaseSuccess(null);
 		try {
-			const res = await createTestCaseFromTrace({ traceId });
+			const res = await createTestCaseFromTrace({ traceId, name });
 
 			if (!res.success) {
 				setTestCaseError(res.error || 'Failed to create test case from trace');
@@ -445,10 +450,12 @@ export default function TraceListClient() {
 													size="small"
 													variant="contained"
 													color="success"
-													disabled={testCaseLoading}
-													onClick={() => handleCreateTestCase(row.original.id)}
-												>
-													{testCaseLoading ? 'Creating...' : 'Create Test Case'}
+												onClick={() => {
+													setSelectedTraceForTestCase(row.original.id);
+													setCreateTestCaseDialogOpen(true);
+												}}
+											>
+												Create Test Case
 												</Button>
 											</div>
 										)}
@@ -483,6 +490,21 @@ export default function TraceListClient() {
 								open={dialogOpen}
 								onClose={handleCloseDialog}
 								traceId={selectedTraceId}
+							/>
+							<CreateTestCaseDialog
+								open={createTestCaseDialogOpen}
+								onClose={() => {
+									setCreateTestCaseDialogOpen(false);
+									setSelectedTraceForTestCase(null);
+								}}
+								onConfirm={(name) => {
+									if (selectedTraceForTestCase) {
+										handleCreateTestCase(selectedTraceForTestCase, name);
+										setCreateTestCaseDialogOpen(false);
+										setSelectedTraceForTestCase(null);
+									}
+								}}
+								loading={testCaseLoading}
 							/>
 							<DeleteFeatureDialog
 								open={deleteDialogOpen}
