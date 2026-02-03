@@ -123,6 +123,11 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 		setRefreshKey((prev) => prev + 1);
 	};
 
+	const handleManualRefreshTestCase = () => {
+		handleManualRefresh();
+		handleAiCallDialog({ id: selectedTestCaseId! } as TestCase);
+	};
+
 	// DataTable search handler
 	const handleGlobalFilterChange = (value: string) => {
 		setSearchName(value);
@@ -420,6 +425,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			<AiCallDialog
 				open={aiDialogOpen}
 				onClose={handleCloseAiDialog}
+				onNeedRefresh={handleManualRefreshTestCase}
 				aiCalls={aiCalls}
 				testCaseId={selectedTestCaseId || undefined}
 				rerun={rerun}

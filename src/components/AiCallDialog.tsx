@@ -20,22 +20,28 @@ import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
 import { prettifyJSON } from '@/utils/prettifyJSON';
-import { resetTestCase } from '@/services/testCaseService';
+import {
+	acceptTestCaseRerun,
+	createNewTestCaseWithRerun,
+	rejectTestCaseRerun,
+	resetTestCase
+} from '@/services/testCaseService';
 
 interface AiCallDialogProps {
 	open: boolean;
 	onClose: () => void;
+	onNeedRefresh: () => void;
 	aiCalls: any[];
 	testCaseId?: number;
 	rerun?: any;
 }
 
-const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, testCaseId, rerun }) => {
+const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, testCaseId, rerun, onNeedRefresh }) => {
 	const [selectedCall, setSelectedCall] = useState<any | null>(null);
 	const [showRerun, setShowRerun] = useState<boolean>(false);
 	const [rerunning, setRerunning] = useState(false);
 	const [alertMessage, setAlertMessage] = useState<string | null>(null);
-	
+
 	// Dialog states
 	const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -48,10 +54,12 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 		if (open && aiCalls && aiCalls.length > 0) {
 			setSelectedCall(aiCalls[0]);
 		}
+
+		setAlertMessage(null);
 	}, [open, aiCalls]);
 
 	useEffect(() => {
-		if (rerun && showRerun && rerun.aiCalls && rerun.aiCalls.length > 0) {
+		if (rerun && rerun.id && showRerun && rerun.aiCalls && rerun.aiCalls.length > 0) {
 			setSelectedCall(rerun.aiCalls[0]);
 		} else if (!showRerun && aiCalls && aiCalls.length > 0) {
 			setSelectedCall(aiCalls[0]);
@@ -65,22 +73,6 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 			setShowRerun(false);
 		}
 	}, [open]);
-
-	const getStatusColor = (status: string) => {
-		switch (status?.toLowerCase()) {
-			case 'completed':
-			case 'success':
-				return 'success';
-			case 'pending':
-			case 'running':
-				return 'warning';
-			case 'failed':
-			case 'error':
-				return 'error';
-			default:
-				return 'default';
-		}
-	};
 
 	const handleRerun = async () => {
 		if (!testCaseId) return;
@@ -102,10 +94,9 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 	const handleUpdateTestCase = async () => {
 		setActionLoading(true);
 		try {
-			// TODO: Call API to update test case
-			console.log('Updating test case', testCaseId);
-			setAlertMessage('Test case updated successfully');
+			await acceptTestCaseRerun(rerun.id!);
 			setUpdateConfirmOpen(false);
+			onNeedRefresh();
 		} catch (err: any) {
 			console.error('Failed to update test case:', err);
 			setAlertMessage(err.message || 'Failed to update test case');
@@ -119,11 +110,11 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 
 		setActionLoading(true);
 		try {
-			// TODO: Call API to create new test case
+			await createNewTestCaseWithRerun(rerun.id!, newTestCaseName);
 			console.log('Creating new test case:', newTestCaseName);
-			setAlertMessage('New test case created successfully');
 			setCreateDialogOpen(false);
 			setNewTestCaseName('');
+			onNeedRefresh();
 		} catch (err: any) {
 			console.error('Failed to create test case:', err);
 			setAlertMessage(err.message || 'Failed to create new test case');
@@ -137,9 +128,10 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 		try {
 			// TODO: Call API to abort/remove rerun result
 			console.log('Aborting rerun');
-			setAlertMessage('Rerun result removed successfully');
+			rejectTestCaseRerun(rerun.id!);
 			setAbortConfirmOpen(false);
 			setShowRerun(false);
+			onNeedRefresh();
 		} catch (err: any) {
 			console.error('Failed to abort rerun:', err);
 			setAlertMessage(err.message || 'Failed to remove rerun result');
@@ -189,7 +181,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 			>
 				<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
 					{/* Leftmost sidebar - Drafts list */}
-					{testCaseId && rerun && (
+					{testCaseId && rerun && rerun.id && (
 						<Box
 							sx={{
 								width: 240,
@@ -493,10 +485,10 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 					</Box>
 
 					{/* Right content - AI Call details */}
-					<Box 
-						sx={{ 
-							flex: 1, 
-							display: 'flex', 
+					<Box
+						sx={{
+							flex: 1,
+							display: 'flex',
 							flexDirection: 'column',
 							overflow: 'hidden'
 						}}
@@ -528,7 +520,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 						</Box>
 
 						{/* Footer with action buttons - only show when rerun data exists */}
-						{showRerun && rerun && (
+						{showRerun && rerun && rerun.id && (
 							<Box
 								sx={{
 									p: 2,
@@ -578,7 +570,8 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 				<DialogTitle>Update Test Case</DialogTitle>
 				<DialogContent>
 					<Typography>
-						The original test case will be updated with this new one. This action cannot be undone. Do you want to continue?
+						The original test case will be updated with this new one. This action cannot be undone. Do you
+						want to continue?
 					</Typography>
 				</DialogContent>
 				<DialogActions>
@@ -621,10 +614,14 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 					/>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={() => {
-						setCreateDialogOpen(false);
-						setNewTestCaseName('');
-					}}>Cancel</Button>
+					<Button
+						onClick={() => {
+							setCreateDialogOpen(false);
+							setNewTestCaseName('');
+						}}
+					>
+						Cancel
+					</Button>
 					<Button
 						variant="contained"
 						color="primary"

@@ -269,6 +269,41 @@ export async function acceptTestCaseRerun(testCaseRunId: number): Promise<any> {
 	return res.result;
 }
 
+/**
+ * Reject a rerun for a test case run record
+ * @param testCaseRunId - The ID of the test case run to reject
+ * @returns Promise<any>
+ */
+export async function rejectTestCaseRerun(testCaseRunId: number): Promise<any> {
+	const res: any = await api
+		.post('testcases/rerun/reject', {
+			json: { testCaseRunId }
+		})
+		.json();
+
+	if (!res.success) throw new Error(res.error || 'Failed to reject test case rerun');
+
+	return res.result;
+}
+
+/**
+ * Create a new test case with a rerun
+ * @param testCaseRunId - The ID of the test case run to create from
+ * @param name - The name of the new test case
+ * @returns Promise<any>
+ */
+export async function createNewTestCaseWithRerun(testCaseRunId: number, name: string): Promise<any> {
+	const res: any = await api
+		.post('testcases/rerun/createtestcase', {
+			json: { testCaseRunId, name }
+		})
+		.json();
+
+	if (!res.success) throw new Error(res.error || 'Failed to create new test case with rerun');
+
+	return res.result;
+}
+
 export async function resetTestCase(testCaseId: number, testCaseRunRecordId: number): Promise<any> {
 	if (!testCaseId) return;
 
