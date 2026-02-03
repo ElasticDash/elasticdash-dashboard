@@ -2,7 +2,8 @@
 import { api } from '@/utils/api';
 export interface CreateTestCaseFromTraceParams {
 	traceId: string;
-	[key: string]: any;
+	name?: string;
+	description?: string;
 }
 
 export interface CreateTestCaseFromTraceResponse {

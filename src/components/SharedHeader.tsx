@@ -2,9 +2,9 @@ import Typography from '@mui/material/Typography';
 // import FuseSvgIcon from '@fuse/core/FuseSvgIcon';
 
 /**
- * The SessionsHeader component.
+ * The SharedHeader component.
  */
-function SessionsHeader({ title, subtitle, icon }) {
+function SharedHeader({ title, subtitle, icon }) {
 	return (
 		<div className="flex flex-auto items-center gap-2 pb-4">
 			<div className="flex min-w-0 flex-col">
@@ -25,4 +25,4 @@ function SessionsHeader({ title, subtitle, icon }) {
 	);
 }
 
-export default SessionsHeader;
+export default SharedHeader;

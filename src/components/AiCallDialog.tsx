@@ -10,21 +10,29 @@ import {
 	List,
 	ListItem,
 	ListItemButton,
-	Box
+	Box,
+	CircularProgress,
+	Chip,
+	Paper
 } from '@mui/material';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import { Divider as MuiDivider } from '@mui/material';
 import { prettifyJSON } from '@/utils/prettifyJSON';
+import { TestCaseDraft, fetchTestCaseDrafts } from '@/services/testCaseService';
 
 interface AiCallDialogProps {
 	open: boolean;
 	onClose: () => void;
 	aiCalls: any[];
+	testCaseId?: number;
 }
 
-const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) => {
+const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, testCaseId }) => {
 	const [selectedCall, setSelectedCall] = useState<any | null>(null);
+	const [drafts, setDrafts] = useState<TestCaseDraft[]>([]);
+	const [loadingDrafts, setLoadingDrafts] = useState(false);
+	const [selectedDraftId, setSelectedDraftId] = useState<number | null>(null);
 
 	// Auto-select first AI call when dialog opens
 	useEffect(() => {
@@ -33,12 +41,55 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 		}
 	}, [open, aiCalls]);
 
+	// Fetch drafts when dialog opens and testCaseId is available
+	useEffect(() => {
+		if (open && testCaseId) {
+			loadDrafts();
+		} else {
+			setDrafts([]);
+			setSelectedDraftId(null);
+		}
+	}, [open, testCaseId]);
+
 	// Reset state when dialog closes
 	useEffect(() => {
 		if (!open) {
 			setSelectedCall(null);
+			setDrafts([]);
+			setSelectedDraftId(null);
 		}
 	}, [open]);
+
+	const loadDrafts = async () => {
+		if (!testCaseId) return;
+
+		setLoadingDrafts(true);
+		try {
+			const result = await fetchTestCaseDrafts({ testCaseId });
+			setDrafts(result || []);
+		} catch (error) {
+			console.error('Failed to fetch drafts:', error);
+			setDrafts([]);
+		} finally {
+			setLoadingDrafts(false);
+		}
+	};
+
+	const getStatusColor = (status: string) => {
+		switch (status?.toLowerCase()) {
+			case 'completed':
+			case 'success':
+				return 'success';
+			case 'pending':
+			case 'running':
+				return 'warning';
+			case 'failed':
+			case 'error':
+				return 'error';
+			default:
+				return 'default';
+		}
+	};
 
 	return (
 		<Dialog
@@ -80,7 +131,85 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls }) =
 				className="border-t-2 border-gray-300"
 			>
 				<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
-					{/* Left sidebar - AI Calls list */}
+					{/* Leftmost sidebar - Drafts list */}
+					{testCaseId && drafts.length > 0 && (
+						<Box
+							sx={{
+								width: 280,
+								borderRight: '1px solid',
+								borderColor: 'divider',
+								overflowY: 'auto',
+								bgcolor: 'background.default'
+							}}
+						>
+							<Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+								<Typography
+									variant="subtitle1"
+									sx={{ fontWeight: 600 }}
+								>
+									Drafts ({drafts.length})
+								</Typography>
+							</Box>
+
+							{loadingDrafts ? (
+								<Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+									<CircularProgress size={24} />
+								</Box>
+							) : drafts.length > 0 ? (
+								<Box sx={{ p: 2 }}>
+									{drafts.map((draft) => (
+										<Paper
+											key={draft.id}
+											sx={{
+												p: 1.5,
+												mb: 1.5,
+												cursor: 'pointer',
+												border:
+													selectedDraftId === draft.id
+														? '2px solid #1976d2'
+														: '1px solid #e0e0e0',
+												'&:hover': {
+													backgroundColor: '#f5f5f5'
+												}
+											}}
+											onClick={() => setSelectedDraftId(draft.id)}
+										>
+											<Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+												<Typography
+													variant="body2"
+													sx={{ fontWeight: 600 }}
+												>
+													Draft #{draft.id}
+												</Typography>
+												<Chip
+													label={draft.status}
+													color={getStatusColor(draft.status)}
+													size="small"
+												/>
+											</Box>
+											<Typography
+												variant="caption"
+												color="text.secondary"
+											>
+												{new Date(draft.createdAt).toLocaleString()}
+											</Typography>
+										</Paper>
+									))}
+								</Box>
+							) : (
+								<Box sx={{ p: 2 }}>
+									<Typography
+										variant="body2"
+										color="text.secondary"
+									>
+										No drafts found
+									</Typography>
+								</Box>
+							)}
+						</Box>
+					)}
+
+					{/* Middle sidebar - AI Calls list */}
 					<Box
 						sx={{
 							width: 300,

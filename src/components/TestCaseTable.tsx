@@ -46,6 +46,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [aiCalls, setAiCalls] = useState<any[]>([]);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [aiDialogOpen, setAiDialogOpen] = useState(false);
+	const [selectedTestCaseId, setSelectedTestCaseId] = useState<number | null>(null);
 
 	// Bulk run state
 	const [bulkRunLoading, setBulkRunLoading] = useState(false);
@@ -138,6 +139,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			const res = await fetchTestCaseDetailWithAiCalls(tc.id);
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
+			setSelectedTestCaseId(tc.id);
 			setAiDialogOpen(true);
 			params.set('testCaseId', tc.id.toString());
 			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -146,6 +148,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			setAlertDialogMsg(err.message || 'Failed to fetch test case detail');
 			setAlertDialogOpen(true);
 			setAiCalls([]);
+			setSelectedTestCaseId(null);
 			setAiDialogOpen(false);
 			params.delete('testCaseId');
 			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -155,6 +158,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const handleCloseAiDialog = () => {
 		setAiDialogOpen(false);
 		setSelected(null);
+		setSelectedTestCaseId(null);
 		params.delete('testCaseId');
 		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
@@ -415,6 +419,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				open={aiDialogOpen}
 				onClose={handleCloseAiDialog}
 				aiCalls={aiCalls}
+				testCaseId={selectedTestCaseId || undefined}
 			/>
 		</>
 	);
