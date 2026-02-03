@@ -62,7 +62,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 		if (rerun && rerun.id && showRerun && rerun.aiCalls && rerun.aiCalls.length > 0) {
 			setSelectedCall(rerun.aiCalls[0]);
 		} else if (!showRerun && aiCalls && aiCalls.length > 0) {
-			setSelectedCall(aiCalls[0]);
+			setSelectedCall(aiCalls[0]); 
 		}
 	}, [showRerun]);
 
