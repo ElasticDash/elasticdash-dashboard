@@ -22,6 +22,7 @@ export interface TestCase {
 	name: string;
 	description: string;
 	count: number;
+	rerunCount: number;
 	deleted: boolean;
 	createdAt: string;
 	createdBy: number;

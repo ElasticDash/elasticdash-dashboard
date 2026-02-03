@@ -3,7 +3,12 @@
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { type MRT_ColumnDef, type MRT_RowSelectionState } from 'material-react-table';
 import DataTable from 'src/components/data-table/DataTable';
-import { fetchTestCaseDetailWithAiCalls, fetchTestCasesPaged, TestCase } from '@/services/testCaseService';
+import {
+	fetchTestCaseDetailWithAiCalls,
+	fetchTestCasesPaged,
+	resetTestCase,
+	TestCase
+} from '@/services/testCaseService';
 import {
 	Paper,
 	Typography,
@@ -13,7 +18,8 @@ import {
 	Select,
 	MenuItem,
 	FormControl,
-	InputLabel
+	InputLabel,
+	Chip
 } from '@mui/material';
 import DeleteTestCaseDialog from './DeleteTestCaseDialog';
 import TestCaseDetailDialog from './TestCaseDetailDialog';
@@ -137,7 +143,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 
 	const handleCloseEdit = () => {
 		setEditDialogOpen(false);
-		setSelected(null); 
+		setSelected(null);
 	};
 
 	const handleAiCallDialog = async (tc: TestCase) => {
@@ -269,7 +275,19 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			{
 				accessorKey: 'name',
 				header: 'Name',
-				Cell: ({ row }) => <Typography>{row.original.name}</Typography>
+				Cell: ({ row }) => (
+					<Typography>
+						{row.original.name}
+						{row.original.rerunCount > 0 ? (
+							<Chip
+								sx={{ ml: 1 }}
+								color="secondary"
+								size="small"
+								label={'Rerun Result Available'}
+							/>
+						) : null}
+					</Typography>
+				)
 			},
 			{
 				accessorKey: 'count',
@@ -357,6 +375,18 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 						// Only show Edit and Delete buttons
 						renderRowActions={({ row }) => (
 							<div style={{ display: 'flex', gap: 8 }}>
+								<Button
+									size="small"
+									variant="contained"
+									color="primary"
+									onClick={(ev) => {
+										ev.stopPropagation();
+										resetTestCase(row.original.id, -1);
+										alert('Test case reset triggered');
+									}}
+								>
+									Rerun
+								</Button>
 								<Button
 									size="small"
 									variant="contained"
