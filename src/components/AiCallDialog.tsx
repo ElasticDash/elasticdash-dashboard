@@ -520,7 +520,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 						</Box>
 
 						{/* Footer with action buttons - only show when rerun data exists */}
-						{showRerun && rerun && rerun.id && (
+						{rerun && rerun.id && (
 							<Box
 								sx={{
 									p: 2,
@@ -533,26 +533,26 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 								}}
 							>
 								<Button
+									disabled={!showRerun || actionLoading}
 									variant="contained"
 									color="primary"
 									onClick={() => setUpdateConfirmOpen(true)}
-									disabled={actionLoading}
 								>
 									Update Test Case
 								</Button>
 								<Button
+									disabled={!showRerun || actionLoading}
 									variant="outlined"
 									color="primary"
 									onClick={() => setCreateDialogOpen(true)}
-									disabled={actionLoading}
 								>
 									Create New Test Case
 								</Button>
 								<Button
+									disabled={!showRerun || actionLoading}
 									variant="outlined"
 									color="error"
 									onClick={() => setAbortConfirmOpen(true)}
-									disabled={actionLoading}
 								>
 									Abort
 								</Button>
