@@ -26,17 +26,19 @@ import {
 	rejectTestCaseRerun,
 	resetTestCase
 } from '@/services/testCaseService';
+import LoadingOverlay from './LoadingOverlay';
 
 interface AiCallDialogProps {
 	open: boolean;
 	onClose: () => void;
 	onNeedRefresh: () => void;
 	aiCalls: any[];
+	loading?: boolean;
 	testCaseId?: number;
 	rerun?: any;
 }
 
-const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, testCaseId, rerun, onNeedRefresh }) => {
+const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, loading = false, testCaseId, rerun, onNeedRefresh }) => {
 	const [selectedCall, setSelectedCall] = useState<any | null>(null);
 	const [showRerun, setShowRerun] = useState<boolean>(false);
 	const [rerunning, setRerunning] = useState(false);
@@ -179,7 +181,10 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 				sx={{ p: 0, height: '100%', display: 'flex', overflow: 'hidden' }}
 				className="border-t-2 border-gray-300"
 			>
-				<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
+				{loading ? (
+					<LoadingOverlay message="Loading AI Calls..." />
+				) : (
+					<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
 					{/* Leftmost sidebar - Drafts list */}
 					{testCaseId && rerun && rerun.id && (
 						<Box
@@ -558,8 +563,9 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, tes
 								</Button>
 							</Box>
 						)}
+						</Box>
 					</Box>
-				</Box>
+				)}
 			</DialogContent>
 
 			{/* Update Confirmation Dialog */}

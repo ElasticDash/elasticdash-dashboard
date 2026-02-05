@@ -53,6 +53,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	const [rerun, setRerun] = useState<any>(null);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [aiDialogOpen, setAiDialogOpen] = useState(false);
+	const [aiDialogLoading, setAiDialogLoading] = useState(false);
 	const [selectedTestCaseId, setSelectedTestCaseId] = useState<number | null>(null);
 
 	// Bulk run state
@@ -147,13 +148,18 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 	};
 
 	const handleAiCallDialog = async (tc: TestCase) => {
+		// Open dialog immediately with loading state
+		setAiDialogOpen(true);
+		setAiDialogLoading(true);
+		setSelectedTestCaseId(tc.id);
+		setAiCalls([]);
+		setRerun(null);
+		
 		try {
 			const res = await fetchTestCaseDetailWithAiCalls(tc.id);
 			console.log('Fetched test case detail:', res);
 			setAiCalls(res.aiCalls || []);
-			setSelectedTestCaseId(tc.id);
 			setRerun(res.rerun || null);
-			setAiDialogOpen(true);
 			params.set('testCaseId', tc.id.toString());
 			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 		} catch (err: any) {
@@ -161,17 +167,18 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 			setAlertDialogMsg(err.message || 'Failed to fetch test case detail');
 			setAlertDialogOpen(true);
 			setAiCalls([]);
-			setSelectedTestCaseId(null);
-			setAiDialogOpen(false);
-			params.delete('testCaseId');
-			window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+		} finally {
+			setAiDialogLoading(false);
 		}
 	};
 
 	const handleCloseAiDialog = () => {
 		setAiDialogOpen(false);
+		setAiDialogLoading(false);
 		setSelected(null);
 		setSelectedTestCaseId(null);
+		setAiCalls([]);
+		setRerun(null);
 		params.delete('testCaseId');
 		window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 	};
@@ -457,6 +464,7 @@ const TestCaseTable: React.FC<TestCaseTableProps> = ({
 				onClose={handleCloseAiDialog}
 				onNeedRefresh={handleManualRefreshTestCase}
 				aiCalls={aiCalls}
+				loading={aiDialogLoading}
 				testCaseId={selectedTestCaseId || undefined}
 				rerun={rerun}
 			/>
