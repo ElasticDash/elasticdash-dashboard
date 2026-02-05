@@ -38,7 +38,15 @@ interface AiCallDialogProps {
 	rerun?: any;
 }
 
-const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, loading = false, testCaseId, rerun, onNeedRefresh }) => {
+const AiCallDialog: React.FC<AiCallDialogProps> = ({
+	open,
+	onClose,
+	aiCalls,
+	loading = false,
+	testCaseId,
+	rerun,
+	onNeedRefresh
+}) => {
 	const [selectedCall, setSelectedCall] = useState<any | null>(null);
 	const [showRerun, setShowRerun] = useState<boolean>(false);
 	const [rerunning, setRerunning] = useState(false);
@@ -64,7 +72,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, loa
 		if (rerun && rerun.id && showRerun && rerun.aiCalls && rerun.aiCalls.length > 0) {
 			setSelectedCall(rerun.aiCalls[0]);
 		} else if (!showRerun && aiCalls && aiCalls.length > 0) {
-			setSelectedCall(aiCalls[0]); 
+			setSelectedCall(aiCalls[0]);
 		}
 	}, [showRerun]);
 
@@ -185,384 +193,384 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({ open, onClose, aiCalls, loa
 					<LoadingOverlay message="Loading AI Calls..." />
 				) : (
 					<Box sx={{ display: 'flex', width: '100%', height: '100%' }}>
-					{/* Leftmost sidebar - Drafts list */}
-					{testCaseId && rerun && rerun.id && (
+						{/* Leftmost sidebar - Drafts list */}
+						{testCaseId && rerun && rerun.id && (
+							<Box
+								sx={{
+									width: 240,
+									borderRight: '1px solid',
+									borderColor: 'divider',
+									overflowY: 'auto',
+									bgcolor: 'background.default'
+								}}
+							>
+								<List sx={{ p: 0 }}>
+									<React.Fragment>
+										<ListItem
+											disablePadding
+											sx={{ alignItems: 'flex-start' }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={!showRerun ? 'primary' : 'disabled'}
+												/>
+												<MuiDivider
+													orientation="vertical"
+													flexItem
+													sx={{
+														height: 28,
+														borderRightWidth: 1,
+														borderColor: 'grey.400',
+														my: 0,
+														mx: 'auto'
+													}}
+												/>
+											</Box>
+											<ListItemButton
+												selected={!showRerun}
+												onClick={() => setShowRerun(false)}
+												sx={{
+													pl: 1,
+													alignItems: 'flex-start',
+													flexDirection: 'column'
+												}}
+											>
+												<Box
+													sx={{
+														width: '100%',
+														display: 'flex',
+														justifyContent: 'space-between',
+														alignItems: 'center'
+													}}
+												>
+													<Box>
+														<Typography
+															variant="body2"
+															fontWeight={600}
+															noWrap
+															sx={{
+																maxWidth: 120,
+																textOverflow: 'ellipsis',
+																overflow: 'hidden',
+																whiteSpace: 'nowrap'
+															}}
+														>
+															Original Test Case
+														</Typography>
+													</Box>
+												</Box>
+											</ListItemButton>
+										</ListItem>
+										<ListItem
+											disablePadding
+											sx={{ alignItems: 'flex-start' }}
+										>
+											<Box
+												sx={{
+													display: 'flex',
+													flexDirection: 'column',
+													alignItems: 'center',
+													minWidth: 28,
+													pt: 1
+												}}
+											>
+												<FiberManualRecordIcon
+													fontSize="small"
+													color={showRerun ? 'primary' : 'disabled'}
+												/>
+											</Box>
+											<ListItemButton
+												selected={showRerun}
+												onClick={() => setShowRerun(true)}
+												sx={{
+													pl: 1,
+													alignItems: 'flex-start',
+													flexDirection: 'column'
+												}}
+											>
+												<Box
+													sx={{
+														width: '100%',
+														display: 'flex',
+														justifyContent: 'space-between',
+														alignItems: 'center'
+													}}
+												>
+													<Box>
+														<Typography
+															variant="body2"
+															fontWeight={600}
+															noWrap
+															sx={{
+																maxWidth: 120,
+																textOverflow: 'ellipsis',
+																overflow: 'hidden',
+																whiteSpace: 'nowrap'
+															}}
+														>
+															Rerun Result
+														</Typography>
+													</Box>
+												</Box>
+											</ListItemButton>
+										</ListItem>
+									</React.Fragment>
+								</List>
+							</Box>
+						)}
+
+						{/* Middle sidebar - AI Calls list */}
 						<Box
 							sx={{
-								width: 240,
+								width: 300,
 								borderRight: '1px solid',
 								borderColor: 'divider',
-								overflowY: 'auto',
+								display: 'flex',
+								flexDirection: 'column',
 								bgcolor: 'background.default'
 							}}
 						>
-							<List sx={{ p: 0 }}>
-								<React.Fragment>
-									<ListItem
-										disablePadding
-										sx={{ alignItems: 'flex-start' }}
-									>
-										<Box
-											sx={{
-												display: 'flex',
-												flexDirection: 'column',
-												alignItems: 'center',
-												minWidth: 28,
-												pt: 1
-											}}
-										>
-											<FiberManualRecordIcon
-												fontSize="small"
-												color={!showRerun ? 'primary' : 'disabled'}
-											/>
-											<MuiDivider
-												orientation="vertical"
-												flexItem
-												sx={{
-													height: 28,
-													borderRightWidth: 1,
-													borderColor: 'grey.400',
-													my: 0,
-													mx: 'auto'
-												}}
-											/>
-										</Box>
-										<ListItemButton
-											selected={!showRerun}
-											onClick={() => setShowRerun(false)}
-											sx={{
-												pl: 1,
-												alignItems: 'flex-start',
-												flexDirection: 'column'
-											}}
-										>
-											<Box
-												sx={{
-													width: '100%',
-													display: 'flex',
-													justifyContent: 'space-between',
-													alignItems: 'center'
-												}}
+							<Box sx={{ flex: 1, overflowY: 'auto' }}>
+								{showRerun && rerun ? (
+									<List sx={{ p: 0 }}>
+										{(rerun.aiCalls || []).map((call: any, index: number) => (
+											<ListItem
+												disablePadding
+												key={call.id || index}
+												sx={{ alignItems: 'flex-start' }}
 											>
-												<Box>
-													<Typography
-														variant="body2"
-														fontWeight={600}
-														noWrap
-														sx={{
-															maxWidth: 120,
-															textOverflow: 'ellipsis',
-															overflow: 'hidden',
-															whiteSpace: 'nowrap'
-														}}
-													>
-														Original Test Case
-													</Typography>
+												<Box
+													sx={{
+														display: 'flex',
+														flexDirection: 'column',
+														alignItems: 'center',
+														minWidth: 28,
+														pt: 1
+													}}
+												>
+													<FiberManualRecordIcon
+														fontSize="small"
+														color={selectedCall === call ? 'primary' : 'disabled'}
+													/>
+													{index < (rerun.aiCalls || []).length - 1 && (
+														<MuiDivider
+															orientation="vertical"
+															flexItem
+															sx={{
+																height: 28,
+																borderRightWidth: 2,
+																borderColor: 'divider',
+																my: 0,
+																mx: 'auto'
+															}}
+														/>
+													)}
 												</Box>
-											</Box>
-										</ListItemButton>
-									</ListItem>
-									<ListItem
-										disablePadding
-										sx={{ alignItems: 'flex-start' }}
-									>
-										<Box
-											sx={{
-												display: 'flex',
-												flexDirection: 'column',
-												alignItems: 'center',
-												minWidth: 28,
-												pt: 1
-											}}
-										>
-											<FiberManualRecordIcon
-												fontSize="small"
-												color={showRerun ? 'primary' : 'disabled'}
-											/>
-										</Box>
-										<ListItemButton
-											selected={showRerun}
-											onClick={() => setShowRerun(true)}
-											sx={{
-												pl: 1,
-												alignItems: 'flex-start',
-												flexDirection: 'column'
-											}}
-										>
-											<Box
-												sx={{
-													width: '100%',
-													display: 'flex',
-													justifyContent: 'space-between',
-													alignItems: 'center'
-												}}
+												<ListItemButton
+													selected={selectedCall === call}
+													onClick={() => setSelectedCall(call)}
+													sx={{ pl: 1, alignItems: 'flex-start' }}
+												>
+													<Box sx={{ width: '100%' }}>
+														<Typography
+															variant="body2"
+															fontWeight={600}
+														>
+															AI Call #{call.stepOrder ?? index + 1}
+														</Typography>
+														<Typography
+															variant="caption"
+															color="text.secondary"
+														>
+															ID: {call.id}
+														</Typography>
+													</Box>
+												</ListItemButton>
+											</ListItem>
+										))}
+									</List>
+								) : aiCalls.length === 0 ? (
+									<Typography sx={{ p: 2, color: 'text.secondary' }}>No AI calls found.</Typography>
+								) : (
+									<List sx={{ p: 0 }}>
+										{aiCalls.map((call: any, index: number) => (
+											<ListItem
+												disablePadding
+												key={call.id || index}
+												sx={{ alignItems: 'flex-start' }}
 											>
-												<Box>
-													<Typography
-														variant="body2"
-														fontWeight={600}
-														noWrap
-														sx={{
-															maxWidth: 120,
-															textOverflow: 'ellipsis',
-															overflow: 'hidden',
-															whiteSpace: 'nowrap'
-														}}
-													>
-														Rerun Result
-													</Typography>
+												<Box
+													sx={{
+														display: 'flex',
+														flexDirection: 'column',
+														alignItems: 'center',
+														minWidth: 28,
+														pt: 1
+													}}
+												>
+													<FiberManualRecordIcon
+														fontSize="small"
+														color={selectedCall === call ? 'primary' : 'disabled'}
+													/>
+													{index < aiCalls.length - 1 && (
+														<MuiDivider
+															orientation="vertical"
+															flexItem
+															sx={{
+																height: 28,
+																borderRightWidth: 2,
+																borderColor: 'divider',
+																my: 0,
+																mx: 'auto'
+															}}
+														/>
+													)}
 												</Box>
-											</Box>
-										</ListItemButton>
-									</ListItem>
-								</React.Fragment>
-							</List>
-						</Box>
-					)}
+												<ListItemButton
+													selected={selectedCall === call}
+													onClick={() => setSelectedCall(call)}
+													sx={{ pl: 1, alignItems: 'flex-start' }}
+												>
+													<Box sx={{ width: '100%' }}>
+														<Typography
+															variant="body2"
+															fontWeight={600}
+														>
+															AI Call #{call.stepOrder ?? index + 1}
+														</Typography>
+														<Typography
+															variant="caption"
+															color="text.secondary"
+														>
+															ID: {call.id}
+														</Typography>
+													</Box>
+												</ListItemButton>
+											</ListItem>
+										))}
+									</List>
+								)}
+							</Box>
 
-					{/* Middle sidebar - AI Calls list */}
-					<Box
-						sx={{
-							width: 300,
-							borderRight: '1px solid',
-							borderColor: 'divider',
-							display: 'flex',
-							flexDirection: 'column',
-							bgcolor: 'background.default'
-						}}
-					>
-						<Box sx={{ flex: 1, overflowY: 'auto' }}>
-							{showRerun && rerun ? (
-								<List sx={{ p: 0 }}>
-									{(rerun.aiCalls || []).map((call: any, index: number) => (
-										<ListItem
-											disablePadding
-											key={call.id || index}
-											sx={{ alignItems: 'flex-start' }}
+							{/* Footer with Rerun button */}
+							{testCaseId && (
+								<Box
+									sx={{
+										p: 2,
+										borderTop: '1px solid',
+										borderColor: 'divider',
+										bgcolor: 'background.paper'
+									}}
+								>
+									{alertMessage && (
+										<Typography
+											variant="body2"
+											color={
+												alertMessage.includes('success') || alertMessage.includes('started')
+													? 'success.main'
+													: 'error.main'
+											}
+											sx={{ mb: 1 }}
 										>
-											<Box
-												sx={{
-													display: 'flex',
-													flexDirection: 'column',
-													alignItems: 'center',
-													minWidth: 28,
-													pt: 1
-												}}
-											>
-												<FiberManualRecordIcon
-													fontSize="small"
-													color={selectedCall === call ? 'primary' : 'disabled'}
-												/>
-												{index < (rerun.aiCalls || []).length - 1 && (
-													<MuiDivider
-														orientation="vertical"
-														flexItem
-														sx={{
-															height: 28,
-															borderRightWidth: 2,
-															borderColor: 'divider',
-															my: 0,
-															mx: 'auto'
-														}}
-													/>
-												)}
-											</Box>
-											<ListItemButton
-												selected={selectedCall === call}
-												onClick={() => setSelectedCall(call)}
-												sx={{ pl: 1, alignItems: 'flex-start' }}
-											>
-												<Box sx={{ width: '100%' }}>
-													<Typography
-														variant="body2"
-														fontWeight={600}
-													>
-														AI Call #{call.stepOrder ?? index + 1}
-													</Typography>
-													<Typography
-														variant="caption"
-														color="text.secondary"
-													>
-														ID: {call.id}
-													</Typography>
-												</Box>
-											</ListItemButton>
-										</ListItem>
-									))}
-								</List>
-							) : aiCalls.length === 0 ? (
-								<Typography sx={{ p: 2, color: 'text.secondary' }}>No AI calls found.</Typography>
-							) : (
-								<List sx={{ p: 0 }}>
-									{aiCalls.map((call: any, index: number) => (
-										<ListItem
-											disablePadding
-											key={call.id || index}
-											sx={{ alignItems: 'flex-start' }}
-										>
-											<Box
-												sx={{
-													display: 'flex',
-													flexDirection: 'column',
-													alignItems: 'center',
-													minWidth: 28,
-													pt: 1
-												}}
-											>
-												<FiberManualRecordIcon
-													fontSize="small"
-													color={selectedCall === call ? 'primary' : 'disabled'}
-												/>
-												{index < aiCalls.length - 1 && (
-													<MuiDivider
-														orientation="vertical"
-														flexItem
-														sx={{
-															height: 28,
-															borderRightWidth: 2,
-															borderColor: 'divider',
-															my: 0,
-															mx: 'auto'
-														}}
-													/>
-												)}
-											</Box>
-											<ListItemButton
-												selected={selectedCall === call}
-												onClick={() => setSelectedCall(call)}
-												sx={{ pl: 1, alignItems: 'flex-start' }}
-											>
-												<Box sx={{ width: '100%' }}>
-													<Typography
-														variant="body2"
-														fontWeight={600}
-													>
-														AI Call #{call.stepOrder ?? index + 1}
-													</Typography>
-													<Typography
-														variant="caption"
-														color="text.secondary"
-													>
-														ID: {call.id}
-													</Typography>
-												</Box>
-											</ListItemButton>
-										</ListItem>
-									))}
-								</List>
+											{alertMessage}
+										</Typography>
+									)}
+									<Button
+										variant="outlined"
+										color="secondary"
+										onClick={handleRerun}
+										disabled={rerunning}
+										fullWidth
+									>
+										{rerunning ? 'Rerunning...' : 'Rerun Test Case'}
+									</Button>
+								</Box>
 							)}
 						</Box>
 
-						{/* Footer with Rerun button */}
-						{testCaseId && (
-							<Box
-								sx={{
-									p: 2,
-									borderTop: '1px solid',
-									borderColor: 'divider',
-									bgcolor: 'background.paper'
-								}}
-							>
-								{alertMessage && (
-									<Typography
-										variant="body2"
-										color={
-											alertMessage.includes('success') || alertMessage.includes('started')
-												? 'success.main'
-												: 'error.main'
-										}
-										sx={{ mb: 1 }}
-									>
-										{alertMessage}
+						{/* Right content - AI Call details */}
+						<Box
+							sx={{
+								flex: 1,
+								display: 'flex',
+								flexDirection: 'column',
+								overflow: 'hidden'
+							}}
+						>
+							<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+								{selectedCall ? (
+									<>
+										<Typography
+											variant="h6"
+											gutterBottom
+										>
+											Input
+										</Typography>
+										{prettifyJSON(selectedCall.input)}
+
+										<Typography
+											variant="h6"
+											gutterBottom
+										>
+											Output
+										</Typography>
+										{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
+									</>
+								) : (
+									<Typography color="text.secondary">
+										Select an AI call from the list to view details
 									</Typography>
 								)}
-								<Button
-									variant="outlined"
-									color="secondary"
-									onClick={handleRerun}
-									disabled={rerunning}
-									fullWidth
-								>
-									{rerunning ? 'Rerunning...' : 'Rerun Test Case'}
-								</Button>
 							</Box>
-						)}
-					</Box>
 
-					{/* Right content - AI Call details */}
-					<Box
-						sx={{
-							flex: 1,
-							display: 'flex',
-							flexDirection: 'column',
-							overflow: 'hidden'
-						}}
-					>
-						<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-							{selectedCall ? (
-								<>
-									<Typography
-										variant="h6"
-										gutterBottom
+							{/* Footer with action buttons - only show when rerun data exists */}
+							{rerun && rerun.id && (
+								<Box
+									sx={{
+										p: 2,
+										borderTop: '1px solid',
+										borderColor: 'divider',
+										bgcolor: 'background.paper',
+										display: 'flex',
+										gap: 2,
+										justifyContent: 'flex-end'
+									}}
+								>
+									<Button
+										disabled={!showRerun || actionLoading}
+										variant="contained"
+										color="primary"
+										onClick={() => setUpdateConfirmOpen(true)}
 									>
-										Input
-									</Typography>
-									{prettifyJSON(selectedCall.input)}
-
-									<Typography
-										variant="h6"
-										gutterBottom
+										Update Test Case
+									</Button>
+									<Button
+										disabled={!showRerun || actionLoading}
+										variant="outlined"
+										color="primary"
+										onClick={() => setCreateDialogOpen(true)}
 									>
-										Output
-									</Typography>
-									{prettifyJSON(selectedCall.expectedOutput ?? selectedCall.output)}
-								</>
-							) : (
-								<Typography color="text.secondary">
-									Select an AI call from the list to view details
-								</Typography>
+										Create New Test Case
+									</Button>
+									<Button
+										disabled={!showRerun || actionLoading}
+										variant="outlined"
+										color="error"
+										onClick={() => setAbortConfirmOpen(true)}
+									>
+										Abort
+									</Button>
+								</Box>
 							)}
-						</Box>
-
-						{/* Footer with action buttons - only show when rerun data exists */}
-						{rerun && rerun.id && (
-							<Box
-								sx={{
-									p: 2,
-									borderTop: '1px solid',
-									borderColor: 'divider',
-									bgcolor: 'background.paper',
-									display: 'flex',
-									gap: 2,
-									justifyContent: 'flex-end'
-								}}
-							>
-								<Button
-									disabled={!showRerun || actionLoading}
-									variant="contained"
-									color="primary"
-									onClick={() => setUpdateConfirmOpen(true)}
-								>
-									Update Test Case
-								</Button>
-								<Button
-									disabled={!showRerun || actionLoading}
-									variant="outlined"
-									color="primary"
-									onClick={() => setCreateDialogOpen(true)}
-								>
-									Create New Test Case
-								</Button>
-								<Button
-									disabled={!showRerun || actionLoading}
-									variant="outlined"
-									color="error"
-									onClick={() => setAbortConfirmOpen(true)}
-								>
-									Abort
-								</Button>
-							</Box>
-						)}
 						</Box>
 					</Box>
 				)}
