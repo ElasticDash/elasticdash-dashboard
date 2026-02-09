@@ -126,7 +126,8 @@ function SignInPageForm() {
 
 				<Link
 					className="text-md font-medium"
-					to="/pages/auth/forgot-password"
+					// to="/pages/auth/forgot-password"
+					to="mailto:contact@elasticdash.com"
 				>
 					Forgot password?
 				</Link>

@@ -1,5 +1,3 @@
-import AvatarGroup from '@mui/material/AvatarGroup';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 
 function SignInPageMessageSection() {
@@ -72,7 +70,7 @@ function SignInPageMessageSection() {
 				/>
 			</Box>
 
-			<div className="relative z-10 w-full max-w-4xl">
+			{/* <div className="relative z-10 w-full max-w-4xl">
 				<div className="text-7xl leading-none font-bold text-gray-100">
 					<div>Welcome to</div>
 					<div>our community</div>
@@ -99,7 +97,7 @@ function SignInPageMessageSection() {
 						More than 17k people joined us, it's your turn
 					</div>
 				</div>
-			</div>
+			</div> */}
 		</Box>
 	);
 }

@@ -154,7 +154,8 @@ function AuthJsCredentialsSignInForm() {
 
 				<Link
 					className="text-md font-medium"
-					to="/#"
+					// to="/pages/auth/forgot-password"
+					to="mailto:contact@elasticdash.com"
 				>
 					Forgot password?
 				</Link>

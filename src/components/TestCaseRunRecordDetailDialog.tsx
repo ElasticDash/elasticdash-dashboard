@@ -721,12 +721,19 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 							{selectedAiCall ? (
 								<>
 									<Box sx={{ height: 'calc(100% - 44px)', overflow: 'auto' }}>
-										<Typography
-											variant="h6"
-											gutterBottom
-										>
-											Input
-										</Typography>
+										<div className="mb-4 flex items-center justify-between">
+											<Typography
+												variant="h6"
+												gutterBottom
+											>
+												Input
+											</Typography>
+											<Chip
+												label={selectedAiCall.aiModel || 'Unknown Model'}
+												size="small"
+												sx={{ height: 20, fontSize: '0.65rem' }}
+											/>
+										</div>
 
 										{prettifyJSON(selectedAiCall.runInput || selectedAiCall.input)}
 

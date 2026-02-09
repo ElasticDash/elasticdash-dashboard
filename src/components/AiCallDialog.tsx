@@ -54,6 +54,7 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 	const [showRerun, setShowRerun] = useState<boolean>(false);
 	const [rerunning, setRerunning] = useState(false);
 	const [alertMessage, setAlertMessage] = useState<string | null>(null);
+	const promptSuffix = `\n\n**Respond with**:\n"passed" or The reason for failure.`;
 
 	// Dialog states
 	const [updateConfirmOpen, setUpdateConfirmOpen] = useState(false);
@@ -68,9 +69,9 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 	// When selectedCall changes, reset edit mode
 	useEffect(() => {
 		setEditPromptMode(false);
-		setEditPromptValue(selectedCall?.validationPrompt || '');
+		setEditPromptValue(selectedCall?.validationPrompt.replace(promptSuffix, '') || '');
 		setEditPromptError(null);
-	}, [selectedCall]);
+	}, [selectedCall, promptSuffix]);
 
 	// Auto-select first AI call when dialog opens
 	useEffect(() => {
@@ -559,7 +560,10 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 									position: 'relative'
 								}}
 							>
-								<Box sx={{ p: 3, pb: 1 }}>
+								<Box
+									sx={{ p: 3, pb: 1 }}
+									className="flex flex-row items-start justify-between"
+								>
 									<Typography
 										variant="h6"
 										fontWeight={600}
@@ -567,16 +571,16 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 									>
 										Validation Prompt
 									</Typography>
-								</Box>
-								<Box className="validation-prompt-container">
-									{/* Edit button, always fixed at top right of the container */}
+
 									{!editPromptMode && (
 										<Box className="validation-prompt-edit-button">
 											<IconButton
 												size="small"
 												aria-label="Edit Validation Prompt"
 												onClick={() => {
-													setEditPromptValue(selectedCall?.validationPrompt || '');
+													setEditPromptValue(
+														selectedCall?.validationPrompt.replace(promptSuffix, '') || ''
+													);
 													setEditPromptMode(true);
 												}}
 											>
@@ -584,18 +588,26 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 											</IconButton>
 										</Box>
 									)}
+								</Box>
+								<Box className="validation-prompt-container">
 									{editPromptMode ? (
 										<section className="validation-prompt-editmode">
 											<textarea
 												className="validation-prompt-editarea"
 												value={editPromptValue}
-												onChange={e => setEditPromptValue(e.target.value)}
+												onChange={(e) => setEditPromptValue(e.target.value)}
 												rows={8}
 												disabled={editPromptLoading}
 												autoFocus
 											/>
 											{editPromptError && (
-												<Typography color="error" fontSize={13} sx={{ mb: 1 }}>{editPromptError}</Typography>
+												<Typography
+													color="error"
+													fontSize={13}
+													sx={{ mb: 1 }}
+												>
+													{editPromptError}
+												</Typography>
 											)}
 											<div className="validation-prompt-editbuttons">
 												<Button
@@ -605,15 +617,22 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 													disabled={editPromptLoading}
 													onClick={async () => {
 														if (!selectedCall) return;
+
 														setEditPromptLoading(true);
 														setEditPromptError(null);
 														try {
-															await updateAiCallValidationPrompt(selectedCall.id, editPromptValue);
+															await updateAiCallValidationPrompt(
+																selectedCall.id,
+																editPromptValue + promptSuffix
+															);
 															// Update local value
-															selectedCall.validationPrompt = editPromptValue;
+															selectedCall.validationPrompt =
+																editPromptValue + promptSuffix;
 															setEditPromptMode(false);
 														} catch (err: any) {
-															setEditPromptError(err.message || 'Failed to update validation prompt');
+															setEditPromptError(
+																err.message || 'Failed to update validation prompt'
+															);
 														} finally {
 															setEditPromptLoading(false);
 														}
@@ -638,9 +657,17 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 									) : (
 										<Box className="validation-prompt-content">
 											{selectedCall?.validationPrompt ? (
-												<Typography fontSize={14} sx={{ whiteSpace: 'pre-wrap' }}>{selectedCall.validationPrompt}</Typography>
+												<Typography
+													fontSize={14}
+													sx={{ whiteSpace: 'pre-wrap' }}
+												>
+													{selectedCall.validationPrompt}
+												</Typography>
 											) : (
-												<Typography color="text.secondary" fontSize={14}>
+												<Typography
+													color="text.secondary"
+													fontSize={14}
+												>
 													No validation prompt.
 												</Typography>
 											)}
