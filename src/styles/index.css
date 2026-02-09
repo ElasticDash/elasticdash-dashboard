@@ -213,3 +213,97 @@ Tables styles
     min-width: 0;
     padding: 4px;
 }
+
+.validation-prompt-container {
+    flex: 1;
+    margin-left: 1rem;
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    color: #333;
+    font-family: monospace;
+    font-size: 14px;
+    overflow-y: auto;
+    position: relative;
+    transition: box-shadow 0.2s;
+    box-shadow: 0;
+
+    .validation-prompt-edit-button {
+        position: sticky;
+        top: 0;
+        right: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 0.25rem;
+        padding-right: 0.25rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+        > * {
+            background-color: #f5f5f5;
+            opacity: 0.7;
+
+            &:hover {
+                background-color: #e0e0e0;
+                opacity: 1;
+            }
+        }
+    }
+
+    .validation-prompt-content {
+        white-space: pre-wrap;
+        word-break: break-word;
+        min-height: 2rem;
+        position: relative;
+        top: -32px;
+    }
+
+    .validation-prompt-editarea {
+        width: 100%;
+        min-height: 120px;
+        height: 100%;
+        flex: 1 1 0%;
+        font-family: monospace;
+        font-size: 14px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        padding: 8px;
+        resize: none;
+        margin-bottom: 12px;
+        background: #fff;
+        color: #222;
+        box-sizing: border-box;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        display: block;
+    }
+
+    .validation-prompt-editbuttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    .validation-prompt-editmode {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        flex: 1 1 0%;
+        min-height: 0;
+    }
+    .validation-prompt-editarea:focus {
+        border-color: #1976d2;
+        box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.15);
+    }
+}
+.validation-prompt-container:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+    .validation-prompt-edit-button {
+        opacity: 1;
+    }
+}

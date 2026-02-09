@@ -25,32 +25,53 @@ export default function AccountSettingsPage() {
 	const [oauthTokenError, setOauthTokenError] = useState('');
 	const [oauthTokenSuccess, setOauthTokenSuccess] = useState('');
 
-	const [llmProviderId, setLlmProviderId] = useState(1); // Only OpenAI for now
-	const [llmToken, setLlmToken] = useState('');
-	const [llmError, setLlmError] = useState('');
-	const [llmSuccess, setLlmSuccess] = useState('');
+	const [openAiToken, setOpenAiToken] = useState('');
+	const [openAiError, setOpenAiError] = useState('');
+	const [openAiSuccess, setOpenAiSuccess] = useState('');
+	const [geminiToken, setGeminiToken] = useState('');
+	const [geminiError, setGeminiError] = useState('');
+	const [geminiSuccess, setGeminiSuccess] = useState('');
 	const [email, setEmail] = useState('user@example.com');
-	// Fetch LLM config
+	// Fetch OpenAI and Gemini configs
 	useEffect(() => {
 		fetchLlmConfig()
 			.then((res: any) => {
-				setLlmProviderId(res?.result?.llmProviderId || 1);
-				setLlmToken(res?.result?.llmToken || '');
+				if (res.result.find((c: any) => c.llmProviderId === 1)) {
+					const openAiConfig = res.result.find((c: any) => c.llmProviderId === 1);
+					setOpenAiToken(openAiConfig.llmToken);
+				}
+
+				if (res.result.find((c: any) => c.llmProviderId === 2)) {
+					const geminiConfig = res.result.find((c: any) => c.llmProviderId === 2);
+					setGeminiToken(geminiConfig.llmToken);
+				}
 			})
 			.catch((err) => {
-				setLlmError(err.message || 'Failed to fetch LLM config');
+				setOpenAiError(err.message || 'Failed to fetch OpenAI config');
 			});
 	}, []);
 
-	const handleLlmSave = async (token: string) => {
-		setLlmError('');
-		setLlmSuccess('');
+	const handleOpenAiSave = async (token: string) => {
+		setOpenAiError('');
+		setOpenAiSuccess('');
 		try {
 			await updateLlmConfig({ llmProviderId: 1, llmToken: token });
-			setLlmToken(token);
-			setLlmSuccess('LLM token updated successfully');
+			setOpenAiToken(token);
+			setOpenAiSuccess('OpenAI token updated successfully');
 		} catch (err: any) {
-			setLlmError(err.message || 'Failed to update LLM token');
+			setOpenAiError(err.message || 'Failed to update OpenAI token');
+		}
+	};
+
+	const handleGeminiSave = async (token: string) => {
+		setGeminiError('');
+		setGeminiSuccess('');
+		try {
+			await updateLlmConfig({ llmProviderId: 2, llmToken: token });
+			setGeminiToken(token);
+			setGeminiSuccess('Gemini token updated successfully');
+		} catch (err: any) {
+			setGeminiError(err.message || 'Failed to update Gemini token');
 		}
 	};
 
@@ -213,6 +234,7 @@ export default function AccountSettingsPage() {
 					LLM Provider & Token
 				</Typography>
 				<Divider className="mb-4" />
+				{/* OpenAI */}
 				<EditableField
 					label="Provider"
 					value="OpenAI"
@@ -221,24 +243,53 @@ export default function AccountSettingsPage() {
 				/>
 				<EditableField
 					label="OpenAI API Key"
-					value={llmToken}
-					onSave={handleLlmSave}
+					value={openAiToken}
+					onSave={handleOpenAiSave}
 					type="password"
 				/>
-				{llmError && (
+				{openAiError && (
 					<Typography
 						color="error"
 						className="mt-2"
 					>
-						{llmError}
+						{openAiError}
 					</Typography>
 				)}
-				{llmSuccess && (
+				{openAiSuccess && (
 					<Typography
 						color="success.main"
 						className="mt-2"
 					>
-						{llmSuccess}
+						{openAiSuccess}
+					</Typography>
+				)}
+				{/* Gemini */}
+				<EditableField
+					label="Provider"
+					value="Gemini"
+					onSave={() => {}}
+					editable={false}
+				/>
+				<EditableField
+					label="Gemini API Key"
+					value={geminiToken}
+					onSave={handleGeminiSave}
+					type="password"
+				/>
+				{geminiError && (
+					<Typography
+						color="error"
+						className="mt-2"
+					>
+						{geminiError}
+					</Typography>
+				)}
+				{geminiSuccess && (
+					<Typography
+						color="success.main"
+						className="mt-2"
+					>
+						{geminiSuccess}
 					</Typography>
 				)}
 			</Paper>

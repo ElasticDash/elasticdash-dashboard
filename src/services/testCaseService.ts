@@ -1,3 +1,29 @@
+/**
+ * Update validation prompt for an AI call
+ * @param aiCallId - The ID of the AI call
+ * @param validationPrompt - The new validation prompt
+ * @returns Promise<any>
+ */
+export async function updateAiCallValidationPrompt(aiCallId: number, validationPrompt: string): Promise<any> {
+	const token = localStorage.getItem('token') || '';
+	const res = await axios.put(
+		process.env.NEXT_PUBLIC_BASE_URL + '/testcases/aicalls/validation-prompt',
+		{
+			aiCallId,
+			validationPrompt
+		},
+		{
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`
+			}
+		}
+	);
+
+	if (!res.data) throw new Error('No response data');
+
+	return res.data;
+}
 import axios from 'axios';
 import { api } from '@/utils/api';
 
@@ -201,7 +227,9 @@ export async function fetchTestCases(): Promise<TestCase[]> {
  * @param id - test case id
  * @returns Promise<{ testCase: TestCase, aiCalls: any[] }>
  */
-export async function fetchTestCaseDetailWithAiCalls(id: number): Promise<{ testCase: TestCase; aiCalls: any[], rerun?: any }> {
+export async function fetchTestCaseDetailWithAiCalls(
+	id: number
+): Promise<{ testCase: TestCase; aiCalls: any[]; rerun?: any }> {
 	const res: any = await api.get(`testcases/detail/${id}`).json();
 
 	if (!res.success) throw new Error(res.error || 'Failed to fetch test case detail');

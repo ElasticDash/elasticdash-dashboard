@@ -5,12 +5,12 @@ import {
 	Typography,
 	IconButton,
 	DialogContent,
-	// Button,
 	CircularProgress,
 	List,
 	ListItem,
 	ListItemButton,
-	Box
+	Box,
+	Chip
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
@@ -26,33 +26,50 @@ interface TraceDetailDialogProps {
 }
 
 const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, traceId }) => {
-	const [traceDetail, setTraceDetail] = useState<any | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [testCaseError, setTestCaseError] = useState<string | null>(null);
 	const [testCaseSuccess, setTestCaseSuccess] = useState<string | null>(null);
 	const [selectedObservation, setSelectedObservation] = useState<any | null>(null);
-
+	const [observations, setObservations] = useState<any[]>([]);
 
 	// Fetch trace detail when dialog opens and traceId changes
 	useEffect(() => {
 		if (open && traceId) {
 			setLoading(true);
 			setError(null);
-			setTraceDetail(null);
 			setTestCaseError(null);
 			setTestCaseSuccess(null);
 			setSelectedObservation(null);
-
+			setObservations([]);
 			fetchTraceDetail({ id: traceId })
 				.then((res: any) => {
 					console.log('Fetched trace detail:', res);
-					setTraceDetail(res);
+					console.log('traceDetail?.observations: ', res.observations);
+
+					const observationsFetched =
+						res.observations.map((o) => ({
+							...o,
+							metadata: o.metadata
+								? {
+										...o.metadata,
+										attributes: o.metadata.attributes ? JSON.parse(o.metadata.attributes) : {},
+										resourceAttributes: o.metadata.resourceAttributes
+											? JSON.parse(o.metadata.resourceAttributes)
+											: {},
+										scope: o.metadata.scope ? JSON.parse(o.metadata.scope) : {}
+									}
+								: null
+						})) || [];
+
+					console.log('Processed observations:', observationsFetched);
 
 					// Auto-select first observation
-					if (res?.observations && res.observations.length > 0) {
-						setSelectedObservation(res.observations[0]);
+					if (observationsFetched && observationsFetched.length > 0) {
+						setSelectedObservation(observationsFetched[0]);
 					}
+
+					setObservations(observationsFetched);
 				})
 				.catch((err: any) => {
 					setError(err.message || 'Failed to fetch trace detail');
@@ -66,7 +83,6 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 	// Reset state when dialog is closed
 	useEffect(() => {
 		if (!open) {
-			setTraceDetail(null);
 			setError(null);
 			setLoading(false);
 			setTestCaseError(null);
@@ -79,9 +95,11 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 		console.log('selectedObservation: ', selectedObservation);
 	}, [selectedObservation]);
 
-	if (!open) return null;
+	useEffect(() => {
+		console.log('observations: ', observations);
+	}, [observations]);
 
-	const observations = traceDetail?.observations || [];
+	if (!open) return null;
 
 	return (
 		<Dialog
@@ -198,12 +216,21 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 												sx={{ pl: 1, alignItems: 'flex-start' }}
 											>
 												<Box sx={{ width: '100%' }}>
-													<Typography
-														variant="body2"
-														fontWeight={600}
-													>
-														AI Call #{index + 1}
-													</Typography>
+													<div className="flex w-full items-center justify-between">
+														<Typography
+															variant="body2"
+															fontWeight={600}
+														>
+															AI Call #{index + 1}
+														</Typography>
+														<Chip
+															label={
+																observation.metadata?.attributes[
+																	'elasticdash.observation.model.name'
+																] || 'Unknown Model'
+															}
+														/>
+													</div>
 													<Typography
 														variant="caption"
 														color="text.secondary"

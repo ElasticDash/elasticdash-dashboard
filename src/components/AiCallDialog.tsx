@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import EditIcon from '@mui/icons-material/Edit';
 import {
 	Dialog,
 	AppBar,
@@ -14,7 +15,8 @@ import {
 	Button,
 	DialogTitle,
 	DialogActions,
-	TextField
+	TextField,
+	Chip
 } from '@mui/material';
 import { CloseIcon } from './tiptap/tiptap-icons/close-icon';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
@@ -24,7 +26,8 @@ import {
 	acceptTestCaseRerun,
 	createNewTestCaseWithRerun,
 	rejectTestCaseRerun,
-	resetTestCase
+	resetTestCase,
+	updateAiCallValidationPrompt
 } from '@/services/testCaseService';
 import LoadingOverlay from './LoadingOverlay';
 
@@ -58,6 +61,16 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 	const [abortConfirmOpen, setAbortConfirmOpen] = useState(false);
 	const [newTestCaseName, setNewTestCaseName] = useState('');
 	const [actionLoading, setActionLoading] = useState(false);
+	const [editPromptMode, setEditPromptMode] = useState(false);
+	const [editPromptValue, setEditPromptValue] = useState('');
+	const [editPromptLoading, setEditPromptLoading] = useState(false);
+	const [editPromptError, setEditPromptError] = useState<string | null>(null);
+	// When selectedCall changes, reset edit mode
+	useEffect(() => {
+		setEditPromptMode(false);
+		setEditPromptValue(selectedCall?.validationPrompt || '');
+		setEditPromptError(null);
+	}, [selectedCall]);
 
 	// Auto-select first AI call when dialog opens
 	useEffect(() => {
@@ -381,12 +394,15 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 													sx={{ pl: 1, alignItems: 'flex-start' }}
 												>
 													<Box sx={{ width: '100%' }}>
-														<Typography
-															variant="body2"
-															fontWeight={600}
-														>
-															AI Call #{call.stepOrder ?? index + 1}
-														</Typography>
+														<div className="flex w-full items-center justify-between">
+															<Typography
+																variant="body2"
+																fontWeight={600}
+															>
+																AI Call #{call.stepOrder ?? index + 1}
+															</Typography>
+															<Chip label={call.aiModel || 'Unknown Model'} />
+														</div>
 														<Typography
 															variant="caption"
 															color="text.secondary"
@@ -441,12 +457,15 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 													sx={{ pl: 1, alignItems: 'flex-start' }}
 												>
 													<Box sx={{ width: '100%' }}>
-														<Typography
-															variant="body2"
-															fontWeight={600}
-														>
-															AI Call #{call.stepOrder ?? index + 1}
-														</Typography>
+														<div className="flex w-full items-center justify-between">
+															<Typography
+																variant="body2"
+																fontWeight={600}
+															>
+																AI Call #{call.stepOrder ?? index + 1}
+															</Typography>
+															<Chip label={call.aiModel || 'Unknown Model'} />
+														</div>
 														<Typography
 															variant="caption"
 															color="text.secondary"
@@ -497,15 +516,9 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 							)}
 						</Box>
 
-						{/* Right content - AI Call details */}
-						<Box
-							sx={{
-								flex: 1,
-								display: 'flex',
-								flexDirection: 'column',
-								overflow: 'hidden'
-							}}
-						>
+						{/* Right content - AI Call details and Validation Prompt sidebar */}
+						<Box sx={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
+							{/* Main details */}
 							<Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
 								{selectedCall ? (
 									<>
@@ -532,10 +545,118 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 								)}
 							</Box>
 
+							{/* Validation Prompt Sidebar */}
+							<Box
+								sx={{
+									width: 360,
+									borderLeft: '1px solid',
+									borderColor: 'divider',
+									bgcolor: 'background.default',
+									p: 0,
+									display: 'flex',
+									flexDirection: 'column',
+									height: '100%',
+									position: 'relative'
+								}}
+							>
+								<Box sx={{ p: 3, pb: 1 }}>
+									<Typography
+										variant="h6"
+										fontWeight={600}
+										gutterBottom
+									>
+										Validation Prompt
+									</Typography>
+								</Box>
+								<Box className="validation-prompt-container">
+									{/* Edit button, always fixed at top right of the container */}
+									{!editPromptMode && (
+										<Box className="validation-prompt-edit-button">
+											<IconButton
+												size="small"
+												aria-label="Edit Validation Prompt"
+												onClick={() => {
+													setEditPromptValue(selectedCall?.validationPrompt || '');
+													setEditPromptMode(true);
+												}}
+											>
+												<EditIcon fontSize="small" />
+											</IconButton>
+										</Box>
+									)}
+									{editPromptMode ? (
+										<section className="validation-prompt-editmode">
+											<textarea
+												className="validation-prompt-editarea"
+												value={editPromptValue}
+												onChange={e => setEditPromptValue(e.target.value)}
+												rows={8}
+												disabled={editPromptLoading}
+												autoFocus
+											/>
+											{editPromptError && (
+												<Typography color="error" fontSize={13} sx={{ mb: 1 }}>{editPromptError}</Typography>
+											)}
+											<div className="validation-prompt-editbuttons">
+												<Button
+													variant="contained"
+													color="primary"
+													fullWidth
+													disabled={editPromptLoading}
+													onClick={async () => {
+														if (!selectedCall) return;
+														setEditPromptLoading(true);
+														setEditPromptError(null);
+														try {
+															await updateAiCallValidationPrompt(selectedCall.id, editPromptValue);
+															// Update local value
+															selectedCall.validationPrompt = editPromptValue;
+															setEditPromptMode(false);
+														} catch (err: any) {
+															setEditPromptError(err.message || 'Failed to update validation prompt');
+														} finally {
+															setEditPromptLoading(false);
+														}
+													}}
+												>
+													{editPromptLoading ? 'Updating...' : 'Update'}
+												</Button>
+												<Button
+													variant="outlined"
+													color="secondary"
+													fullWidth
+													disabled={editPromptLoading}
+													onClick={() => {
+														setEditPromptMode(false);
+														setEditPromptError(null);
+													}}
+												>
+													Cancel
+												</Button>
+											</div>
+										</section>
+									) : (
+										<Box className="validation-prompt-content">
+											{selectedCall?.validationPrompt ? (
+												<Typography fontSize={14} sx={{ whiteSpace: 'pre-wrap' }}>{selectedCall.validationPrompt}</Typography>
+											) : (
+												<Typography color="text.secondary" fontSize={14}>
+													No validation prompt.
+												</Typography>
+											)}
+										</Box>
+									)}
+								</Box>
+							</Box>
+
 							{/* Footer with action buttons - only show when rerun data exists */}
 							{rerun && rerun.id && (
 								<Box
 									sx={{
+										position: 'absolute',
+										bottom: 0,
+										left: 0,
+										right: 360,
 										p: 2,
 										borderTop: '1px solid',
 										borderColor: 'divider',
