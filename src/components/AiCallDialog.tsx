@@ -610,6 +610,18 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 												</Typography>
 											)}
 											<div className="validation-prompt-editbuttons">
+												{/* Suffix section */}
+												<Typography
+													variant="caption"
+													color="text.secondary"
+													sx={{ fontWeight: 500 }}
+												>
+													The following will be appended to the end of your prompt and is not
+													editable:
+												</Typography>
+												<Box sx={{ mt: 0.5, p: 1, borderRadius: 1, bgcolor: 'grey.100', fontFamily: 'monospace', fontSize: 13, color: 'text.secondary', whiteSpace: 'normal', display: 'inline-block' }}>
+													{promptSuffix}
+												</Box>
 												<Button
 													variant="contained"
 													color="primary"
