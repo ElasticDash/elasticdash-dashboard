@@ -68,14 +68,7 @@ export function prettifyJSON(content: any): string | JSX.Element {
 					marginBottom: '24px'
 				}}
 			>
-				<ReactJson
-					src={content}
-					name={null}
-					enableClipboard={false}
-					displayDataTypes={false}
-					indentWidth={2}
-					style={{ fontSize: '14px' }}
-				/>
+				{content instanceof Object ? JSON.stringify(content, null, 2) : String(content)}
 			</pre>
 		);
 	} catch {
@@ -90,7 +83,7 @@ export function prettifyJSON(content: any): string | JSX.Element {
 					marginBottom: '24px'
 				}}
 			>
-				{content}
+				{content instanceof Object ? JSON.stringify(content, null, 2) : String(content)}
 			</pre>
 		);
 	}
