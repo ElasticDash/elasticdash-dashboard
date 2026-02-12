@@ -36,12 +36,12 @@ export default function AccountSettingsPage() {
 	useEffect(() => {
 		fetchLlmConfig()
 			.then((res: any) => {
-				if (res.result.find((c: any) => c.llmProviderId === 1)) {
+				if (res && res.result && res.result.find((c: any) => c.llmProviderId === 1)) {
 					const openAiConfig = res.result.find((c: any) => c.llmProviderId === 1);
 					setOpenAiToken(openAiConfig.llmToken);
 				}
 
-				if (res.result.find((c: any) => c.llmProviderId === 2)) {
+				if (res && res.result && res.result.find((c: any) => c.llmProviderId === 2)) {
 					const geminiConfig = res.result.find((c: any) => c.llmProviderId === 2);
 					setGeminiToken(geminiConfig.llmToken);
 				}
