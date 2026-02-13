@@ -74,7 +74,7 @@ export function useChat() {
 			}
 
 			if (status === 'completed' && result) {
-				setChatHistory((prev) => addToChatHistory(prev, { type: 'result', ...result }));
+				setChatHistory((prev) => addToChatHistory(prev, prev, { type: 'result', ...result }]);
 			}
 
 			setPendingPlan(null);
@@ -122,7 +122,7 @@ export function useChat() {
 				content: userContent,
 				createdAt: new Date().toISOString()
 			};
-			setChatHistory((prev) => addToChatHistory(prev, userMessage));
+			setChatHistory((prev) => addToChatHistory(prev, prev, userMessage]);
 			const userMessageBody = {
 				messages: [{ type: 'user', content: userContent }],
 				conversationId: currentConversationId || undefined,
@@ -212,7 +212,7 @@ export function useChat() {
 				content: feedback || 'Let me provide feedback on this plan',
 				createdAt: new Date().toISOString()
 			};
-			setChatHistory((prev) => addToChatHistory(prev, userMessage));
+			setChatHistory((prev) => addToChatHistory(prev, prev, userMessage]);
 			setPendingPlan(null);
 			setIsProcessing(false);
 			setError(null);

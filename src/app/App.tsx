@@ -16,7 +16,7 @@ import { NavbarContextProvider } from '@/components/theme-layouts/components/nav
 import { QuickPanelProvider } from '@/components/theme-layouts/components/quickPanel/contexts/QuickPanelContext/QuickPanelContextProvider';
 import RootThemeProvider from '@/contexts/RootThemeProvider';
 import { NavigationContextProvider } from '@/components/theme-layouts/components/navigation/contexts/NavigationContextProvider';
-import { initSocket } from '@/services/socketService';
+import { initSocket, disconnectSocket } from '@/services/socketService';
 import { useEffect } from 'react';
 
 const queryClient = new QueryClient({
@@ -48,7 +48,7 @@ function App(props: AppProps) {
 		});
 
 		return () => {
-			socket.disconnect();
+			disconnectSocket(); // Use proper cleanup to prevent memory leaks
 		};
 	}, []);
 

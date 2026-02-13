@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 const API_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 let socket: Socket | null = null;
+let storageHandler: ((event: StorageEvent) => void) | null = null;
 
 export function initSocket() {
 	console.log('initSocket is triggered with api base url:', API_BASE_URL);
@@ -36,26 +37,29 @@ export function initSocket() {
 	});
 
 	// Listen for localStorage changes and join when data becomes available
-	if (typeof window !== 'undefined') {
-		window.addEventListener('storage', (event) => {
-			if (!socket) return;
+	// Store handler reference for cleanup
+	storageHandler = (event: StorageEvent) => {
+		if (!socket) return;
 
-			if (event.key === 'chatSessionId' && event.newValue) {
-				socket.emit('join', event.newValue);
-			}
+		if (event.key === 'chatSessionId' && event.newValue) {
+			socket.emit('join', event.newValue);
+		}
 
-			if (event.key === 'hb-user' && event.newValue) {
-				try {
-					const userId = JSON.parse(event.newValue)?.id;
+		if (event.key === 'hb-user' && event.newValue) {
+			try {
+				const userId = JSON.parse(event.newValue)?.id;
 
-					if (userId) {
-						socket.emit('join', userId);
-					}
-				} catch (error) {
-					console.error('Failed to parse hb-user from localStorage', error);
+				if (userId) {
+					socket.emit('join', userId);
 				}
+			} catch (error) {
+				console.error('Failed to parse hb-user from localStorage', error);
 			}
-		});
+		}
+	};
+
+	if (typeof window !== 'undefined') {
+		window.addEventListener('storage', storageHandler);
 	}
 
 	socket.on('disconnect', () => {
@@ -101,4 +105,21 @@ export function setupReconnectionHandler(onReconnect?: () => void) {
 	socket.on('reconnect_failed', () => {
 		// Optionally handle reconnection failure
 	});
+}
+
+/**
+ * Properly disconnect socket and clean up all event listeners
+ * CRITICAL: Prevents memory leaks from accumulating storage event listeners
+ */
+export function disconnectSocket() {
+	if (socket) {
+		socket.disconnect();
+		socket = null;
+	}
+
+	// Remove storage event listener to prevent memory leak
+	if (storageHandler && typeof window !== 'undefined') {
+		window.removeEventListener('storage', storageHandler);
+		storageHandler = null;
+	}
 }
