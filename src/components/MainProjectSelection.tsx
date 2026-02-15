@@ -15,14 +15,14 @@ const projectOptions: ProjectOption[] = [
 		logo: '/assets/images/logo/vite.svg',
 		darkLogo: '/assets/images/logo/vite.svg',
 		name: 'Vitejs',
-		url: 'https://fuse-react-vitejs-demo.fusetheme.com'
+		url: 'https://www.elasticdash.com'
 	},
 	{
 		value: 'Nextjs',
 		logo: '/assets/images/logo/nextjs.svg',
 		darkLogo: '/assets/images/logo/nextjs-dark.svg',
 		name: 'Nextjs',
-		url: 'https://fuse-react-nextjs-demo.fusetheme.com'
+		url: 'https://www.elasticdash.com'
 	}
 ];
 

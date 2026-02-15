@@ -304,7 +304,7 @@ const changelogData: ChangelogItemType[] = [
 				action={
 					<Button
 						component="a"
-						href="https://fuse-react-nextjs-demo.fusetheme.com"
+						href="https://www.elasticdash.com"
 						target="_blank"
 						variant="outlined"
 						color="inherit"
@@ -1321,7 +1321,7 @@ const changelogData: ChangelogItemType[] = [
 			<span key="user-role-array">
 				user.role can be array to assign multiple permission roles. For details checkout
 				<a
-					href="http://react-material.fusetheme.com/documentation/fuse-components/fuse-authorization"
+					href="http://react-material.elasticdash.com/documentation/fuse-components/fuse-authorization"
 					target="_blank"
 					rel="noopener noreferrer"
 				>

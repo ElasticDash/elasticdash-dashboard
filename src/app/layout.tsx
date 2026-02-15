@@ -15,7 +15,7 @@ export const metadata = await generateMetadata({
 	cardImage: '/card.png',
 	robots: 'follow, index',
 	favicon: '/assets/images/logo/logo.svg',
-	url: 'https://react-material.fusetheme.com'
+	url: 'https://www.elasticdash.com'
 });
 
 export default async function RootLayout({

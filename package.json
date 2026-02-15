@@ -1,6 +1,6 @@
 {
-  "name": "fuse-react-app",
-  "version": "16.0.0",
+  "name": "elasticdash-dashboard",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "dependencies": {
@@ -155,8 +155,6 @@
     "lint": "eslint ./src --config ./eslint.config.mjs",
     "lint:fix": "eslint --fix ./src --config ./eslint.config.mjs",
     "build-docs": "npx tsx  \"./src/app/(public)/documentation/lib/utils/build-mui-docs.ts\"",
-    "postinstall": "node src/utils/node-scripts/fuse-react-message.js",
-    "poststart": "node src/utils/node-scripts/fuse-react-message.js",
     "audit": "npm audit --production"
   },
   "engines": {

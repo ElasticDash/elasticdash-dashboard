@@ -243,7 +243,7 @@ function FuseNavigationDoc() {
                 'title' : 'Test Link',
                 'type'  : 'link',
                 'icon'  : 'link',
-                'url'   : 'http://fusetheme.com',
+                'url'   : 'http://www.elasticdash.com',
                 'target': '_blank'
             }
         `}
@@ -487,7 +487,7 @@ function FuseNavigationDoc() {
 					className="mb-6 text-lg"
 					component="h2"
 				>
-					With the button below, "fusetheme.com" navigation item is added at the top of the navigation array.
+					With the button below, "elasticdash.com" navigation item is added at the top of the navigation array.
 				</Typography>
 
 				<FuseHighlight
@@ -502,10 +502,10 @@ function FuseNavigationDoc() {
                     prependNavigationItem(
                         {
                             'id'    : 'test-link',
-                            'title' : 'fusetheme.com',
+                            'title' : 'elasticdash.com',
                             'type'  : 'link',
                             'icon'  : 'link',
-                            'url'   : 'http://fusetheme.com',
+                            'url'   : 'http://elasticdash.com',
                             'target': '_blank'
                         }
                     )
@@ -524,7 +524,7 @@ function FuseNavigationDoc() {
 					className="mb-6 text-lg"
 					component="h2"
 				>
-					With the button below, "fusetheme.com" navigation item is added into the top of the "Dashboards"
+					With the button below, "elasticdash.com" navigation item is added into the top of the "Dashboards"
 					children.
 				</Typography>
 
@@ -540,10 +540,10 @@ function FuseNavigationDoc() {
                   prependNavigationItem(
                       {
                           'id'    : 'test-link',
-                          'title' : 'fusetheme.com',
+                          'title' : 'elasticdash.com',
                           'type'  : 'link',
                           'icon'  : 'link',
-                          'url'   : 'http://fusetheme.com',
+                          'url'   : 'http://elasticdash.com',
                           'target': '_blank'
                       }, 'dashboards'
                   )
@@ -573,7 +573,7 @@ function FuseNavigationDoc() {
 					className="mb-6 text-lg"
 					component="h2"
 				>
-					With the button below, "fusetheme.com" navigation item is added at the bottom of the array.
+					With the button below, "elasticdash.com" navigation item is added at the bottom of the array.
 				</Typography>
 
 				<FuseHighlight
@@ -588,10 +588,10 @@ function FuseNavigationDoc() {
                     appendNavigationItem(
                         {
                             'id'    : 'test-link',
-                            'title' : 'fusetheme.com',
+                            'title' : 'elasticdash.com',
                             'type'  : 'link',
                             'icon'  : 'link',
-                            'url'   : 'http://fusetheme.com',
+                            'url'   : 'http://elasticdash.com',
                             'target': '_blank'
                         }
                     )
@@ -610,7 +610,7 @@ function FuseNavigationDoc() {
 					className="mb-6 text-lg"
 					component="h2"
 				>
-					With the button below, "fusetheme.com" navigation item is added into the bottom of the "Dashboards"
+					With the button below, "elasticdash.com" navigation item is added into the bottom of the "Dashboards"
 					children.
 				</Typography>
 
@@ -626,10 +626,10 @@ function FuseNavigationDoc() {
                   appendNavigationItem(
                       {
                           'id'    : 'test-link',
-                          'title' : 'fusetheme.com',
+                          'title' : 'elasticdash.com',
                           'type'  : 'link',
                           'icon'  : 'link',
-                          'url'   : 'http://fusetheme.com',
+                          'url'   : 'http://elasticdash.com',
                           'target': '_blank'
                       }, 'dashboards'
                   )

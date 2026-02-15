@@ -133,7 +133,7 @@ function AccountTabView() {
 															color="text.secondary"
 															className="italic"
 														>
-															fusetheme.com/
+															elasticdash.com/
 														</Typography>
 													)
 												}
