@@ -4,7 +4,7 @@
     "title": "Fuse Mock API",
     "version": "1.0.0",
     "contact": {
-      "url": "http://fusetheme.com/",
+      "url": "http://elasticdash.com/",
       "email": "themes@withinpixels.com",
       "name": "Fuse Theme"
     },
@@ -8510,7 +8510,7 @@
             "role": "admin",
             "displayName": "Abbott Keitch",
             "photoURL": "/assets/images/avatars/brian-hughes.jpg",
-            "email": "admin@fusetheme.com",
+            "email": "admin@elasticdash.com",
             "settings": {
               "layout": {},
               "theme": {}
@@ -34234,7 +34234,7 @@
             "role": "admin",
             "displayName": "Abbott Keitch",
             "photoURL": "/assets/images/avatars/brian-hughes.jpg",
-            "email": "admin@fusetheme.com",
+            "email": "admin@elasticdash.com",
             "settings": {
               "layout": {},
               "theme": {}

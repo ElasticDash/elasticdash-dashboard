@@ -1,33 +1,63 @@
 
-# Fuse React Versions
-## Available Versions
-- **Fuse React ViteJs** - Single Page Application (SPA)
-  - ViteJs offers a fast development experience with its instant server start and hot module replacement, making it ideal for SPAs where quick feedback and performance are crucial.
-- **Fuse React NextJs** - Server Side Rendering (SSR)
-  - NextJs excels in SSR by providing automatic static optimization and server-side rendering capabilities, which enhance SEO and initial load performance, making it perfect for dynamic web applications.
+# ElasticDash Dashboard
 
-## GitHub Branches
+ElasticDash Dashboard is the web-based dashboard for the LLM regression testing platform **ElasticDash**. It provides a user-friendly interface to manage, monitor, and analyze regression tests for large language models (LLMs).
 
-| | **ViteJs** | **NextJs** |
-|---------|------|----------|
-| **Demo** | [`vitejs-demo`](https://github.com/withinpixels/fuse-react/tree/vitejs-demo) [🌐](https://fuse-react-vitejs-demo.fusetheme.com) | [`nextjs-demo`](https://github.com/withinpixels/fuse-react/tree/nextjs-demo) [🌐](https://fuse-react-nextjs-demo.fusetheme.com) |
-| **Skeleton** | [`vitejs-skeleton`](https://github.com/withinpixels/fuse-react/tree/vitejs-skeleton) [🌐](https://fuse-react-vitejs-skeleton.fusetheme.com) | [`nextjs-skeleton`](https://github.com/withinpixels/fuse-react/tree/nextjs-skeleton) [🌐](https://fuse-react-nextjs-skeleton.fusetheme.com) |
-| **Development Demo** | [`vitejs-demo-dev`](https://github.com/withinpixels/fuse-react/tree/vitejs-demo-dev) [🌐](https://fuse-react-vitejs-demo-dev.fusetheme.com) | [`nextjs-demo-dev`](https://github.com/withinpixels/fuse-react/tree/nextjs-demo-dev) [🌐](https://fuse-react-nextjs-demo-dev.fusetheme.com) |
-| **Development Skeleton** | [`vitejs-skeleton-dev`](https://github.com/withinpixels/fuse-react/tree/vitejs-skeleton-dev) [🌐](https://fuse-react-vitejs-skeleton-dev.fusetheme.com) | [`nextjs-skeleton-dev`](https://github.com/withinpixels/fuse-react/tree/nextjs-skeleton-dev) [🌐](https://fuse-react-nextjs-skeleton-dev.fusetheme.com) |
+## Features
+- Visualize and manage LLM regression test cases
+- Monitor test runs and results
+- Organize features and test suites
+- User authentication and access control
+- Modern, responsive UI
 
+## Getting Started
 
-## CLI Reference Links
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or yarn
 
-- [ViteJs CLI Documentation](https://vitejs.dev/guide/cli.html)
+### Installation
 
-- [NextJs CLI Documentation](https://nextjs.org/docs/api-reference/cli)
+Clone the repository:
+
+```bash
+git clone https://github.com/your-org/elasticdash-dashboard.git
+cd elasticdash-dashboard
+```
+
+Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+### Running the Dashboard
+
+Start the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+The dashboard will be available at [http://localhost:3000](http://localhost:3000).
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
 
 ## License
 
-- [License Information](https://themeforest.net/licenses/terms/regular)
+See [LICENSE](LICENSE) for details.
 
-## More
+---
 
-- [Fuse Theme Official Website](https://fusetheme.com/)
+For more information about ElasticDash and LLM regression testing, visit the main project repository or contact the maintainers.
 
 
