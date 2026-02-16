@@ -121,7 +121,7 @@
     "@types/lodash": "4.17.16",
     "@types/marked": "4.3.2",
     "@types/node": "22.14.1",
-    "@types/prismjs": "1.26.5",
+    "@types/prismjs": "1.26.6",
     "@types/qs": "6.9.18",
     "@types/react": "19.1.2",
     "@types/react-autosuggest": "10.1.11",
