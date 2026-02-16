@@ -43,7 +43,7 @@
     "@tiptap/extension-typography": "2.11.7",
     "@tiptap/extension-underline": "2.11.7",
     "@tiptap/pm": "2.11.7",
-    "@tiptap/react": "2.11.7",
+    "@tiptap/react": "3.19.0",
     "@tiptap/starter-kit": "2.11.7",
     "@vercel/kv": "3.0.0",
     "apexcharts": "4.5.0",
