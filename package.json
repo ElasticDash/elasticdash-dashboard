@@ -35,7 +35,7 @@
     "@tiptap/extension-highlight": "2.11.7",
     "@tiptap/extension-image": "2.11.7",
     "@tiptap/extension-link": "2.11.7",
-    "@tiptap/extension-subscript": "2.11.7",
+    "@tiptap/extension-subscript": "3.19.0",
     "@tiptap/extension-superscript": "2.11.7",
     "@tiptap/extension-task-item": "2.11.7",
     "@tiptap/extension-task-list": "2.11.7",
