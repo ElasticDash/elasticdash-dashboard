@@ -729,7 +729,11 @@ const TestCaseRunRecordDetailDialog: React.FC<TestCaseRunRecordDetailDialogProps
 												Input
 											</Typography>
 											<Chip
-												label={selectedAiCall.aiModel || 'Unknown Model'}
+												label={
+													selectedAiCall.aiModel ||
+													selectedAiCall.provided_model_name ||
+													'Unknown Model'
+												}
 												size="small"
 												sx={{ height: 20, fontSize: '0.65rem' }}
 											/>

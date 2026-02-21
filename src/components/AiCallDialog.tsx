@@ -402,7 +402,13 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 															>
 																AI Call #{call.stepOrder ?? index + 1}
 															</Typography>
-															<Chip label={call.aiModel || 'Unknown Model'} />
+															<Chip
+																label={
+																	call.aiModel ||
+																	call.provided_model_name ||
+																	'Unknown Model'
+																}
+															/>
 														</div>
 														<Typography
 															variant="caption"
@@ -465,7 +471,13 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 															>
 																AI Call #{call.stepOrder ?? index + 1}
 															</Typography>
-															<Chip label={call.aiModel || 'Unknown Model'} />
+															<Chip
+																label={
+																	call.aiModel ||
+																	call.provided_model_name ||
+																	'Unknown Model'
+																}
+															/>
 														</div>
 														<Typography
 															variant="caption"
@@ -619,7 +631,19 @@ const AiCallDialog: React.FC<AiCallDialogProps> = ({
 													The following will be appended to the end of your prompt and is not
 													editable:
 												</Typography>
-												<Box sx={{ mt: 0.5, p: 1, borderRadius: 1, bgcolor: 'grey.100', fontFamily: 'monospace', fontSize: 13, color: 'text.secondary', whiteSpace: 'normal', display: 'inline-block' }}>
+												<Box
+													sx={{
+														mt: 0.5,
+														p: 1,
+														borderRadius: 1,
+														bgcolor: 'grey.100',
+														fontFamily: 'monospace',
+														fontSize: 13,
+														color: 'text.secondary',
+														whiteSpace: 'normal',
+														display: 'inline-block'
+													}}
+												>
 													{promptSuffix}
 												</Box>
 												<Button

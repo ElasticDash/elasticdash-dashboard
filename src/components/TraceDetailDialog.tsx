@@ -227,7 +227,9 @@ const TraceDetailDialog: React.FC<TraceDetailDialogProps> = ({ open, onClose, tr
 															label={
 																observation.metadata?.attributes[
 																	'elasticdash.observation.model.name'
-																] || 'Unknown Model'
+																] ||
+																observation.provided_model_name ||
+																'Unknown Model'
 															}
 														/>
 													</div>
